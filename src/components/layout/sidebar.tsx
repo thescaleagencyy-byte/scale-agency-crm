@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -94,6 +95,7 @@ const navItems: NavItem[] = [
   { href: "/broadcasts", label: "Broadcasts", icon: Radio },
   { href: "/automations", label: "Automations", icon: Zap },
   { href: "/flows", label: "Flows", icon: Workflow, beta: true },
+  { href: "/n8n", label: "n8n", icon: Workflow },
 ];
 
 const bottomNavItems = [
@@ -178,12 +180,17 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
         {/* Logo row. On mobile we put a close button here; on desktop the
             close button is hidden since the sidebar is always-visible. */}
         <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border px-4">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <MessageSquare className="h-4 w-4" />
-            </div>
-            <span className="text-sm font-semibold text-foreground">
-              CRM Template for WhatsApp
+          <Link href="/dashboard" className="flex items-center gap-2.5">
+            <Image
+              src="/branding.jpeg"
+              alt="The Scale Agency"
+              width={32}
+              height={32}
+              priority
+              className="rounded-full object-cover shrink-0"
+            />
+            <span className="text-sm font-semibold text-foreground leading-tight">
+              the scale<br />agency™
             </span>
           </Link>
           <button

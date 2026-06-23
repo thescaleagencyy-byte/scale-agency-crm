@@ -191,6 +191,8 @@ export interface Message {
    * cue (renders with a "↩ button reply" affordance).
    */
   interactive_reply_id?: string;
+  /** True when the message was sent by an n8n automation via /api/n8n/send. */
+  is_automated?: boolean;
 }
 
 export type ReactionActor = 'customer' | 'agent';
@@ -224,6 +226,34 @@ export interface WhatsAppConfig {
   subscribed_apps_at?: string;
   /** Last error from /register; cleared on success. */
   last_registration_error?: string;
+  /** Custom webhook callback URL. When absent, defaults to {origin}/api/whatsapp/webhook. */
+  webhook_url?: string;
+}
+
+export interface N8nConfig {
+  id: string;
+  account_id: string;
+  /** n8n webhook trigger URL — Meta events are forwarded here. */
+  webhook_url?: string;
+  /** n8n instance base URL (e.g. https://my.n8n.io) for the live dashboard. */
+  api_url?: string;
+  /** AES-256-GCM encrypted n8n API key. */
+  api_key?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface N8nExecution {
+  id: string;
+  status: 'success' | 'error' | 'running' | 'waiting' | 'crashed';
+  mode: string;
+  startedAt: string;
+  stoppedAt?: string;
+  finished: boolean;
+  workflowData?: {
+    id: string;
+    name: string;
+  };
 }
 
 // Raw Meta status enum. We persist this verbatim from Meta (sync + webhook)

@@ -13,6 +13,7 @@ import {
   LayoutTemplate,
   ImageOff,
   CornerDownLeft,
+  Zap,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ReplyQuote } from "./reply-quote";
@@ -278,17 +279,19 @@ export function MessageBubble({
         <MessageContent message={message} />
         <div
           className={cn(
-            "mt-1 flex items-center gap-1",
+            "mt-1 flex items-center gap-1.5",
             isAgent ? "justify-end" : "justify-start",
           )}
         >
+          {message.is_automated && (
+            <span className="inline-flex items-center gap-0.5 rounded-full bg-primary-foreground/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-primary-foreground/80">
+              <Zap className="h-2.5 w-2.5" />
+              n8n
+            </span>
+          )}
           <span
             className={cn(
               "text-[10px]",
-              // Outbound bubbles sit on the primary fill, so the
-              // timestamp must read against that (not the neutral
-              // foreground) — otherwise it goes low-contrast in light
-              // mode. Inbound bubbles use the muted surface.
               isAgent ? "text-primary-foreground/70" : "text-muted-foreground",
             )}
           >

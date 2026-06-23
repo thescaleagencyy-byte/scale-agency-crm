@@ -11,6 +11,7 @@ import {
   handleTemplateWebhookChange,
   isTemplateWebhookField,
 } from '@/lib/whatsapp/template-webhook'
+import { getAllN8nWebhookUrls } from '@/app/api/n8n/config/route'
 
 // Lazy-initialized to avoid build-time crash when env vars are missing
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -182,12 +183,31 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
+  // Forward raw payload to all configured n8n webhook URLs (fire-and-forget).
+  forwardToN8n(rawBody).catch((err) => {
+    console.error('[n8n forward] failed:', err)
+  })
+
   // Process asynchronously so we can ack Meta within their timeout.
   processWebhook(body).catch((error) => {
     console.error('Error processing webhook:', error)
   })
 
   return NextResponse.json({ status: 'received' }, { status: 200 })
+}
+
+async function forwardToN8n(rawBody: string) {
+  const urls = await getAllN8nWebhookUrls()
+  await Promise.allSettled(
+    urls.map((url) =>
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: rawBody,
+        signal: AbortSignal.timeout(5000),
+      }),
+    ),
+  )
 }
 
 async function processWebhook(body: { entry?: WhatsAppWebhookEntry[] }) {

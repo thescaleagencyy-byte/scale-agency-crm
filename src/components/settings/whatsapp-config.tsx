@@ -60,6 +60,7 @@ export function WhatsAppConfig() {
   const [verifyToken, setVerifyToken] = useState('');
   const [pin, setPin] = useState('');
   const [tokenEdited, setTokenEdited] = useState(false);
+  const [customWebhookUrl, setCustomWebhookUrl] = useState('');
 
   // True once /register has succeeded on Meta's side (timestamp set
   // in the row). When false, the saved config is metadata-only and
@@ -80,10 +81,12 @@ export function WhatsAppConfig() {
   const [registrationProbe, setRegistrationProbe] =
     useState<RegistrationProbe | null>(null);
 
-  const webhookUrl =
+  const defaultWebhookUrl =
     typeof window !== 'undefined'
       ? `${window.location.origin}/api/whatsapp/webhook`
       : '';
+
+  const webhookUrl = customWebhookUrl || defaultWebhookUrl;
 
   const fetchConfig = useCallback(async (acctId: string) => {
     setLoading(true);
@@ -112,6 +115,7 @@ export function WhatsAppConfig() {
         setVerifyToken('');
         setPin('');
         setTokenEdited(false);
+        setCustomWebhookUrl(data.webhook_url || '');
       } else {
         setConfig(null);
         setPhoneNumberId('');
@@ -120,6 +124,7 @@ export function WhatsAppConfig() {
         setVerifyToken('');
         setPin('');
         setTokenEdited(false);
+        setCustomWebhookUrl('');
       }
       // Clear any stale probe result when reloading the row.
       setRegistrationProbe(null);
@@ -191,6 +196,7 @@ export function WhatsAppConfig() {
         phone_number_id: phoneNumberId.trim(),
         waba_id: wabaId.trim() || null,
         verify_token: verifyToken.trim() || null,
+        webhook_url: customWebhookUrl.trim() || null,
         // Optional — only sent when the user filled it in. The server
         // requires it on first save or when changing numbers; for a
         // simple token rotation, leaving it blank skips re-register.
@@ -343,6 +349,7 @@ export function WhatsAppConfig() {
       setAccessToken('');
       setVerifyToken('');
       setTokenEdited(false);
+      setCustomWebhookUrl('');
       setConnectionStatus('disconnected');
       setResetReason(null);
       setStatusMessage('');
@@ -672,9 +679,10 @@ export function WhatsAppConfig() {
               <Label className="text-muted-foreground">Webhook Callback URL</Label>
               <div className="flex gap-2">
                 <Input
-                  readOnly
-                  value={webhookUrl}
-                  className="bg-muted border-border text-muted-foreground font-mono text-sm"
+                  value={customWebhookUrl}
+                  onChange={(e) => setCustomWebhookUrl(e.target.value)}
+                  placeholder={defaultWebhookUrl}
+                  className="bg-muted border-border text-foreground font-mono text-sm placeholder:text-muted-foreground"
                 />
                 <Button
                   variant="outline"
@@ -685,6 +693,9 @@ export function WhatsAppConfig() {
                   <Copy className="size-4" />
                 </Button>
               </div>
+              <p className="text-xs text-muted-foreground">
+                Enter a custom URL or leave blank to use the default ({defaultWebhookUrl}). Saved with your configuration.
+              </p>
             </div>
           </CardContent>
         </Card>

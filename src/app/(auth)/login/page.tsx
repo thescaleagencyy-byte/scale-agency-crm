@@ -3,24 +3,13 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { MessageSquare, UsersRound } from "lucide-react";
+import { UsersRound } from "lucide-react";
 
-// `useSearchParams` opts the component out of static prerendering
-// unless it sits under a Suspense boundary. We split the form into
-// a child component so the outer page can prerender the chrome
-// (background, card frame) while the form hydrates with the query
-// string on the client.
 export default function LoginPage() {
   return (
     <Suspense fallback={null}>
@@ -31,9 +20,6 @@ export default function LoginPage() {
 
 function LoginPageInner() {
   const searchParams = useSearchParams();
-  // Forwarded from `/join/<token>` when the visitor already has an
-  // account. After a successful sign-in we send them to the join
-  // page to accept rather than to /dashboard.
   const inviteToken = searchParams.get("invite");
 
   const [email, setEmail] = useState("");
@@ -48,10 +34,7 @@ function LoginPageInner() {
     setError(null);
     setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
       setError(error.message);
@@ -59,34 +42,102 @@ function LoginPageInner() {
       return;
     }
 
-    if (inviteToken) {
-      router.push(`/join/${encodeURIComponent(inviteToken)}`);
-    } else {
-      router.push("/dashboard");
-    }
+    router.push(inviteToken ? `/join/${encodeURIComponent(inviteToken)}` : "/dashboard");
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md border-border bg-card">
-        <CardHeader className="items-center text-center">
-          <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-            {inviteToken ? (
-              <UsersRound className="h-6 w-6 text-primary" />
-            ) : (
-              <MessageSquare className="h-6 w-6 text-primary" />
-            )}
+    <div className="flex min-h-screen bg-[#080808]">
+
+      {/* ── Left panel – brand ── */}
+      <div className="relative hidden lg:flex lg:w-[55%] flex-col items-center justify-center overflow-hidden p-12">
+
+        {/* Green glow orbs */}
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute top-[-10%] left-[-10%] h-[500px] w-[500px] rounded-full bg-[#39ff14] opacity-[0.12] blur-[120px]" />
+          <div className="absolute bottom-[-5%] right-[-5%] h-[400px] w-[400px] rounded-full bg-[#39ff14] opacity-[0.08] blur-[100px]" />
+          <div className="absolute top-[40%] left-[55%] h-[250px] w-[250px] rounded-full bg-[#39ff14] opacity-[0.06] blur-[80px]" />
+        </div>
+
+        {/* Subtle grid overlay */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage:
+              "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)",
+            backgroundSize: "60px 60px",
+          }}
+        />
+
+        {/* Content */}
+        <div className="relative z-10 flex flex-col items-center text-center">
+          <Image
+            src="/branding.jpeg"
+            alt="The Scale Agency"
+            width={180}
+            height={180}
+            priority
+            className="rounded-2xl object-cover mb-8 ring-1 ring-white/10 shadow-2xl shadow-[#39ff14]/10"
+          />
+          <h1 className="text-4xl font-bold text-white tracking-tight leading-tight">
+            Scale smarter.<br />
+            <span className="text-[#39ff14]">Close faster.</span>
+          </h1>
+          <p className="mt-4 text-base text-white/40 max-w-sm leading-relaxed">
+            Your WhatsApp CRM — built for teams that move fast and convert faster.
+          </p>
+
+          {/* Stat pills */}
+          <div className="mt-10 flex items-center gap-4 flex-wrap justify-center">
+            {[
+              { value: "100%", label: "WhatsApp native" },
+              { value: "Real-time", label: "live inbox" },
+              { value: "n8n", label: "automation ready" },
+            ].map((s) => (
+              <div
+                key={s.label}
+                className="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm backdrop-blur-sm"
+              >
+                <span className="font-semibold text-[#39ff14]">{s.value}</span>
+                <span className="ml-1.5 text-white/50">{s.label}</span>
+              </div>
+            ))}
           </div>
-          <CardTitle className="text-xl text-foreground">
-            {inviteToken ? "Sign in to accept" : "Welcome back"}
-          </CardTitle>
-          <CardDescription className="text-muted-foreground">
-            {inviteToken
-              ? "Sign in and we'll take you to the invitation."
-              : "Sign in to your account"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+        </div>
+      </div>
+
+      {/* ── Right panel – form ── */}
+      <div className="flex w-full lg:w-[45%] items-center justify-center px-6 py-12">
+        <div className="w-full max-w-sm">
+
+          {/* Mobile logo */}
+          <div className="flex justify-center mb-8 lg:hidden">
+            <Image
+              src="/branding.jpeg"
+              alt="The Scale Agency"
+              width={80}
+              height={80}
+              priority
+              className="rounded-xl object-cover ring-1 ring-white/10"
+            />
+          </div>
+
+          {inviteToken ? (
+            <div className="mb-6 flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#39ff14]/10 ring-1 ring-[#39ff14]/20">
+                <UsersRound className="h-5 w-5 text-[#39ff14]" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">You&apos;re invited</p>
+                <p className="text-xs text-white/40">Sign in to accept the invitation.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-white">Welcome back</h2>
+              <p className="mt-1 text-sm text-white/40">Sign in to your account to continue.</p>
+            </div>
+          )}
+
           <form onSubmit={handleLogin} className="flex flex-col gap-4">
             {error && (
               <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
@@ -94,8 +145,8 @@ function LoginPageInner() {
               </div>
             )}
 
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="email" className="text-muted-foreground">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="email" className="text-xs font-medium text-white/50 uppercase tracking-wider">
                 Email
               </Label>
               <Input
@@ -105,57 +156,57 @@ function LoginPageInner() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="border-border bg-muted text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/20"
+                className="h-11 border-white/10 bg-white/5 text-white placeholder:text-white/20 focus-visible:border-[#39ff14]/50 focus-visible:ring-[#39ff14]/10 rounded-xl"
               />
             </div>
 
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-muted-foreground">
+                <Label htmlFor="password" className="text-xs font-medium text-white/50 uppercase tracking-wider">
                   Password
                 </Label>
-                <Link
-                  href="/forgot-password"
-                  className="text-sm text-primary hover:text-primary/80"
-                >
+                <Link href="/forgot-password" className="text-xs text-[#39ff14]/70 hover:text-[#39ff14] transition-colors">
                   Forgot password?
                 </Link>
               </div>
               <Input
                 id="password"
                 type="password"
-                placeholder="Enter your password"
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="border-border bg-muted text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/20"
+                className="h-11 border-white/10 bg-white/5 text-white placeholder:text-white/20 focus-visible:border-[#39ff14]/50 focus-visible:ring-[#39ff14]/10 rounded-xl"
               />
             </div>
 
             <Button
               type="submit"
               disabled={loading}
-              className="mt-2 h-10 w-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              className="mt-2 h-11 w-full rounded-xl font-semibold text-sm transition-all"
+              style={{
+                background: loading
+                  ? "rgba(57,255,20,0.3)"
+                  : "linear-gradient(135deg, #39ff14 0%, #22c55e 100%)",
+                color: "#080808",
+                boxShadow: loading ? "none" : "0 0 24px rgba(57,255,20,0.3)",
+              }}
             >
               {loading ? "Signing in..." : "Sign in"}
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-muted-foreground">
+          <p className="mt-6 text-center text-sm text-white/30">
             Don&apos;t have an account?{" "}
             <Link
-              href={
-                inviteToken
-                  ? `/signup?invite=${encodeURIComponent(inviteToken)}`
-                  : "/signup"
-              }
-              className="text-primary hover:text-primary/80"
+              href={inviteToken ? `/signup?invite=${encodeURIComponent(inviteToken)}` : "/signup"}
+              className="text-[#39ff14]/70 hover:text-[#39ff14] transition-colors"
             >
               Create account
             </Link>
           </p>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
