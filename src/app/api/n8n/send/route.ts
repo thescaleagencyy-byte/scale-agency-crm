@@ -136,7 +136,7 @@ export async function POST(request: Request) {
     .from('conversations')
     .select('*')
     .eq('account_id', accountId)
-    .eq('contact_id', contact.id)
+    .eq('contact_id', contact!.id)
     .maybeSingle()
 
   let conversation = existingConv
