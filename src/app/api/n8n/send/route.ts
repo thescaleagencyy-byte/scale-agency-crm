@@ -128,7 +128,7 @@ export async function POST(request: Request) {
       console.error('[n8n/send] Failed to create contact:', createErr)
       return NextResponse.json({ error: 'Failed to resolve contact.' }, { status: 500 })
     }
-    contact = newContact
+    contact = newContact!
   }
 
   // ── Resolve conversation ──────────────────────────────────────
