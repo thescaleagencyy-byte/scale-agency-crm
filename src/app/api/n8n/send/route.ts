@@ -146,7 +146,7 @@ export async function POST(request: Request) {
       .insert({
         account_id: accountId,
         user_id: config.user_id,
-        contact_id: contact.id,
+        contact_id: contact!.id,
       })
       .select()
       .single()
@@ -233,6 +233,6 @@ export async function POST(request: Request) {
     message_id: messageRecord.id,
     whatsapp_message_id: waMessageId,
     conversation_id: conversation.id,
-    contact_id: contact.id,
+    contact_id: contact!.id,
   })
 }
