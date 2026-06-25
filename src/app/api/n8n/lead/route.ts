@@ -55,12 +55,12 @@ export async function POST(request: Request) {
   // Resolve account
   const { data: configs } = await admin
     .from('whatsapp_config')
-    .select('account_id')
+    .select('account_id, updated_at, created_at')
     .eq('status', 'connected')
   if (!configs?.length) {
     return NextResponse.json({ error: 'No active WhatsApp config.' }, { status: 404 })
   }
-  configs.sort((a, b) => (b.updated_at ?? b.created_at) > (a.updated_at ?? a.created_at) ? 1 : -1)
+  configs.sort((a, b) => ((b.updated_at ?? b.created_at) > (a.updated_at ?? a.created_at) ? 1 : -1))
   const accountId = configs[0].account_id
 
   // Resolve contact + conversation IDs (best-effort, don't block on failure)
