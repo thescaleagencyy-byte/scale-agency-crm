@@ -87,10 +87,7 @@ export async function POST(request: Request) {
       )
     }
     if (configs.length > 1) {
-      return NextResponse.json(
-        { error: 'Multiple accounts found — pass account_id in the request body.' },
-        { status: 400 },
-      )
+      configs.sort((a, b) => new Date(b.updated_at ?? b.created_at).getTime() - new Date(a.updated_at ?? a.created_at).getTime())
     }
     config = configs[0]
     accountId = config.account_id
