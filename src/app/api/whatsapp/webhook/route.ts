@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, after } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { decrypt, encrypt, isLegacyFormat } from '@/lib/whatsapp/encryption'
 import { getMediaUrl, downloadMedia } from '@/lib/whatsapp/meta-api'
@@ -183,14 +183,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  // Forward raw payload to all configured n8n webhook URLs (fire-and-forget).
-  forwardToN8n(rawBody).catch((err) => {
-    console.error('[n8n forward] failed:', err)
-  })
-
-  // Process asynchronously so we can ack Meta within their timeout.
-  processWebhook(body).catch((error) => {
-    console.error('Error processing webhook:', error)
+  // Use after() so Vercel keeps the function alive until both tasks
+  // complete — without it the runtime terminates immediately after the
+  // 200 response and the async work is silently dropped.
+  after(async () => {
+    await Promise.allSettled([
+      forwardToN8n(rawBody).catch((err) => {
+        console.error('[n8n forward] failed:', err)
+      }),
+      processWebhook(body).catch((error) => {
+        console.error('Error processing webhook:', error)
+      }),
+    ])
   })
 
   return NextResponse.json({ status: 'received' }, { status: 200 })
