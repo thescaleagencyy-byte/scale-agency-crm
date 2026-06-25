@@ -60,23 +60,30 @@ export default function LeadsPage() {
 
   const fetchLeads = useCallback(async () => {
     setLoading(true);
-    let query = supabase
-      .from('leads')
-      .select('*', { count: 'exact' })
-      .order('created_at', { ascending: false })
-      .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
+    try {
+      let query = supabase
+        .from('leads')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
 
-    if (filterStatus !== 'all') query = query.eq('status', filterStatus);
-    if (search.trim()) {
-      const s = `%${search.trim()}%`;
-      query = query.or(`customer_name.ilike.${s},customer_phone.ilike.${s},company.ilike.${s},service_type.ilike.${s},project_site.ilike.${s}`);
+      if (filterStatus !== 'all') query = query.eq('status', filterStatus);
+      if (search.trim()) {
+        const s = `%${search.trim()}%`;
+        query = query.or(`customer_name.ilike.${s},customer_phone.ilike.${s},company.ilike.${s},service_type.ilike.${s},project_site.ilike.${s}`);
+      }
+
+      const { data, count, error } = await query;
+      if (error) { toast.error(`Failed to load leads: ${error.message}`); }
+      else {
+        setLeads((data as Lead[]) ?? []);
+        setTotal(count ?? 0);
+      }
+    } catch (err) {
+      toast.error(`Unexpected error: ${String(err)}`);
+    } finally {
+      setLoading(false);
     }
-
-    const { data, count, error } = await query;
-    if (error) { toast.error('Failed to load leads'); setLoading(false); return; }
-    setLeads((data as Lead[]) ?? []);
-    setTotal(count ?? 0);
-    setLoading(false);
   }, [page, search, filterStatus, supabase]);
 
   useEffect(() => { fetchLeads(); }, [fetchLeads]);
