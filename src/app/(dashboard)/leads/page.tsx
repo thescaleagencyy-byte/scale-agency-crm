@@ -188,15 +188,8 @@ export default function LeadsPage() {
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-white/40 hover:text-white"
-                          disabled={updating === lead.id}
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
+                      <DropdownMenuTrigger className="h-7 w-7 flex items-center justify-center rounded text-white/40 hover:text-white hover:bg-white/5 disabled:opacity-50" disabled={updating === lead.id}>
+                        <MoreHorizontal className="h-4 w-4" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="bg-zinc-900 border-white/10">
                         {ALL_STATUSES.filter(s => s !== lead.status).map(s => (
