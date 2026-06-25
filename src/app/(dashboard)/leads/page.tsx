@@ -8,15 +8,19 @@ export default function LeadsPage() {
   const [status, setStatus] = useState('loading...');
 
   useEffect(() => {
-    supabase
-      .from('leads')
-      .select('id', { count: 'exact' })
-      .limit(1)
-      .then(({ data, count, error }) => {
+    async function check() {
+      try {
+        const { count, error } = await supabase
+          .from('leads')
+          .select('id', { count: 'exact' })
+          .limit(1);
         if (error) setStatus(`ERROR: ${error.message}`);
         else setStatus(`OK — ${count ?? 0} leads found`);
-      })
-      .catch((e: unknown) => setStatus(`CRASH: ${String(e)}`));
+      } catch (e: unknown) {
+        setStatus(`CRASH: ${String(e)}`);
+      }
+    }
+    check();
   }, [supabase]);
 
   return (
