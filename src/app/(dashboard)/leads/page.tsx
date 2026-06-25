@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import {
@@ -49,7 +49,7 @@ const PAGE_SIZE = 25;
 const ALL_STATUSES: LeadStatus[] = ['new', 'called', 'won', 'lost'];
 
 export default function LeadsPage() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
