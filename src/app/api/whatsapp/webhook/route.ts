@@ -40,15 +40,19 @@ interface WhatsAppMessage {
   location?: { latitude: number; longitude: number; name?: string; address?: string }
   reaction?: { message_id: string; emoji: string }
   /**
-   * Set when the customer taps a button or list row on an interactive
-   * message we sent. `button_reply.id` / `list_reply.id` is whatever id
-   * we put on the button/row when sending — the Flows engine uses this
-   * to advance the per-contact run.
+   * Set when the customer taps a button/list row OR completes a WhatsApp Flow.
+   * `button_reply`/`list_reply` advance the bot-flow engine;
+   * `nfm_reply` carries the completed form JSON from a Meta Flow.
    */
   interactive?: {
-    type: 'button_reply' | 'list_reply'
+    type: 'button_reply' | 'list_reply' | 'nfm_reply'
     button_reply?: { id: string; title: string }
     list_reply?: { id: string; title: string; description?: string }
+    nfm_reply?: {
+      response_json: string
+      body: string
+      name: string
+    }
   }
   /** Present when the customer swipe-replies to one of our messages. */
   context?: { id: string }
@@ -673,6 +677,12 @@ async function processMessage(
   // trigger installed in migration 003).
   await flagBroadcastReplyIfAny(accountId, contactRecord.id)
 
+  // WhatsApp Flows completion — nfm_reply means a flow form was submitted.
+  // Parse flow_token to get flow_id + contact_id, then auto-create appointment.
+  if (message.type === 'interactive' && message.interactive?.type === 'nfm_reply') {
+    after(() => handleFlowCompletion(message, contactRecord.id, accountId, configOwnerUserId))
+  }
+
   // ============================================================
   // Flow runner dispatch.
   //
@@ -1065,4 +1075,83 @@ async function evaluateRoutingRules(accountId: string, firstMessage: string): Pr
   }
 
   return null
+}
+
+/**
+ * Handle a completed WhatsApp Flow submission (nfm_reply).
+ * Parses the flow_token to find the source flow + contact, extracts
+ * form fields, and creates an appointment if the data is present.
+ * Best-effort — errors are logged but never rethrow.
+ */
+async function handleFlowCompletion(
+  message: WhatsAppMessage,
+  contactId: string,
+  accountId: string,
+  userId: string,
+) {
+  try {
+    const nfm = message.interactive?.nfm_reply
+    if (!nfm) return
+
+    // flow_token format: booking_{flow_id}_{contact_id}_{timestamp}
+    const parsed = (() => {
+      try { return JSON.parse(nfm.response_json) } catch { return {} }
+    })()
+
+    // Extract date/time from common field names used in the flow builder
+    const dateVal: string =
+      parsed.date || parsed.appointment_date || parsed.preferred_date || ''
+    const timeVal: string =
+      parsed.time || parsed.appointment_time || parsed.preferred_time || '09:00'
+    const notes: string =
+      parsed.notes || parsed.message || parsed.comments || ''
+
+    if (!dateVal) {
+      console.log('[flows] nfm_reply has no date field — skipping appointment creation', parsed)
+      return
+    }
+
+    // Find matching service by name if provided
+    let serviceId: string | null = null
+    const serviceName: string = parsed.service || parsed.service_name || ''
+    if (serviceName) {
+      const { data: svc } = await supabaseAdmin()
+        .from('booking_services')
+        .select('id')
+        .eq('account_id', accountId)
+        .ilike('name', serviceName)
+        .maybeSingle()
+      serviceId = svc?.id ?? null
+    }
+
+    const startAt = new Date(`${dateVal}T${timeVal.includes(':') ? timeVal : timeVal + ':00'}`)
+    const endAt = new Date(startAt.getTime() + 30 * 60000) // default 30min
+
+    const { data: slot } = await supabaseAdmin()
+      .from('booking_slots')
+      .insert({
+        account_id: accountId,
+        service_id: serviceId,
+        start_at: startAt.toISOString(),
+        end_at: endAt.toISOString(),
+        booked_count: 1,
+      })
+      .select()
+      .single()
+
+    if (!slot) return
+
+    await supabaseAdmin().from('appointments').insert({
+      account_id: accountId,
+      slot_id: slot.id,
+      contact_id: contactId,
+      service_id: serviceId,
+      notes: notes || `Booked via WhatsApp Flow`,
+      status: 'confirmed',
+    })
+
+    console.log('[flows] appointment created from flow submission for contact', contactId)
+  } catch (err) {
+    console.error('[flows] handleFlowCompletion error:', err)
+  }
 }

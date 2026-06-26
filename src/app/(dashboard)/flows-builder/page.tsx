@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Loader2, Plus, Workflow, ChevronUp, ChevronDown, Trash2, X, Eye, Code, Send } from 'lucide-react';
+import { Loader2, Plus, Workflow, ChevronUp, ChevronDown, Trash2, X, Code, Send, Upload, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type ComponentType = 'TextInput' | 'Dropdown' | 'RadioButtonsGroup' | 'DatePicker' | 'CheckboxGroup' | 'TextBody' | 'Footer';
@@ -111,8 +111,16 @@ export default function FlowsBuilderPage() {
   const [newName, setNewName] = useState('');
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const [showJson, setShowJson] = useState(false);
   const [activeScreen, setActiveScreen] = useState(0);
+  const [showSendModal, setShowSendModal] = useState(false);
+  const [sendContact, setSendContact] = useState('');
+  const [sendHeader, setSendHeader] = useState('Book an Appointment');
+  const [sendBody, setSendBody] = useState('Tap below to fill out the booking form.');
+  const [sendCta, setSendCta] = useState('Book Now');
+  const [sending, setSending] = useState(false);
+  const [contacts, setContacts] = useState<{ id: string; name: string | null; phone: string }[]>([]);
 
   async function load() {
     const db = createClient();
@@ -121,7 +129,10 @@ export default function FlowsBuilderPage() {
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    createClient().from('contacts').select('id, name, phone').order('name').limit(200).then(({ data }) => setContacts(data ?? []));
+  }, []);
 
   async function createFlow(e: React.FormEvent) {
     e.preventDefault();
@@ -137,6 +148,46 @@ export default function FlowsBuilderPage() {
     setFlows(prev => [data as WaFlow, ...prev]);
     setActiveFlow(data as WaFlow);
     setActiveScreen(0);
+  }
+
+  async function publishFlow(flow: WaFlow) {
+    setPublishing(true);
+    try {
+      const res = await fetch('/api/whatsapp/flows/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ flow_id: flow.id }),
+      });
+      const json = await res.json();
+      if (!res.ok) { toast.error(json.error ?? 'Publish failed'); return; }
+      toast.success(json.published ? 'Flow published to Meta' : `Flow created on Meta (draft). meta_flow_id: ${json.meta_flow_id}`);
+      load();
+    } catch { toast.error('Publish failed'); }
+    setPublishing(false);
+  }
+
+  async function sendFlow() {
+    if (!sendContact || !activeFlow) return;
+    setSending(true);
+    try {
+      const res = await fetch('/api/whatsapp/flows/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          flow_id: activeFlow.id,
+          contact_id: sendContact,
+          header_text: sendHeader,
+          body_text: sendBody,
+          cta_text: sendCta,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) { toast.error(json.error ?? 'Send failed'); setSending(false); return; }
+      toast.success('Flow sent via WhatsApp');
+      setShowSendModal(false);
+      setSendContact('');
+    } catch { toast.error('Send failed'); }
+    setSending(false);
   }
 
   async function saveFlow(flow: WaFlow) {
@@ -284,6 +335,26 @@ export default function FlowsBuilderPage() {
               >
                 {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : null}Save
               </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={publishing}
+                onClick={() => publishFlow(activeFlow)}
+                className="border-border bg-transparent h-8 text-xs gap-1"
+              >
+                {publishing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                {activeFlow.meta_flow_id ? 'Re-publish' : 'Publish to Meta'}
+              </Button>
+              {activeFlow.meta_flow_id && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowSendModal(true)}
+                  className="border-border bg-transparent h-8 text-xs gap-1"
+                >
+                  <Users className="h-3.5 w-3.5" />Send to Contact
+                </Button>
+              )}
             </div>
           </div>
 
@@ -418,6 +489,45 @@ export default function FlowsBuilderPage() {
           <Workflow className="h-10 w-10 text-muted-foreground" />
           <p className="text-sm font-medium text-foreground">Select or create a flow to start building</p>
           <p className="text-xs text-muted-foreground max-w-xs text-center">WhatsApp Flows let customers fill out forms, surveys, or bookings — all inside WhatsApp.</p>
+        </div>
+      )}
+
+      {/* Send to contact modal */}
+      {showSendModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowSendModal(false)}>
+          <div className="bg-popover border border-border rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-semibold text-foreground">Send Booking Flow</h2>
+              <button onClick={() => setShowSendModal(false)} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
+            </div>
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Contact</Label>
+                <select value={sendContact} onChange={e => setSendContact(e.target.value)} className="w-full h-10 rounded-lg border border-border bg-muted text-foreground text-sm px-3">
+                  <option value="">Select contact...</option>
+                  {contacts.map(c => <option key={c.id} value={c.id}>{c.name ?? c.phone}</option>)}
+                </select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Header text</Label>
+                <Input value={sendHeader} onChange={e => setSendHeader(e.target.value)} className="border-border bg-muted text-foreground" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Body text</Label>
+                <Input value={sendBody} onChange={e => setSendBody(e.target.value)} className="border-border bg-muted text-foreground" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Button label</Label>
+                <Input value={sendCta} onChange={e => setSendCta(e.target.value)} className="border-border bg-muted text-foreground" />
+              </div>
+            </div>
+            <div className="flex gap-2 pt-1">
+              <Button variant="outline" onClick={() => setShowSendModal(false)} className="flex-1 border-border bg-transparent text-muted-foreground">Cancel</Button>
+              <Button onClick={sendFlow} disabled={sending || !sendContact} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90">
+                {sending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-4 w-4 mr-1" />}Send via WhatsApp
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>
