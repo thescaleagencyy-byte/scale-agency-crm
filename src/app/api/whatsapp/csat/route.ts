@@ -10,21 +10,36 @@ export async function POST(request: Request) {
   const { conversation_id } = await request.json()
   if (!conversation_id) return NextResponse.json({ error: 'conversation_id required' }, { status: 400 })
 
+  // Fetch conversation + contact phone separately (avoid join array/object ambiguity)
   const { data: conv } = await supabase
     .from('conversations')
-    .select('contact_id, account_id, contacts(phone)')
+    .select('contact_id, account_id')
     .eq('id', conversation_id)
     .single()
-
   if (!conv) return NextResponse.json({ error: 'Conversation not found' }, { status: 404 })
 
-  // Skip if already sent for this conversation
+  const { data: contact } = await supabase
+    .from('contacts')
+    .select('phone')
+    .eq('id', conv.contact_id)
+    .single()
+  if (!contact?.phone) return NextResponse.json({ error: 'Contact has no phone' }, { status: 400 })
+
+  // Skip only if customer already RESPONDED (rating not null) — not just "sent"
   const { data: existing } = await supabase
     .from('csat_responses')
-    .select('id')
+    .select('id, rating')
     .eq('conversation_id', conversation_id)
+    .not('rating', 'is', null)
     .maybeSingle()
-  if (existing) return NextResponse.json({ skipped: true, reason: 'already_sent' })
+  if (existing) return NextResponse.json({ skipped: true, reason: 'already_responded' })
+
+  // Delete any un-responded stale record so we can resend
+  await supabase
+    .from('csat_responses')
+    .delete()
+    .eq('conversation_id', conversation_id)
+    .is('rating', null)
 
   // Get WA config
   const { data: config } = await supabase
@@ -35,36 +50,33 @@ export async function POST(request: Request) {
   if (!config) return NextResponse.json({ error: 'WhatsApp not configured' }, { status: 400 })
 
   const token = decrypt(config.access_token)
-  const contact = conv.contacts as unknown as { phone: string } | null
-  const to = (contact?.phone ?? '').replace(/\D/g, '')
-  if (!to) return NextResponse.json({ error: 'Contact has no phone' }, { status: 400 })
+  const to = contact.phone.replace(/\D/g, '')
+  if (!to) return NextResponse.json({ error: 'Invalid phone' }, { status: 400 })
 
-  // Try interactive buttons first (3-button limit on Meta)
-  const interactiveBody = {
-    messaging_product: 'whatsapp',
-    to,
-    type: 'interactive',
-    interactive: {
-      type: 'button',
-      body: { text: 'How would you rate your experience with us today?' },
-      action: {
-        buttons: [
-          { type: 'reply', reply: { id: `csat_${conversation_id}_5`, title: '⭐ Excellent' } },
-          { type: 'reply', reply: { id: `csat_${conversation_id}_3`, title: '👍 OK' } },
-          { type: 'reply', reply: { id: `csat_${conversation_id}_1`, title: '👎 Poor' } },
-        ],
-      },
-    },
-  }
-
+  // Try interactive buttons first
   let res = await fetch(`https://graph.facebook.com/v19.0/${config.phone_number_id}/messages`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(interactiveBody),
+    body: JSON.stringify({
+      messaging_product: 'whatsapp',
+      to,
+      type: 'interactive',
+      interactive: {
+        type: 'button',
+        body: { text: 'How would you rate your experience with us today?' },
+        action: {
+          buttons: [
+            { type: 'reply', reply: { id: `csat_${conversation_id}_5`, title: '⭐ Excellent' } },
+            { type: 'reply', reply: { id: `csat_${conversation_id}_3`, title: '👍 OK' } },
+            { type: 'reply', reply: { id: `csat_${conversation_id}_1`, title: '👎 Poor' } },
+          ],
+        },
+      },
+    }),
   })
 
   if (!res.ok) {
-    // Fallback: plain text rating request
+    // Fallback: plain text
     res = await fetch(`https://graph.facebook.com/v19.0/${config.phone_number_id}/messages`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -77,14 +89,18 @@ export async function POST(request: Request) {
     })
   }
 
-  // Record pending CSAT regardless of send result (rating = null until customer replies)
+  const json = await res.json()
+  if (!res.ok) {
+    console.error('[csat] Meta send failed:', json)
+    return NextResponse.json({ error: json.error?.message ?? 'Send failed', detail: json }, { status: 500 })
+  }
+
+  // Insert fresh pending record
   await supabase.from('csat_responses').insert({
     account_id: conv.account_id,
     conversation_id,
     contact_id: conv.contact_id,
   })
 
-  const json = await res.json()
-  if (!res.ok) return NextResponse.json({ error: json.error?.message ?? 'Send failed', sent: false })
   return NextResponse.json({ sent: true, message_id: json.messages?.[0]?.id })
 }
