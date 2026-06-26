@@ -88,6 +88,7 @@ export function RoutingRulesPanel() {
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
+    if (!accountId) { toast.error('Account not loaded'); return; }
     if (!ruleName.trim() || conditions.some(c => !c.value.trim())) {
       toast.error('Fill all condition values');
       return;

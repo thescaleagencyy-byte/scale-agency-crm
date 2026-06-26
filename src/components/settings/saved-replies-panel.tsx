@@ -38,6 +38,7 @@ export function SavedRepliesPanel() {
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
+    if (!accountId) { toast.error('Account not loaded'); return; }
     if (!title.trim() || !shortcut.trim() || !body.trim()) return;
     setSaving(true);
     const db = createClient();

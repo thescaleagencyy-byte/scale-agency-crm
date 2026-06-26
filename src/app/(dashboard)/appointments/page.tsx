@@ -75,6 +75,7 @@ export default function AppointmentsPage() {
 
   async function createService(e: React.FormEvent) {
     e.preventDefault();
+    if (!accountId) { toast.error('Account not loaded yet'); return; }
     setSvcSaving(true);
     const db = createClient();
     const { error } = await db.from('booking_services').insert({ account_id: accountId, name: svcName.trim(), duration_minutes: svcDuration, description: svcDesc.trim() || null });
@@ -88,6 +89,7 @@ export default function AppointmentsPage() {
 
   async function createAppointment(e: React.FormEvent) {
     e.preventDefault();
+    if (!accountId) { toast.error('Account not loaded yet'); return; }
     if (!apptService || !apptContact || !apptDate || !apptTime) { toast.error('All fields required'); return; }
     setApptSaving(true);
     const db = createClient();

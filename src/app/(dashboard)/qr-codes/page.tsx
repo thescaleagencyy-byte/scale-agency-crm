@@ -78,6 +78,7 @@ export default function QRCodesPage() {
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
+    if (!accountId) { toast.error('Account not loaded'); return; }
     if (!name.trim() || !phone.trim()) return;
     setSaving(true);
     const db = createClient();

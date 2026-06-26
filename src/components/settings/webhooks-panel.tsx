@@ -84,6 +84,7 @@ export function WebhooksPanel() {
 
   async function addWebhook(e: React.FormEvent) {
     e.preventDefault();
+    if (!accountId) { toast.error('Account not loaded'); return; }
     if (!whUrl.trim() || whEvents.length === 0) { toast.error('URL and at least one event required'); return; }
     setWhSaving(true);
     const db = createClient();
@@ -104,7 +105,7 @@ export function WebhooksPanel() {
 
   async function createApiKey(e: React.FormEvent) {
     e.preventDefault();
-    if (!keyName.trim()) return;
+    if (!accountId || !keyName.trim()) return;
     setKeySaving(true);
     const key = generateApiKey();
     const hash = await hashKey(key);

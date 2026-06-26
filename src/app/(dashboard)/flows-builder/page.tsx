@@ -125,7 +125,7 @@ export default function FlowsBuilderPage() {
 
   async function createFlow(e: React.FormEvent) {
     e.preventDefault();
-    if (!newName.trim()) return;
+    if (!accountId || !newName.trim()) return;
     setCreating(true);
     const db = createClient();
     const def: FlowDef = { version: '3.0', screens: [newScreen(1)] };
