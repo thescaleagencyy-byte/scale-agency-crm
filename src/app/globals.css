@@ -217,6 +217,21 @@ html[data-theme="rose"] {
   --sidebar-ring: oklch(0.645 0.22 16);
 }
 
+/* Scale Agency brand — neon lime #33DF33 */
+html[data-theme="scale"] {
+  --primary: oklch(0.794 0.247 143);
+  --primary-foreground: oklch(0.13 0.03 143);
+  --primary-hover: oklch(0.85 0.24 140);
+  --primary-soft: oklch(0.794 0.247 143 / 0.12);
+  --primary-soft-2: oklch(0.794 0.247 143 / 0.22);
+  --ring: oklch(0.794 0.247 143);
+  --chart-1: oklch(0.794 0.247 143);
+  --chart-2: oklch(0.72 0.2 165);
+  --sidebar-primary: oklch(0.794 0.247 143);
+  --sidebar-primary-foreground: oklch(0.13 0.03 143);
+  --sidebar-ring: oklch(0.794 0.247 143);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

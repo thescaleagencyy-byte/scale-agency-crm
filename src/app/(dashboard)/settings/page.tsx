@@ -16,6 +16,9 @@ import { TemplateManager } from '@/components/settings/template-manager';
 import { FieldsAndTagsPanel } from '@/components/settings/fields-and-tags-panel';
 import { DealsSettings } from '@/components/settings/deals-settings';
 import { MembersTab } from '@/components/settings/members-tab';
+import { SavedRepliesPanel } from '@/components/settings/saved-replies-panel';
+import { WebhooksPanel } from '@/components/settings/webhooks-panel';
+import { WorkspacesPanel } from '@/components/settings/workspaces-panel';
 import {
   resolveSection,
   type SettingsSection,
@@ -58,9 +61,12 @@ export default function SettingsPage() {
     whatsapp: <WhatsAppConfig />,
     n8n: <N8nConfig />,
     templates: <TemplateManager />,
+    'saved-replies': <SavedRepliesPanel />,
     fields: <FieldsAndTagsPanel />,
     deals: <DealsSettings />,
     members: <MembersTab />,
+    webhooks: <WebhooksPanel />,
+    workspaces: <WorkspacesPanel />,
   };
 
   return (

@@ -9,6 +9,9 @@ import {
   User,
   UsersRound,
   Workflow,
+  MessageSquareText,
+  Webhook,
+  Building2,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -28,9 +31,12 @@ export const SETTINGS_SECTIONS = [
   'whatsapp',
   'n8n',
   'templates',
+  'saved-replies',
   'fields',
   'deals',
   'members',
+  'webhooks',
+  'workspaces',
 ] as const;
 
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
@@ -53,9 +59,12 @@ export const SECTION_META: Record<SettingsSection, SectionMeta> = {
   whatsapp: { id: 'whatsapp', label: 'WhatsApp', icon: PlugZap, group: 'workspace' },
   n8n: { id: 'n8n', label: 'n8n', icon: Workflow, group: 'workspace' },
   templates: { id: 'templates', label: 'Templates', icon: FileText, group: 'workspace' },
+  'saved-replies': { id: 'saved-replies', label: 'Saved Replies', icon: MessageSquareText, group: 'workspace' },
   fields: { id: 'fields', label: 'Fields & tags', icon: Tags, group: 'workspace' },
   deals: { id: 'deals', label: 'Deals & currency', icon: Coins, group: 'workspace' },
   members: { id: 'members', label: 'Team members', icon: UsersRound, group: 'workspace' },
+  webhooks: { id: 'webhooks', label: 'Webhooks & API', icon: Webhook, group: 'workspace' },
+  workspaces: { id: 'workspaces', label: 'Workspaces', icon: Building2, group: 'workspace' },
 };
 
 export const RAIL_GROUPS: { label: string | null; group: SectionMeta['group'] }[] = [

@@ -36,6 +36,7 @@ import {
   MEDIA_MAX_BYTES_BY_KIND,
 } from "@/lib/storage/upload-media";
 import { ReplyQuote } from "./reply-quote";
+import { createClient } from "@/lib/supabase/client";
 
 /** Media content types an agent can send from the composer. */
 export type ComposerMediaKind = "image" | "video" | "document" | "audio";
@@ -111,6 +112,13 @@ function formatDuration(seconds: number): string {
  *  Meta-accepted format means no server ffmpeg / transcode step. */
 const OPUS_ENCODER_PATH = "/opus/encoderWorker.min.js";
 
+interface SavedReply {
+  id: string;
+  title: string;
+  shortcut: string;
+  body: string;
+}
+
 export function MessageComposer({
   conversationId,
   sessionExpired,
@@ -123,6 +131,17 @@ export function MessageComposer({
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Saved replies
+  const [savedReplies, setSavedReplies] = useState<SavedReply[]>([]);
+  const [replyPopup, setReplyPopup] = useState<SavedReply[]>([]);
+  const [replyPopupIdx, setReplyPopupIdx] = useState(0);
+
+  useEffect(() => {
+    const db = createClient();
+    db.from('saved_replies').select('id, title, shortcut, body').order('shortcut')
+      .then(({ data }) => { if (data) setSavedReplies(data as SavedReply[]); });
+  }, []);
 
   // Media attachment state. `draft` holds an uploaded-but-not-yet-sent
   // attachment; `busy` covers the upload/transcode window.
@@ -207,20 +226,46 @@ export function MessageComposer({
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {
+      if (replyPopup.length > 0) {
+        if (e.key === 'ArrowDown') { e.preventDefault(); setReplyPopupIdx(i => Math.min(i + 1, replyPopup.length - 1)); return; }
+        if (e.key === 'ArrowUp') { e.preventDefault(); setReplyPopupIdx(i => Math.max(i - 1, 0)); return; }
+        if (e.key === 'Tab' || (e.key === 'Enter' && !e.shiftKey)) {
+          e.preventDefault();
+          const r = replyPopup[replyPopupIdx];
+          setText(r.body);
+          setReplyPopup([]);
+          setTimeout(() => adjustHeight(), 0);
+          return;
+        }
+        if (e.key === 'Escape') { setReplyPopup([]); return; }
+      }
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
         handleSend();
       }
     },
-    [handleSend]
+    [handleSend, replyPopup, replyPopupIdx, adjustHeight]
   );
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      setText(e.target.value);
+      const val = e.target.value;
+      setText(val);
       adjustHeight();
+      // Show saved replies popup when line starts with /
+      if (val.startsWith('/')) {
+        const query = val.slice(1).toLowerCase();
+        const matches = savedReplies.filter(r =>
+          r.shortcut.toLowerCase().includes(query) ||
+          r.title.toLowerCase().includes(query)
+        );
+        setReplyPopup(matches);
+        setReplyPopupIdx(0);
+      } else {
+        setReplyPopup([]);
+      }
     },
-    [adjustHeight]
+    [adjustHeight, savedReplies]
   );
 
   // Upload a captured file to chat-media and stage it as a draft.
@@ -471,6 +516,29 @@ export function MessageComposer({
           </Button>
         </div>
       ) : (
+        <div className="relative flex flex-col gap-2">
+          {/* Saved replies popup */}
+          {replyPopup.length > 0 && (
+            <div className="absolute bottom-full left-0 right-0 mb-1 z-20 rounded-xl border border-border bg-popover shadow-xl overflow-hidden">
+              {replyPopup.map((r, i) => (
+                <button
+                  key={r.id}
+                  type="button"
+                  onMouseDown={e => { e.preventDefault(); setText(r.body); setReplyPopup([]); setTimeout(() => adjustHeight(), 0); }}
+                  className={cn(
+                    "flex w-full items-start gap-3 px-4 py-2.5 text-left transition-colors hover:bg-muted",
+                    i === replyPopupIdx && "bg-muted"
+                  )}
+                >
+                  <span className="mt-0.5 shrink-0 rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-mono font-semibold text-primary">/{r.shortcut}</span>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-foreground">{r.title}</p>
+                    <p className="truncate text-[11px] text-muted-foreground">{r.body}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         <div className="flex items-end gap-2">
           {/* Attach menu — photo / video / document / voice. */}
           <DropdownMenu>
@@ -557,6 +625,7 @@ export function MessageComposer({
           >
             <Send className="h-4 w-4" />
           </GatedButton>
+        </div>
         </div>
       )}
 

@@ -597,6 +597,7 @@ export interface Lead {
   contact_id: string | null;
   conversation_id: string | null;
   raw_handoff: string | null;
+  source: string | null;
   created_at: string;
   updated_at: string;
 }

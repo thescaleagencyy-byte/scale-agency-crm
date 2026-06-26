@@ -209,6 +209,7 @@ export default function LeadsPage() {
                 <TableHead className="text-muted-foreground">Site</TableHead>
                 <TableHead className="text-muted-foreground">Duration</TableHead>
                 <TableHead className="text-muted-foreground">Company</TableHead>
+                <TableHead className="text-muted-foreground">Source</TableHead>
                 <TableHead className="text-muted-foreground">Score</TableHead>
                 <TableHead className="text-muted-foreground">Status</TableHead>
                 <TableHead className="text-muted-foreground">Date</TableHead>
@@ -231,6 +232,13 @@ export default function LeadsPage() {
                   <TableCell className="text-sm text-foreground">{lead.project_site ?? '—'}</TableCell>
                   <TableCell className="text-sm text-foreground">{lead.duration ?? '—'}</TableCell>
                   <TableCell className="text-sm text-foreground">{lead.company ?? '—'}</TableCell>
+                  <TableCell>
+                    {lead.source ? (
+                      <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground capitalize">
+                        {lead.source.replace(/_/g, ' ')}
+                      </span>
+                    ) : <span className="text-muted-foreground">—</span>}
+                  </TableCell>
                   <TableCell><ScoreBadge score={lead.score ?? 0} /></TableCell>
                   <TableCell>
                     <Badge variant="outline" className={`text-xs ${STATUS_CLASS[lead.status] ?? ''}`}>

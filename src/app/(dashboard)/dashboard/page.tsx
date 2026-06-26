@@ -38,7 +38,7 @@ import { RevenueForecast } from '@/components/dashboard/revenue-forecast'
 type RangeDays = 7 | 30 | 90
 
 export default function DashboardPage() {
-  const { defaultCurrency } = useAuth()
+  const { defaultCurrency, profile } = useAuth()
   const [metrics, setMetrics] = useState<MetricsBundle | null>(null)
   const [metricsLoading, setMetricsLoading] = useState(true)
 
@@ -119,14 +119,39 @@ export default function DashboardPage() {
     [series],
   )
 
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Live analytics across conversations, contacts, deals, broadcasts, and automations.
-        </p>
+      {/* Branded hero */}
+      <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-card px-6 py-5">
+        {/* Glow orbs */}
+        <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-primary opacity-[0.07] blur-[80px]" />
+        <div className="pointer-events-none absolute -bottom-8 left-1/3 h-32 w-48 rounded-full bg-primary opacity-[0.05] blur-[60px]" />
+        {/* Grid overlay */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.025] rounded-2xl"
+          style={{
+            backgroundImage: 'linear-gradient(var(--color-primary, #33df33) 1px, transparent 1px), linear-gradient(90deg, var(--color-primary, #33df33) 1px, transparent 1px)',
+            backgroundSize: '40px 40px',
+          }}
+        />
+        <div className="relative z-10 flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-primary/70 mb-1">the scale agency™</p>
+            <h1 className="text-2xl font-bold text-foreground leading-tight">
+              {greeting}{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}.
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Your WhatsApp pipeline — live and ready.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+            <span className="text-xs font-medium text-primary">Live</span>
+          </div>
+        </div>
       </div>
 
       {/* Metric cards */}

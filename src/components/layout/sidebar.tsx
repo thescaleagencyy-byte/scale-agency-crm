@@ -24,6 +24,8 @@ import {
   Workflow,
   X,
   Zap,
+  BarChart3,
+  CalendarDays,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
 
@@ -96,6 +98,8 @@ const navItems: NavItem[] = [
   { href: "/pipelines", label: "Pipelines", icon: GitBranch },
   { href: "/broadcasts", label: "Broadcasts", icon: Radio },
   { href: "/drip", label: "Drip Campaigns", icon: Zap },
+  { href: "/appointments", label: "Appointments", icon: CalendarDays },
+  { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/automations", label: "Automations", icon: Zap },
   { href: "/flows", label: "Flows", icon: Workflow, beta: true },
   { href: "/n8n", label: "n8n", icon: Workflow },
@@ -180,9 +184,14 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
         )}
         aria-label="Primary"
       >
+        {/* Brand glow — subtle primary halo at the top of the sidebar */}
+        <div className="pointer-events-none absolute left-0 right-0 top-0 h-32 rounded-t-none opacity-60"
+          style={{ background: 'radial-gradient(ellipse 120% 60% at 50% 0%, oklch(0.794 0.247 143 / 0.18) 0%, transparent 100%)' }}
+        />
+
         {/* Logo row. On mobile we put a close button here; on desktop the
             close button is hidden since the sidebar is always-visible. */}
-        <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border px-4">
+        <div className="relative flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border px-4">
           <Link href="/dashboard" className="flex items-center gap-2.5">
             <Image
               src="/branding.jpeg"
