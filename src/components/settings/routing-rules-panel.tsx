@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { Loader2, Plus, Route, Trash2, X, GripVertical, ToggleLeft, ToggleRight } from 'lucide-react';
 import { SettingsPanelHead } from './settings-panel-head';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/use-auth';
 
 interface Condition {
   type: 'keyword' | 'time_of_day' | 'language';
@@ -38,6 +39,7 @@ const CONDITION_TYPES = [
 ];
 
 export function RoutingRulesPanel() {
+  const { accountId } = useAuth();
   const [rules, setRules] = useState<RoutingRule[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,6 +95,7 @@ export function RoutingRulesPanel() {
     setSaving(true);
     const db = createClient();
     const { error } = await db.from('routing_rules').insert({
+      account_id: accountId,
       name: ruleName.trim(),
       conditions,
       assign_to_agent_id: ruleAgent || null,

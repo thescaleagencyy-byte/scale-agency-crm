@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -102,6 +103,7 @@ function buildMetaJson(def: FlowDef): object {
 }
 
 export default function FlowsBuilderPage() {
+  const { accountId } = useAuth();
   const [flows, setFlows] = useState<WaFlow[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFlow, setActiveFlow] = useState<WaFlow | null>(null);
@@ -127,7 +129,7 @@ export default function FlowsBuilderPage() {
     setCreating(true);
     const db = createClient();
     const def: FlowDef = { version: '3.0', screens: [newScreen(1)] };
-    const { data, error } = await db.from('whatsapp_flows').insert({ name: newName.trim(), definition: def }).select().single();
+    const { data, error } = await db.from('whatsapp_flows').insert({ account_id: accountId, name: newName.trim(), definition: def }).select().single();
     setCreating(false);
     if (error) { toast.error(error.message); return; }
     setNewName('');

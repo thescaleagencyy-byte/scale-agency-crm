@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,6 +27,7 @@ function buildWaLink(phone: string, msg: string) {
 }
 
 export default function QRCodesPage() {
+  const { accountId } = useAuth();
   const [entries, setEntries] = useState<QREntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -80,6 +82,7 @@ export default function QRCodesPage() {
     setSaving(true);
     const db = createClient();
     const { error } = await db.from('qr_codes').insert({
+      account_id: accountId,
       name: name.trim(),
       phone: phone.trim(),
       prefill_message: msg.trim(),

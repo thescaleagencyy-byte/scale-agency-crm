@@ -9,6 +9,7 @@ import { SettingsPanelHead } from './settings-panel-head';
 import { Trash2, Plus, Loader2, Copy, Check, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/use-auth';
 
 const WEBHOOK_EVENTS = [
   { id: 'lead.created', label: 'Lead created' },
@@ -51,6 +52,7 @@ async function hashKey(key: string): Promise<string> {
 }
 
 export function WebhooksPanel() {
+  const { accountId } = useAuth();
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [loading, setLoading] = useState(true);
@@ -85,7 +87,7 @@ export function WebhooksPanel() {
     if (!whUrl.trim() || whEvents.length === 0) { toast.error('URL and at least one event required'); return; }
     setWhSaving(true);
     const db = createClient();
-    const { error } = await db.from('webhooks').insert({ name: whName.trim() || whUrl, url: whUrl.trim(), events: whEvents });
+    const { error } = await db.from('webhooks').insert({ account_id: accountId, name: whName.trim() || whUrl, url: whUrl.trim(), events: whEvents });
     setWhSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success('Webhook added');
@@ -107,7 +109,7 @@ export function WebhooksPanel() {
     const key = generateApiKey();
     const hash = await hashKey(key);
     const db = createClient();
-    const { error } = await db.from('api_keys').insert({ name: keyName.trim(), key_hash: hash, key_prefix: key.slice(0, 10) });
+    const { error } = await db.from('api_keys').insert({ account_id: accountId, name: keyName.trim(), key_hash: hash, key_prefix: key.slice(0, 10) });
     setKeySaving(false);
     if (error) { toast.error(error.message); return; }
     setNewKey(key);

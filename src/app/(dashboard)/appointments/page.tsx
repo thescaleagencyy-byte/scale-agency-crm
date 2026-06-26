@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -35,6 +36,7 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 export default function AppointmentsPage() {
+  const { accountId } = useAuth();
   const [services, setServices] = useState<Service[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,7 +77,7 @@ export default function AppointmentsPage() {
     e.preventDefault();
     setSvcSaving(true);
     const db = createClient();
-    const { error } = await db.from('booking_services').insert({ name: svcName.trim(), duration_minutes: svcDuration, description: svcDesc.trim() || null });
+    const { error } = await db.from('booking_services').insert({ account_id: accountId, name: svcName.trim(), duration_minutes: svcDuration, description: svcDesc.trim() || null });
     setSvcSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success('Service added');
@@ -96,6 +98,7 @@ export default function AppointmentsPage() {
 
     // Create slot first
     const { data: slot, error: slotErr } = await db.from('booking_slots').insert({
+      account_id: accountId,
       service_id: apptService,
       start_at: startAt.toISOString(),
       end_at: endAt.toISOString(),
@@ -105,6 +108,7 @@ export default function AppointmentsPage() {
     if (slotErr || !slot) { toast.error('Failed to create slot'); setApptSaving(false); return; }
 
     const { error } = await db.from('appointments').insert({
+      account_id: accountId,
       slot_id: slot.id,
       contact_id: apptContact,
       service_id: apptService,

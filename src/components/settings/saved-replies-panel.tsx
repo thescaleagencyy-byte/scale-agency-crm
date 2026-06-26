@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,6 +19,7 @@ interface SavedReply {
 }
 
 export function SavedRepliesPanel() {
+  const { accountId } = useAuth();
   const [replies, setReplies] = useState<SavedReply[]>([]);
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState('');
@@ -40,7 +42,7 @@ export function SavedRepliesPanel() {
     setSaving(true);
     const db = createClient();
     const clean = shortcut.replace(/^\//, '').toLowerCase().replace(/\s+/g, '_');
-    const { error } = await db.from('saved_replies').insert({ title: title.trim(), shortcut: clean, body: body.trim() });
+    const { error } = await db.from('saved_replies').insert({ account_id: accountId, title: title.trim(), shortcut: clean, body: body.trim() });
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success('Saved reply added');
