@@ -100,7 +100,7 @@ export default function LeadsPage() {
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{ minHeight: 200, outline: '3px solid red' }}>
       <div className="flex items-center gap-2">
         <TrendingUp className="h-5 w-5 text-white/60" />
         <h1 className="text-xl font-semibold text-white">Leads</h1>
