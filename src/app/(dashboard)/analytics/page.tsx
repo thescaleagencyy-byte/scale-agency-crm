@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Loader2, Clock, MessageSquare, CheckCircle2, TrendingUp, Users } from 'lucide-react';
+import { Loader2, Clock, MessageSquare, CheckCircle2, TrendingUp, Users, Brain, Lightbulb, AlertCircle, Sparkles, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface AgentStat {
   agent_id: string | null;
@@ -11,6 +12,18 @@ interface AgentStat {
   resolved: number;
   avg_first_reply_mins: number | null;
   avg_resolution_mins: number | null;
+}
+
+interface IntelligenceReport {
+  id: string;
+  generated_at: string;
+  conversations_analyzed: number;
+  top_objections: string[];
+  common_requests: string[];
+  sentiment_breakdown: { positive: number; neutral: number; negative: number };
+  key_insights: string[];
+  raw_summary: string;
+  avg_close_days: number | null;
 }
 
 interface SLASummary {
@@ -49,9 +62,15 @@ export default function AnalyticsPage() {
   const [summary, setSummary] = useState<SLASummary | null>(null);
   const [agents, setAgents] = useState<AgentStat[]>([]);
   const [loading, setLoading] = useState(true);
+  const [intelligence, setIntelligence] = useState<IntelligenceReport | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
 
   useEffect(() => {
     const db = createClient();
+    // Fetch latest intelligence report
+    db.from('conversation_intelligence').select('*').order('generated_at', { ascending: false }).limit(1).maybeSingle()
+      .then(({ data }) => { if (data) setIntelligence(data as IntelligenceReport); });
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -112,11 +131,25 @@ export default function AnalyticsPage() {
     });
   }, []);
 
+  async function runAnalysis() {
+    setAnalyzing(true);
+    try {
+      const res = await fetch('/api/intelligence/analyze', { method: 'POST' });
+      const json = await res.json();
+      if (!res.ok) { toast.error(json.error ?? 'Analysis failed'); setAnalyzing(false); return; }
+      setIntelligence(json.report as IntelligenceReport);
+      toast.success('Intelligence report generated');
+    } catch {
+      toast.error('Failed to run analysis');
+    }
+    setAnalyzing(false);
+  }
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Analytics</h1>
-        <p className="mt-1 text-sm text-muted-foreground">SLA performance and agent workload across your team.</p>
+        <p className="mt-1 text-sm text-muted-foreground">SLA performance, agent workload, and AI conversation intelligence.</p>
       </div>
 
       {loading ? (
@@ -154,6 +187,142 @@ export default function AnalyticsPage() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Conversation Intelligence */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Brain className="h-4 w-4 text-muted-foreground" />
+                <p className="text-sm font-semibold text-foreground">Conversation Intelligence</p>
+                {intelligence && (
+                  <span className="text-xs text-muted-foreground">
+                    · last analyzed {new Date(intelligence.generated_at).toLocaleDateString()} · {intelligence.conversations_analyzed} conversations
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={runAnalysis}
+                disabled={analyzing}
+                className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50 transition-colors"
+              >
+                {analyzing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                {analyzing ? 'Analyzing…' : 'Analyze Now'}
+              </button>
+            </div>
+
+            {intelligence ? (
+              <div className="grid gap-4 lg:grid-cols-2">
+                {/* Summary */}
+                {intelligence.raw_summary && (
+                  <div className="lg:col-span-2 rounded-xl border border-primary/20 bg-primary/5 p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Sparkles className="h-4 w-4 text-primary" />
+                      <p className="text-xs font-semibold text-primary">AI Summary</p>
+                    </div>
+                    <p className="text-sm text-foreground leading-relaxed">{intelligence.raw_summary}</p>
+                  </div>
+                )}
+
+                {/* Top objections */}
+                {intelligence.top_objections.length > 0 && (
+                  <div className="rounded-xl border border-border bg-card p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <AlertCircle className="h-4 w-4 text-amber-400" />
+                      <p className="text-xs font-semibold text-foreground">Top Customer Objections</p>
+                    </div>
+                    <ul className="space-y-1.5">
+                      {intelligence.top_objections.map((o, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-foreground">
+                          <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-[9px] font-bold text-amber-400">{i + 1}</span>
+                          {o}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Common requests */}
+                {intelligence.common_requests.length > 0 && (
+                  <div className="rounded-xl border border-border bg-card p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <MessageSquare className="h-4 w-4 text-primary" />
+                      <p className="text-xs font-semibold text-foreground">Most Common Requests</p>
+                    </div>
+                    <ul className="space-y-1.5">
+                      {intelligence.common_requests.map((r, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-foreground">
+                          <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary/20 text-[9px] font-bold text-primary">{i + 1}</span>
+                          {r}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Key insights */}
+                {intelligence.key_insights.length > 0 && (
+                  <div className="lg:col-span-2 rounded-xl border border-border bg-card p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Lightbulb className="h-4 w-4 text-primary" />
+                      <p className="text-xs font-semibold text-foreground">Actionable Insights</p>
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {intelligence.key_insights.map((insight, i) => (
+                        <div key={i} className="flex items-start gap-2.5 rounded-lg border border-border bg-muted/30 px-3 py-2.5">
+                          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[10px] font-bold text-primary">{i + 1}</span>
+                          <p className="text-xs text-foreground leading-relaxed">{insight}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Sentiment + close time */}
+                <div className="rounded-xl border border-border bg-card p-4">
+                  <p className="text-xs font-semibold text-foreground mb-3">Sentiment Breakdown</p>
+                  <div className="space-y-2">
+                    {(['positive', 'neutral', 'negative'] as const).map(k => {
+                      const pct = intelligence.sentiment_breakdown?.[k] ?? 0;
+                      const colors: Record<string, string> = { positive: 'bg-primary', neutral: 'bg-muted-foreground', negative: 'bg-red-500' };
+                      return (
+                        <div key={k}>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs text-muted-foreground capitalize">{k}</span>
+                            <span className="text-xs font-bold text-foreground">{pct}%</span>
+                          </div>
+                          <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                            <div className={`h-full rounded-full ${colors[k]}`} style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {intelligence.avg_close_days !== null && (
+                  <div className="rounded-xl border border-border bg-card p-4 flex flex-col justify-center">
+                    <p className="text-xs text-muted-foreground mb-1">Avg days to close conversation</p>
+                    <p className="text-3xl font-bold text-foreground">{intelligence.avg_close_days.toFixed(1)}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">days</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-border bg-card p-8 text-center">
+                <Brain className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                <p className="text-sm font-medium text-foreground">No intelligence report yet</p>
+                <p className="mt-1 text-xs text-muted-foreground mb-4">Click &ldquo;Analyze Now&rdquo; to run AI analysis on last 30 days of conversations. Requires 10+ closed conversations.</p>
+                <button
+                  onClick={runAnalysis}
+                  disabled={analyzing}
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                >
+                  {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                  {analyzing ? 'Analyzing…' : 'Run Analysis'}
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Agent breakdown */}

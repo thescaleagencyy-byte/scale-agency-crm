@@ -52,6 +52,17 @@ interface WhatsAppMessage {
   }
   /** Present when the customer swipe-replies to one of our messages. */
   context?: { id: string }
+  /** Present when the conversation started from a Click-to-WhatsApp ad. */
+  referral?: {
+    source_url?: string
+    source_id?: string
+    source_type?: string
+    headline?: string
+    body?: string
+    ctwa_clid?: string
+    media_type?: string
+    image_url?: string
+  }
 }
 
 interface WhatsAppWebhookEntry {
@@ -548,11 +559,13 @@ async function processMessage(
   if (!contactOutcome) return
   const contactRecord = contactOutcome.contact
 
-  // Find or create conversation
+  // Find or create conversation (pass referral for ad attribution + first message for routing)
   const conversation = await findOrCreateConversation(
     accountId,
     configOwnerUserId,
-    contactRecord.id
+    contactRecord.id,
+    message.referral,
+    message.text?.body
   )
   if (!conversation) return
 
@@ -958,6 +971,8 @@ async function findOrCreateConversation(
   accountId: string,
   configOwnerUserId: string,
   contactId: string,
+  referral?: WhatsAppMessage['referral'],
+  firstMessageText?: string,
 ) {
   // Look for existing conversation in this account
   const { data: existing, error: findError } = await supabaseAdmin()
@@ -971,14 +986,33 @@ async function findOrCreateConversation(
     return existing
   }
 
-  // Create new conversation. Same tenancy + audit split as
-  // findOrCreateContact above.
+  // Build attribution payload from referral (Click-to-WhatsApp ad)
+  const adFields: Record<string, string | object | null> = {}
+  if (referral) {
+    adFields.ad_source_url = referral.source_url ?? null
+    adFields.ad_source_id = referral.source_id ?? null
+    adFields.ad_headline = referral.headline ?? null
+    adFields.ad_ctwa_clid = referral.ctwa_clid ?? null
+    adFields.referral_data = referral
+  }
+
+  // Evaluate routing rules and determine agent assignment
+  let assignedAgentId: string | null = null
+  try {
+    assignedAgentId = await evaluateRoutingRules(accountId, firstMessageText ?? '')
+  } catch (err) {
+    console.warn('[routing] Rule evaluation failed:', err)
+  }
+
+  // Create new conversation
   const { data: newConv, error: createError } = await supabaseAdmin()
     .from('conversations')
     .insert({
       account_id: accountId,
       user_id: configOwnerUserId,
       contact_id: contactId,
+      assigned_agent_id: assignedAgentId,
+      ...adFields,
     })
     .select()
     .single()
@@ -989,4 +1023,46 @@ async function findOrCreateConversation(
   }
 
   return newConv
+}
+
+async function evaluateRoutingRules(accountId: string, firstMessage: string): Promise<string | null> {
+  const { data: rules, error } = await supabaseAdmin()
+    .from('routing_rules')
+    .select('*')
+    .eq('account_id', accountId)
+    .eq('enabled', true)
+    .order('priority')
+
+  if (error || !rules || rules.length === 0) return null
+
+  const msgLower = firstMessage.toLowerCase()
+  const nowHour = new Date().getUTCHours()
+
+  for (const rule of rules) {
+    const conditions = rule.conditions as Array<{ type: string; value: string; operator?: string }>
+    const allMatch = conditions.every(c => {
+      if (c.type === 'keyword') {
+        return c.operator === 'equals'
+          ? msgLower === c.value.toLowerCase()
+          : msgLower.includes(c.value.toLowerCase())
+      }
+      if (c.type === 'time_of_day') {
+        const [start, end] = c.value.split('-').map(Number)
+        return !isNaN(start) && !isNaN(end) && nowHour >= start && nowHour < end
+      }
+      if (c.type === 'language') {
+        const lang = c.value.toLowerCase()
+        if (lang === 'arabic') return /[؀-ۿ]/.test(firstMessage)
+        if (lang === 'english') return /^[a-zA-Z0-9\s.,!?'"()-]+$/.test(firstMessage.slice(0, 50))
+        return false
+      }
+      return false
+    })
+
+    if (allMatch && rule.assign_to_agent_id) {
+      return rule.assign_to_agent_id as string
+    }
+  }
+
+  return null
 }

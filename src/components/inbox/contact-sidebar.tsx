@@ -15,17 +15,21 @@ import {
   DollarSign,
   StickyNote,
   Plus,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
+import { ConversationNotes } from "./conversation-notes";
 
 interface ContactSidebarProps {
   contact: Contact | null;
+  conversationId?: string | null;
 }
 
-export function ContactSidebar({ contact }: ContactSidebarProps) {
+export function ContactSidebar({ contact, conversationId }: ContactSidebarProps) {
   const { accountId } = useAuth();
+  const [activeTab, setActiveTab] = useState<'info' | 'notes'>('info');
   const [copied, setCopied] = useState(false);
   const [deals, setDeals] = useState<Deal[]>([]);
   const [notes, setNotes] = useState<ContactNote[]>([]);
@@ -128,6 +132,35 @@ export function ContactSidebar({ contact }: ContactSidebarProps) {
 
   return (
     <div className="flex h-full w-70 flex-col border-l border-border bg-card">
+      {/* Tab strip */}
+      <div className="flex shrink-0 border-b border-border">
+        <button
+          onClick={() => setActiveTab('info')}
+          className={cn(
+            'flex flex-1 items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors',
+            activeTab === 'info' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground hover:text-foreground'
+          )}
+        >
+          <User className="h-3.5 w-3.5" />Contact
+        </button>
+        {conversationId && (
+          <button
+            onClick={() => setActiveTab('notes')}
+            className={cn(
+              'flex flex-1 items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors',
+              activeTab === 'notes' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            <MessageSquare className="h-3.5 w-3.5" />Team Notes
+          </button>
+        )}
+      </div>
+
+      {activeTab === 'notes' && conversationId && accountId ? (
+        <div className="flex-1 overflow-y-auto">
+          <ConversationNotes conversationId={conversationId} accountId={accountId} />
+        </div>
+      ) : (
       <ScrollArea className="flex-1">
         <div className="p-4">
           {/* Contact Info */}
@@ -294,6 +327,7 @@ export function ContactSidebar({ contact }: ContactSidebarProps) {
           </div>
         </div>
       </ScrollArea>
+      )}
     </div>
   );
 }

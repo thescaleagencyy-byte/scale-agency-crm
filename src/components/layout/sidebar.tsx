@@ -26,6 +26,9 @@ import {
   Zap,
   BarChart3,
   CalendarDays,
+  QrCode,
+  Route,
+  Brain,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
 
@@ -100,6 +103,8 @@ const navItems: NavItem[] = [
   { href: "/drip", label: "Drip Campaigns", icon: Zap },
   { href: "/appointments", label: "Appointments", icon: CalendarDays },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/qr-codes", label: "QR Codes", icon: QrCode },
+  { href: "/flows-builder", label: "Flow Builder", icon: Brain },
   { href: "/automations", label: "Automations", icon: Zap },
   { href: "/flows", label: "Flows", icon: Workflow, beta: true },
   { href: "/n8n", label: "n8n", icon: Workflow },

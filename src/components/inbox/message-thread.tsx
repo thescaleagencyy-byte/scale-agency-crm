@@ -193,6 +193,7 @@ export function MessageThread({
   const [replyTo, setReplyTo] = useState<ReplyDraft | null>(null);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [viewerCount, setViewerCount] = useState(0);
   const [handoffSummary, setHandoffSummary] = useState<{
     customer_intent?: string;
     key_details?: string[];
@@ -819,6 +820,27 @@ export function MessageThread({
     [conversation, onAssignChange],
   );
 
+  // Collision detection — broadcast presence whenever this conversation is open
+  useEffect(() => {
+    if (!conversation?.id || !user?.id) return;
+    const supabase = createClient();
+    const channel = supabase.channel(`viewing:${conversation.id}`, {
+      config: { presence: { key: user.id } },
+    });
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState();
+        const count = Object.keys(state).length;
+        setViewerCount(count);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({ user_id: user.id, at: Date.now() });
+        }
+      });
+    return () => { supabase.removeChannel(channel); };
+  }, [conversation?.id, user?.id]);
+
   // Empty state — same WhatsApp-style doodle background as the active
   // thread below, so swapping between empty/selected doesn't change the
   // pattern under the user's eye.
@@ -1027,6 +1049,20 @@ export function MessageThread({
           </DropdownMenu>
         </div>
       </div>
+
+      {/* Collision detection banner */}
+      {viewerCount > 1 && (
+        <div className="flex items-center gap-2 border-b border-amber-500/20 bg-amber-500/10 px-4 py-1.5 text-xs text-amber-400">
+          <div className="flex -space-x-1">
+            {Array.from({ length: Math.min(viewerCount - 1, 3) }).map((_, i) => (
+              <div key={i} className="flex h-4 w-4 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/20 text-[8px] font-bold text-amber-400">
+                {i + 1}
+              </div>
+            ))}
+          </div>
+          {viewerCount - 1} other {viewerCount - 1 === 1 ? 'agent is' : 'agents are'} viewing this conversation
+        </div>
+      )}
 
       {/* Messages Area */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4">

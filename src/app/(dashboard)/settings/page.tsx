@@ -19,6 +19,7 @@ import { MembersTab } from '@/components/settings/members-tab';
 import { SavedRepliesPanel } from '@/components/settings/saved-replies-panel';
 import { WebhooksPanel } from '@/components/settings/webhooks-panel';
 import { WorkspacesPanel } from '@/components/settings/workspaces-panel';
+import { RoutingRulesPanel } from '@/components/settings/routing-rules-panel';
 import {
   resolveSection,
   type SettingsSection,
@@ -62,6 +63,7 @@ export default function SettingsPage() {
     n8n: <N8nConfig />,
     templates: <TemplateManager />,
     'saved-replies': <SavedRepliesPanel />,
+    routing: <RoutingRulesPanel />,
     fields: <FieldsAndTagsPanel />,
     deals: <DealsSettings />,
     members: <MembersTab />,

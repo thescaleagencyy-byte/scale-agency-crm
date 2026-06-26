@@ -12,6 +12,7 @@ import {
   MessageSquareText,
   Webhook,
   Building2,
+  Route,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -32,6 +33,7 @@ export const SETTINGS_SECTIONS = [
   'n8n',
   'templates',
   'saved-replies',
+  'routing',
   'fields',
   'deals',
   'members',
@@ -60,6 +62,7 @@ export const SECTION_META: Record<SettingsSection, SectionMeta> = {
   n8n: { id: 'n8n', label: 'n8n', icon: Workflow, group: 'workspace' },
   templates: { id: 'templates', label: 'Templates', icon: FileText, group: 'workspace' },
   'saved-replies': { id: 'saved-replies', label: 'Saved Replies', icon: MessageSquareText, group: 'workspace' },
+  routing: { id: 'routing', label: 'Routing Rules', icon: Route, group: 'workspace' },
   fields: { id: 'fields', label: 'Fields & tags', icon: Tags, group: 'workspace' },
   deals: { id: 'deals', label: 'Deals & currency', icon: Coins, group: 'workspace' },
   members: { id: 'members', label: 'Team members', icon: UsersRound, group: 'workspace' },
