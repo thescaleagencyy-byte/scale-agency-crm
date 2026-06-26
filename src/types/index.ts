@@ -155,6 +155,8 @@ export interface Conversation {
   unread_count: number;
   created_at: string;
   updated_at: string;
+  first_agent_reply_at?: string | null;
+  sla_deadline_at?: string | null;
   contact?: Contact;
 }
 

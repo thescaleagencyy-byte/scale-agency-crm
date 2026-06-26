@@ -26,6 +26,13 @@ interface IntelligenceReport {
   avg_close_days: number | null;
 }
 
+interface RoiData {
+  totalRevenue: number;
+  wonDeals: number;
+  avgCsat: number | null;
+  csatCount: number;
+}
+
 interface SLASummary {
   total_conversations: number;
   resolved_today: number;
@@ -64,6 +71,7 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [intelligence, setIntelligence] = useState<IntelligenceReport | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+  const [roi, setRoi] = useState<RoiData | null>(null);
 
   useEffect(() => {
     const db = createClient();
@@ -73,6 +81,20 @@ export default function AnalyticsPage() {
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
+    // Fetch ROI data: won deals + CSAT avg
+    Promise.all([
+      db.from('deals').select('value, currency').eq('stage', 'won'),
+      db.from('csat_responses').select('rating').not('rating', 'is', null),
+    ]).then(([dealsRes, csatRes]) => {
+      const deals = dealsRes.data ?? [];
+      const csatRatings = (csatRes.data ?? []).map((r: { rating: number }) => r.rating).filter(Boolean);
+      const totalRevenue = deals.reduce((sum, d) => sum + (d.value ?? 0), 0);
+      const avgCsat = csatRatings.length > 0
+        ? csatRatings.reduce((a: number, b: number) => a + b, 0) / csatRatings.length
+        : null;
+      setRoi({ totalRevenue, wonDeals: deals.length, avgCsat, csatCount: csatRatings.length });
+    });
 
     Promise.all([
       db.from('conversations').select('id, status, first_replied_at, resolved_at, assigned_agent_id, created_at'),
@@ -156,6 +178,38 @@ export default function AnalyticsPage() {
         <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
       ) : (
         <>
+          {/* ROI banner */}
+          {roi && (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 rounded-2xl border border-primary/20 bg-primary/5 p-4">
+              <div className="space-y-0.5">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-primary/70">Revenue from CRM</p>
+                <p className="text-2xl font-bold text-primary">${roi.totalRevenue.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">{roi.wonDeals} deals won</p>
+              </div>
+              <div className="space-y-0.5">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">CSAT Score</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {roi.avgCsat != null ? `${roi.avgCsat.toFixed(1)}/5` : '—'}
+                </p>
+                <p className="text-xs text-muted-foreground">{roi.csatCount} responses</p>
+              </div>
+              <div className="space-y-0.5">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">CSAT Satisfaction</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {roi.avgCsat != null ? `${Math.round((roi.avgCsat / 5) * 100)}%` : '—'}
+                </p>
+                <p className="text-xs text-muted-foreground">avg rating</p>
+              </div>
+              <div className="space-y-0.5">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Deal Win Rate</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {summary ? `${Math.round((roi.wonDeals / Math.max(summary.total_conversations, 1)) * 100)}%` : '—'}
+                </p>
+                <p className="text-xs text-muted-foreground">conversations → won</p>
+              </div>
+            </div>
+          )}
+
           {/* Summary cards */}
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <StatCard icon={MessageSquare} label="Total Conversations" value={(summary?.total_conversations ?? 0).toLocaleString()} />

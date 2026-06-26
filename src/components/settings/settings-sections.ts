@@ -13,6 +13,8 @@ import {
   Webhook,
   Building2,
   Route,
+  ShieldCheck,
+  Brush,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -30,6 +32,7 @@ export const SETTINGS_SECTIONS = [
   'security',
   'appearance',
   'whatsapp',
+  'number-health',
   'n8n',
   'templates',
   'saved-replies',
@@ -39,6 +42,7 @@ export const SETTINGS_SECTIONS = [
   'members',
   'webhooks',
   'workspaces',
+  'branding',
 ] as const;
 
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
@@ -59,6 +63,7 @@ export const SECTION_META: Record<SettingsSection, SectionMeta> = {
   security: { id: 'security', label: 'Login & security', icon: Shield, group: 'account' },
   appearance: { id: 'appearance', label: 'Appearance', icon: Palette, group: 'account' },
   whatsapp: { id: 'whatsapp', label: 'WhatsApp', icon: PlugZap, group: 'workspace' },
+  'number-health': { id: 'number-health', label: 'Number Health', icon: ShieldCheck, group: 'workspace' },
   n8n: { id: 'n8n', label: 'n8n', icon: Workflow, group: 'workspace' },
   templates: { id: 'templates', label: 'Templates', icon: FileText, group: 'workspace' },
   'saved-replies': { id: 'saved-replies', label: 'Saved Replies', icon: MessageSquareText, group: 'workspace' },
@@ -68,6 +73,7 @@ export const SECTION_META: Record<SettingsSection, SectionMeta> = {
   members: { id: 'members', label: 'Team members', icon: UsersRound, group: 'workspace' },
   webhooks: { id: 'webhooks', label: 'Webhooks & API', icon: Webhook, group: 'workspace' },
   workspaces: { id: 'workspaces', label: 'Workspaces', icon: Building2, group: 'workspace' },
+  branding: { id: 'branding', label: 'Branding', icon: Brush, group: 'workspace' },
 };
 
 export const RAIL_GROUPS: { label: string | null; group: SectionMeta['group'] }[] = [

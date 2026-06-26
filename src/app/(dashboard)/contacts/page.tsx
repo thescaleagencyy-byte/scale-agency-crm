@@ -64,6 +64,7 @@ export default function ContactsPage() {
   const [contacts, setContacts] = useState<ContactWithTags[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState<'created_at' | 'lead_score'>('created_at');
   const [page, setPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
 
@@ -108,7 +109,7 @@ export default function ContactsPage() {
     let query = supabase
       .from('contacts')
       .select('*', { count: 'exact' })
-      .order('created_at', { ascending: false })
+      .order(sortBy, { ascending: false })
       .range(from, to);
 
     if (search.trim()) {
@@ -374,6 +375,13 @@ export default function ContactsPage() {
               <TableHead className="text-muted-foreground hidden lg:table-cell">Company</TableHead>
               <TableHead className="text-muted-foreground hidden md:table-cell">Tags</TableHead>
               <TableHead className="text-muted-foreground hidden lg:table-cell">Created</TableHead>
+              <TableHead
+                className="text-muted-foreground hidden lg:table-cell cursor-pointer select-none hover:text-foreground"
+                onClick={() => setSortBy(s => s === 'lead_score' ? 'created_at' : 'lead_score')}
+                title="Sort by lead score"
+              >
+                Score {sortBy === 'lead_score' ? '↓' : ''}
+              </TableHead>
               <TableHead className="text-muted-foreground w-12" />
             </TableRow>
           </TableHeader>
@@ -466,6 +474,20 @@ export default function ContactsPage() {
                       day: 'numeric',
                       year: 'numeric',
                     })}
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell">
+                    {(() => {
+                      const score: number = (contact as { lead_score?: number }).lead_score ?? 0;
+                      const color = score >= 70 ? 'text-emerald-400' : score >= 40 ? 'text-amber-400' : 'text-muted-foreground';
+                      return (
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden">
+                            <div className={`h-full rounded-full ${score >= 70 ? 'bg-emerald-500' : score >= 40 ? 'bg-amber-400' : 'bg-muted-foreground/40'}`} style={{ width: `${score}%` }} />
+                          </div>
+                          <span className={`text-xs font-mono ${color}`}>{score}</span>
+                        </div>
+                      );
+                    })()}
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>

@@ -683,6 +683,20 @@ async function processMessage(
     after(() => handleFlowCompletion(message, contactRecord.id, accountId, configOwnerUserId))
   }
 
+  // CSAT reply — button_reply id starts with "csat_"
+  const buttonId = message.interactive?.button_reply?.id ?? ''
+  if (message.type === 'interactive' && buttonId.startsWith('csat_')) {
+    after(() => recordCsatReply(buttonId, accountId))
+  }
+
+  // Plain-text CSAT reply — number 1-5 with pending CSAT record
+  if (message.type === 'text') {
+    const trimmed = (message.text?.body ?? '').trim()
+    if (/^[1-5]$/.test(trimmed)) {
+      after(() => recordCsatTextReply(trimmed, contactRecord.id, accountId))
+    }
+  }
+
   // ============================================================
   // Flow runner dispatch.
   //
@@ -1014,6 +1028,9 @@ async function findOrCreateConversation(
     console.warn('[routing] Rule evaluation failed:', err)
   }
 
+  // SLA: 4-hour first-response deadline for new conversations
+  const slaDeadline = new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString()
+
   // Create new conversation
   const { data: newConv, error: createError } = await supabaseAdmin()
     .from('conversations')
@@ -1022,6 +1039,7 @@ async function findOrCreateConversation(
       user_id: configOwnerUserId,
       contact_id: contactId,
       assigned_agent_id: assignedAgentId,
+      sla_deadline_at: slaDeadline,
       ...adFields,
     })
     .select()
@@ -1153,5 +1171,46 @@ async function handleFlowCompletion(
     console.log('[flows] appointment created from flow submission for contact', contactId)
   } catch (err) {
     console.error('[flows] handleFlowCompletion error:', err)
+  }
+}
+
+/** Handle CSAT button reply: id format = csat_{conversation_id}_{rating} */
+async function recordCsatReply(buttonId: string, accountId: string) {
+  try {
+    const parts = buttonId.split('_')
+    if (parts.length < 3) return
+    const conversationId = parts.slice(1, -1).join('_')
+    const rating = parseInt(parts[parts.length - 1], 10)
+    if (!conversationId || isNaN(rating)) return
+    await supabaseAdmin()
+      .from('csat_responses')
+      .update({ rating, responded_at: new Date().toISOString() })
+      .eq('conversation_id', conversationId)
+      .eq('account_id', accountId)
+      .is('rating', null)
+  } catch (err) {
+    console.error('[csat] recordCsatReply error:', err)
+  }
+}
+
+/** Handle plain-text number 1-5 CSAT reply — find most recent pending CSAT for this contact */
+async function recordCsatTextReply(ratingStr: string, contactId: string, accountId: string) {
+  try {
+    const rating = parseInt(ratingStr, 10)
+    const { data: pending } = await supabaseAdmin()
+      .from('csat_responses')
+      .select('id')
+      .eq('account_id', accountId)
+      .is('rating', null)
+      .order('sent_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (!pending) return
+    await supabaseAdmin()
+      .from('csat_responses')
+      .update({ rating, responded_at: new Date().toISOString() })
+      .eq('id', pending.id)
+  } catch (err) {
+    console.error('[csat] recordCsatTextReply error:', err)
   }
 }

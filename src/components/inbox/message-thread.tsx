@@ -192,6 +192,7 @@ export function MessageThread({
   }, [isRefreshing, onRefresh]);
   const [replyTo, setReplyTo] = useState<ReplyDraft | null>(null);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
+  const [composerDraft, setComposerDraft] = useState<string | undefined>();
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [viewerCount, setViewerCount] = useState(0);
   const [handoffSummary, setHandoffSummary] = useState<{
@@ -422,7 +423,7 @@ export function MessageThread({
     const lastMsg = messages[messages.length - 1];
     if (lastMsg?.sender_type !== 'customer') return;
     setLoadingSuggestions(true);
-    fetch('/api/ai/reply-suggestions', {
+    fetch('/api/intelligence/suggest', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ conversation_id: conversationId }),
@@ -612,6 +613,15 @@ export function MessageThread({
         .from("conversations")
         .update({ status })
         .eq("id", conversation.id);
+
+      // Auto-send CSAT survey when agent closes a conversation
+      if (status === 'closed') {
+        fetch('/api/whatsapp/csat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ conversation_id: conversation.id }),
+        }).catch(() => {});
+      }
 
       onStatusChange(conversation.id, status);
     },
@@ -1174,7 +1184,7 @@ export function MessageThread({
               {aiSuggestions.map((s, i) => (
                 <button
                   key={i}
-                  onClick={() => handleSend(s)}
+                  onClick={() => { setComposerDraft(s); setAiSuggestions([]); }}
                   className="max-w-[280px] truncate rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs text-primary hover:bg-primary/20 transition-colors text-left"
                   title={s}
                 >
@@ -1198,6 +1208,8 @@ export function MessageThread({
         onSendMedia={handleSendMedia}
         onOpenTemplates={handleOpenTemplates}
         replyTo={replyTo}
+        draftText={composerDraft}
+        onDraftConsumed={() => setComposerDraft(undefined)}
         onClearReply={() => setReplyTo(null)}
       />
 

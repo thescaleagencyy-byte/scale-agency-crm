@@ -388,13 +388,20 @@ export async function POST(request: Request) {
       )
     }
 
-    // Update conversation
+    // Update conversation — also stamp first_agent_reply_at if not already set
+    const now = new Date().toISOString()
+    const { data: convRow } = await supabase
+      .from('conversations')
+      .select('first_agent_reply_at')
+      .eq('id', conversation_id)
+      .single()
     await supabase
       .from('conversations')
       .update({
         last_message_text: content_text || `[${message_type}]`,
-        last_message_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        last_message_at: now,
+        updated_at: now,
+        ...(convRow && !convRow.first_agent_reply_at ? { first_agent_reply_at: now } : {}),
       })
       .eq('id', conversation_id)
 

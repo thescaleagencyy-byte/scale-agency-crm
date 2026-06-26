@@ -20,6 +20,8 @@ import { SavedRepliesPanel } from '@/components/settings/saved-replies-panel';
 import { WebhooksPanel } from '@/components/settings/webhooks-panel';
 import { WorkspacesPanel } from '@/components/settings/workspaces-panel';
 import { RoutingRulesPanel } from '@/components/settings/routing-rules-panel';
+import { NumberHealthPanel } from '@/components/settings/number-health-panel';
+import { BrandConfigPanel } from '@/components/settings/brand-config-panel';
 import {
   resolveSection,
   type SettingsSection,
@@ -69,6 +71,8 @@ export default function SettingsPage() {
     members: <MembersTab />,
     webhooks: <WebhooksPanel />,
     workspaces: <WorkspacesPanel />,
+    'number-health': <NumberHealthPanel />,
+    branding: <BrandConfigPanel />,
   };
 
   return (
