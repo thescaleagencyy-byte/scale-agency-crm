@@ -317,6 +317,7 @@ export interface PipelineStage {
   name: string;
   position: number;
   color: string;
+  probability: number;
   created_at: string;
 }
 
@@ -340,6 +341,9 @@ export interface Deal {
   notes?: string;
   expected_close_date?: string;
   status?: DealStatus;
+  close_reason?: string | null;
+  close_reason_notes?: string | null;
+  closed_at?: string | null;
   created_at: string;
   updated_at?: string;
   contact?: Contact;
@@ -570,5 +574,107 @@ export interface AutomationLog {
   status: AutomationLogStatus;
   error_message?: string | null;
   created_at: string;
+  contact?: Contact;
+}
+
+// ============================================================
+// Leads (n8n/lead endpoint + leads page)
+// ============================================================
+
+export interface Lead {
+  id: string;
+  account_id: string;
+  customer_name: string | null;
+  customer_phone: string;
+  service_type: string | null;
+  project_site: string | null;
+  duration: string | null;
+  quantity: string | null;
+  company: string | null;
+  status: 'new' | 'called' | 'won' | 'lost';
+  score: number;
+  score_factors: Record<string, number> | null;
+  contact_id: string | null;
+  conversation_id: string | null;
+  raw_handoff: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LeadNote {
+  id: string;
+  lead_id: string;
+  account_id: string;
+  user_id: string;
+  note_text: string;
+  created_at: string;
+  author?: Pick<Profile, 'full_name' | 'avatar_url'>;
+}
+
+// ============================================================
+// Follow-up reminders (migration 028)
+// ============================================================
+
+export type ReminderEntityType = 'lead' | 'contact' | 'deal';
+
+export interface FollowUpReminder {
+  id: string;
+  account_id: string;
+  user_id: string;
+  entity_type: ReminderEntityType;
+  entity_id: string;
+  due_at: string;
+  note: string | null;
+  is_done: boolean;
+  done_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// ============================================================
+// Drip campaigns (migration 030)
+// ============================================================
+
+export type DripCampaignStatus = 'draft' | 'active' | 'paused' | 'archived';
+export type DripEnrollTrigger = 'manual' | 'tag_added' | 'lead_created' | 'contact_created';
+
+export interface DripCampaign {
+  id: string;
+  account_id: string;
+  user_id: string;
+  name: string;
+  description: string | null;
+  status: DripCampaignStatus;
+  enroll_trigger: DripEnrollTrigger;
+  enroll_config: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+  steps?: DripStep[];
+  enrollment_count?: number;
+}
+
+export interface DripStep {
+  id: string;
+  campaign_id: string;
+  position: number;
+  delay_days: number;
+  template_name: string;
+  template_language: string;
+  template_variables: Record<string, string> | null;
+  created_at: string;
+}
+
+export type DripEnrollmentStatus = 'active' | 'completed' | 'unsubscribed' | 'failed';
+
+export interface DripEnrollment {
+  id: string;
+  campaign_id: string;
+  contact_id: string;
+  account_id: string;
+  current_step: number;
+  status: DripEnrollmentStatus;
+  enrolled_at: string;
+  next_send_at: string | null;
+  completed_at: string | null;
   contact?: Contact;
 }

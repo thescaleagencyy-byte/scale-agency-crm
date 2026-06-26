@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import {
@@ -12,20 +12,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, ChevronLeft, ChevronRight, MoreHorizontal, TrendingUp, Loader2 } from 'lucide-react';
-
-interface Lead {
-  id: string;
-  customer_name: string | null;
-  customer_phone: string;
-  service_type: string | null;
-  project_site: string | null;
-  duration: string | null;
-  company: string | null;
-  status: string;
-  created_at: string;
-  conversation_id: string | null;
-}
+import {
+  Search, ChevronLeft, ChevronRight, MoreHorizontal, TrendingUp, Loader2,
+  StickyNote, Bell, CheckSquare, Square,
+} from 'lucide-react';
+import { LeadNotesPanel } from '@/components/leads/lead-notes-panel';
+import { ReminderDialog } from '@/components/reminders/reminder-dialog';
+import type { Lead } from '@/types';
 
 const STATUS_LABEL: Record<string, string> = { new: 'New', called: 'Called', won: 'Won', lost: 'Lost' };
 const STATUS_CLASS: Record<string, string> = {
@@ -38,6 +31,18 @@ const STATUSES = ['new', 'called', 'won', 'lost'] as const;
 type LeadStatus = typeof STATUSES[number];
 const PAGE_SIZE = 25;
 
+function ScoreBadge({ score }: { score: number }) {
+  const color =
+    score >= 80 ? 'bg-green-500/15 text-green-600 border-green-500/30' :
+    score >= 50 ? 'bg-yellow-500/15 text-yellow-600 border-yellow-500/30' :
+                  'bg-muted text-muted-foreground border-border';
+  return (
+    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${color}`}>
+      {score}
+    </span>
+  );
+}
+
 export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [total, setTotal] = useState(0);
@@ -46,41 +51,40 @@ export default function LeadsPage() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkUpdating, setBulkUpdating] = useState(false);
 
-  useEffect(() => {
+  const [notesLead, setNotesLead] = useState<Lead | null>(null);
+  const [reminderLead, setReminderLead] = useState<Lead | null>(null);
+
+  const load = useCallback(async () => {
     const supabase = createClient();
-    let cancelled = false;
     setLoading(true);
+    try {
+      let query = supabase
+        .from('leads')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
 
-    async function load() {
-      try {
-        let query = supabase
-          .from('leads')
-          .select('id,customer_name,customer_phone,service_type,project_site,duration,company,status,created_at,conversation_id', { count: 'exact' })
-          .order('created_at', { ascending: false })
-          .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
-
-        if (filterStatus !== 'all') query = query.eq('status', filterStatus);
-        if (search.trim()) {
-          query = query.or(
-            `customer_name.ilike.%${search.trim()}%,customer_phone.ilike.%${search.trim()}%,company.ilike.%${search.trim()}%`
-          );
-        }
-
-        const { data, count, error } = await query;
-        if (cancelled) return;
-        if (error) toast.error(error.message);
-        else { setLeads((data as Lead[]) ?? []); setTotal(count ?? 0); }
-      } catch (e) {
-        if (!cancelled) toast.error(String(e));
-      } finally {
-        if (!cancelled) setLoading(false);
+      if (filterStatus !== 'all') query = query.eq('status', filterStatus);
+      if (search.trim()) {
+        query = query.or(
+          `customer_name.ilike.%${search.trim()}%,customer_phone.ilike.%${search.trim()}%,company.ilike.%${search.trim()}%`
+        );
       }
-    }
 
-    load();
-    return () => { cancelled = true; };
+      const { data, count, error } = await query;
+      if (error) toast.error(error.message);
+      else { setLeads((data as Lead[]) ?? []); setTotal(count ?? 0); }
+    } catch (e) {
+      toast.error(String(e));
+    } finally {
+      setLoading(false);
+    }
   }, [page, search, filterStatus]);
+
+  useEffect(() => { load(); }, [load]);
 
   async function updateStatus(id: string, status: LeadStatus) {
     setUpdating(id);
@@ -97,7 +101,36 @@ export default function LeadsPage() {
     setUpdating(null);
   }
 
+  async function bulkUpdateStatus(status: LeadStatus) {
+    if (!selected.size) return;
+    setBulkUpdating(true);
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('leads')
+      .update({ status, updated_at: new Date().toISOString() })
+      .in('id', Array.from(selected));
+    setBulkUpdating(false);
+    if (error) { toast.error('Bulk update failed'); return; }
+    toast.success(`${selected.size} leads marked ${STATUS_LABEL[status]}`);
+    setSelected(new Set());
+    load();
+  }
+
+  function toggleSelect(id: string) {
+    setSelected(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    if (selected.size === leads.length) setSelected(new Set());
+    else setSelected(new Set(leads.map(l => l.id)));
+  }
+
   const totalPages = Math.ceil(total / PAGE_SIZE);
+  const allSelected = leads.length > 0 && selected.size === leads.length;
 
   return (
     <div className="space-y-6">
@@ -132,6 +165,22 @@ export default function LeadsPage() {
             </button>
           ))}
         </div>
+
+        {selected.size > 0 && (
+          <div className="ml-auto flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">{selected.size} selected</span>
+            {STATUSES.map(s => (
+              <button
+                key={s}
+                onClick={() => bulkUpdateStatus(s)}
+                disabled={bulkUpdating}
+                className="px-3 py-1.5 rounded-md text-xs font-medium border border-border text-muted-foreground hover:bg-muted hover:text-foreground transition-colors disabled:opacity-50"
+              >
+                {bulkUpdating ? <Loader2 className="h-3 w-3 animate-spin inline" /> : `→ ${STATUS_LABEL[s]}`}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="rounded-lg border border-border overflow-hidden">
@@ -150,11 +199,17 @@ export default function LeadsPage() {
           <Table>
             <TableHeader>
               <TableRow className="border-border hover:bg-transparent">
+                <TableHead className="w-8">
+                  <button onClick={toggleAll} className="text-muted-foreground hover:text-foreground">
+                    {allSelected ? <CheckSquare className="h-4 w-4" /> : <Square className="h-4 w-4" />}
+                  </button>
+                </TableHead>
                 <TableHead className="text-muted-foreground">Customer</TableHead>
                 <TableHead className="text-muted-foreground">Service</TableHead>
                 <TableHead className="text-muted-foreground">Site</TableHead>
                 <TableHead className="text-muted-foreground">Duration</TableHead>
                 <TableHead className="text-muted-foreground">Company</TableHead>
+                <TableHead className="text-muted-foreground">Score</TableHead>
                 <TableHead className="text-muted-foreground">Status</TableHead>
                 <TableHead className="text-muted-foreground">Date</TableHead>
                 <TableHead />
@@ -162,7 +217,12 @@ export default function LeadsPage() {
             </TableHeader>
             <TableBody>
               {leads.map(lead => (
-                <TableRow key={lead.id} className="border-border">
+                <TableRow key={lead.id} className={`border-border ${selected.has(lead.id) ? 'bg-primary/5' : ''}`}>
+                  <TableCell>
+                    <button onClick={() => toggleSelect(lead.id)} className="text-muted-foreground hover:text-foreground">
+                      {selected.has(lead.id) ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4" />}
+                    </button>
+                  </TableCell>
                   <TableCell>
                     <div className="text-sm font-medium text-foreground">{lead.customer_name ?? '—'}</div>
                     <div className="text-xs text-muted-foreground">{lead.customer_phone}</div>
@@ -171,6 +231,7 @@ export default function LeadsPage() {
                   <TableCell className="text-sm text-foreground">{lead.project_site ?? '—'}</TableCell>
                   <TableCell className="text-sm text-foreground">{lead.duration ?? '—'}</TableCell>
                   <TableCell className="text-sm text-foreground">{lead.company ?? '—'}</TableCell>
+                  <TableCell><ScoreBadge score={lead.score ?? 0} /></TableCell>
                   <TableCell>
                     <Badge variant="outline" className={`text-xs ${STATUS_CLASS[lead.status] ?? ''}`}>
                       {STATUS_LABEL[lead.status] ?? lead.status}
@@ -180,25 +241,41 @@ export default function LeadsPage() {
                     {new Date(lead.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' })}
                   </TableCell>
                   <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger className="h-7 w-7 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted">
-                        {updating === lead.id
-                          ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          : <MoreHorizontal className="h-4 w-4" />}
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        {STATUSES.filter(s => s !== lead.status).map(s => (
-                          <DropdownMenuItem key={s} onClick={() => updateStatus(lead.id, s)}>
-                            Mark as {STATUS_LABEL[s]}
-                          </DropdownMenuItem>
-                        ))}
-                        {lead.conversation_id && (
-                          <DropdownMenuItem onClick={() => { window.location.href = `/inbox?c=${lead.conversation_id}`; }}>
-                            View conversation
-                          </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setNotesLead(lead)}
+                        className="h-7 w-7 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted"
+                        title="Notes"
+                      >
+                        <StickyNote className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setReminderLead(lead)}
+                        className="h-7 w-7 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted"
+                        title="Set reminder"
+                      >
+                        <Bell className="h-3.5 w-3.5" />
+                      </button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger className="h-7 w-7 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted">
+                          {updating === lead.id
+                            ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            : <MoreHorizontal className="h-4 w-4" />}
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {STATUSES.filter(s => s !== lead.status).map(s => (
+                            <DropdownMenuItem key={s} onClick={() => updateStatus(lead.id, s)}>
+                              Mark as {STATUS_LABEL[s]}
+                            </DropdownMenuItem>
+                          ))}
+                          {lead.conversation_id && (
+                            <DropdownMenuItem onClick={() => { window.location.href = `/inbox?c=${lead.conversation_id}`; }}>
+                              View conversation
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -221,6 +298,18 @@ export default function LeadsPage() {
             </Button>
           </div>
         </div>
+      )}
+
+      {notesLead && (
+        <LeadNotesPanel lead={notesLead} onClose={() => setNotesLead(null)} />
+      )}
+      {reminderLead && (
+        <ReminderDialog
+          entityType="lead"
+          entityId={reminderLead.id}
+          entityLabel={reminderLead.customer_name ?? reminderLead.customer_phone}
+          onClose={() => setReminderLead(null)}
+        />
       )}
     </div>
   );

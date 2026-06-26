@@ -114,6 +114,7 @@ export function PipelineSettings({
       name: s.name,
       color: s.color,
       position: i,
+      probability: s.probability ?? 20,
     }));
 
     const [renameRes, stagesRes] = await Promise.all([
@@ -273,6 +274,11 @@ export function PipelineSettings({
                             updated[index] = { ...updated[index], color: v };
                             setLocalStages(updated);
                           }}
+                          onProbabilityChange={(v) => {
+                            const updated = [...localStages];
+                            updated[index] = { ...updated[index], probability: v };
+                            setLocalStages(updated);
+                          }}
                           onRemove={() => handleRemoveStage(stage.id)}
                           colors={STAGE_COLORS}
                         />
@@ -367,12 +373,14 @@ function SortableStageRow({
   stage,
   onNameChange,
   onColorChange,
+  onProbabilityChange,
   onRemove,
   colors,
 }: {
   stage: PipelineStage;
   onNameChange: (v: string) => void;
   onColorChange: (v: string) => void;
+  onProbabilityChange: (v: number) => void;
   onRemove: () => void;
   colors: string[];
 }) {
@@ -406,6 +414,18 @@ function SortableStageRow({
         onChange={(e) => onNameChange(e.target.value)}
         className="h-7 flex-1 border-transparent bg-transparent text-sm text-foreground focus:border-border"
       />
+      <div className="flex items-center gap-1 shrink-0">
+        <Input
+          type="number"
+          min={0}
+          max={100}
+          value={stage.probability ?? 20}
+          onChange={e => onProbabilityChange(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))}
+          className="h-7 w-14 border-transparent bg-transparent text-xs text-center text-muted-foreground focus:border-border"
+          title="Win probability %"
+        />
+        <span className="text-xs text-muted-foreground">%</span>
+      </div>
       <Button
         variant="ghost"
         size="icon-xs"

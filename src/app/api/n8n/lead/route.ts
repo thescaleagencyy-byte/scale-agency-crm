@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/flows/admin-client'
 import { findExistingContact } from '@/lib/contacts/dedupe'
 import { normalizePhone } from '@/lib/whatsapp/phone-utils'
+import { scoreLead } from '@/lib/leads/score'
 
 /**
  * POST /api/n8n/lead
@@ -77,21 +78,28 @@ export async function POST(request: Request) {
     conversationId = conv?.id ?? null
   }
 
+  const leadFields = {
+    customer_name: body.customer_name?.trim() || null,
+    service_type: body.service_type?.trim() || null,
+    project_site: body.project_site?.trim() || null,
+    duration: body.duration?.trim() || null,
+    quantity: body.quantity?.trim() || null,
+    company: body.company?.trim() || null,
+  }
+  const { score, factors } = scoreLead(leadFields)
+
   const { data: lead, error } = await admin
     .from('leads')
     .insert({
       account_id: accountId,
-      customer_name: body.customer_name?.trim() || null,
+      ...leadFields,
       customer_phone: normalizedPhone,
-      service_type: body.service_type?.trim() || null,
-      project_site: body.project_site?.trim() || null,
-      duration: body.duration?.trim() || null,
-      quantity: body.quantity?.trim() || null,
-      company: body.company?.trim() || null,
       raw_handoff: body.raw_handoff?.trim() || null,
       contact_id: contact?.id ?? null,
       conversation_id: conversationId,
       status: 'new',
+      score,
+      score_factors: factors,
     })
     .select()
     .single()

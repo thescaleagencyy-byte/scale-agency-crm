@@ -191,6 +191,14 @@ export function MessageThread({
     }, 700);
   }, [isRefreshing, onRefresh]);
   const [replyTo, setReplyTo] = useState<ReplyDraft | null>(null);
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [handoffSummary, setHandoffSummary] = useState<{
+    customer_intent?: string;
+    key_details?: string[];
+    sentiment?: 'positive' | 'neutral' | 'negative';
+    suggested_next_action?: string;
+  } | null>(null);
 
   // Profiles are bounded by RLS to rows the current user is allowed to
   // see — today that's just the current user, but the dropdown keeps the
@@ -403,6 +411,43 @@ export function MessageThread({
   // a quote pulled from conversation A shouldn't bleed into conversation B.
   useEffect(() => {
     setReplyTo(null);
+    setAiSuggestions([]);
+    setHandoffSummary(null);
+  }, [conversationId]);
+
+  // Fetch AI reply suggestions when messages load and last message is from customer
+  useEffect(() => {
+    if (!conversationId || !messages.length) return;
+    const lastMsg = messages[messages.length - 1];
+    if (lastMsg?.sender_type !== 'customer') return;
+    setLoadingSuggestions(true);
+    fetch('/api/ai/reply-suggestions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ conversation_id: conversationId }),
+    })
+      .then(r => r.json())
+      .then(({ suggestions }) => setAiSuggestions(suggestions ?? []))
+      .catch(() => setAiSuggestions([]))
+      .finally(() => setLoadingSuggestions(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationId, messages.length]);
+
+  // Fetch handoff summary when last bot-sent message is detected and agent is now viewing
+  useEffect(() => {
+    if (!conversationId || !messages.length) return;
+    const hasBotMessages = messages.some(m => m.sender_type === 'bot');
+    const lastSenderIsAgent = messages[messages.length - 1]?.sender_type === 'agent';
+    if (!hasBotMessages || lastSenderIsAgent) return;
+    fetch('/api/ai/conversation-summary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ conversation_id: conversationId }),
+    })
+      .then(r => r.json())
+      .then(({ summary }) => setHandoffSummary(summary ?? null))
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId]);
 
   // Reset the server-side unread_count to 0 whenever an unread count
@@ -1055,6 +1100,59 @@ export function MessageThread({
           </div>
         )}
       </div>
+
+      {/* Handoff Summary — shown when bot handed off to human */}
+      {handoffSummary && (
+        <div className="border-t border-border bg-primary/5 px-4 py-3 space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-primary uppercase tracking-wide">AI Handoff Summary</span>
+            <button
+              onClick={() => setHandoffSummary(null)}
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >✕</button>
+          </div>
+          {handoffSummary.customer_intent && (
+            <p className="text-xs text-foreground"><span className="font-medium">Intent:</span> {handoffSummary.customer_intent}</p>
+          )}
+          {handoffSummary.key_details?.length ? (
+            <p className="text-xs text-foreground">
+              <span className="font-medium">Details:</span> {handoffSummary.key_details.join(' · ')}
+            </p>
+          ) : null}
+          {handoffSummary.suggested_next_action && (
+            <p className="text-xs text-primary font-medium">→ {handoffSummary.suggested_next_action}</p>
+          )}
+        </div>
+      )}
+
+      {/* AI Reply Suggestions */}
+      {(aiSuggestions.length > 0 || loadingSuggestions) && (
+        <div className="border-t border-border bg-card px-4 py-2">
+          {loadingSuggestions ? (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="h-3 w-3 animate-spin rounded-full border border-primary border-t-transparent" />
+              Generating suggestions...
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {aiSuggestions.map((s, i) => (
+                <button
+                  key={i}
+                  onClick={() => handleSend(s)}
+                  className="max-w-[280px] truncate rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs text-primary hover:bg-primary/20 transition-colors text-left"
+                  title={s}
+                >
+                  {s}
+                </button>
+              ))}
+              <button
+                onClick={() => setAiSuggestions([])}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >✕</button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Composer */}
       <MessageComposer

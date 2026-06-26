@@ -69,6 +69,10 @@ export function DealForm({
   const [linkedConversation, setLinkedConversation] =
     useState<Conversation | null>(null);
 
+  const [closeReason, setCloseReason] = useState('');
+  const [closeReasonNotes, setCloseReasonNotes] = useState('');
+  const [pendingStatus, setPendingStatus] = useState<DealStatus | null>(null);
+
   const [saving, setSaving] = useState(false);
   const [statusAction, setStatusAction] = useState<DealStatus | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -85,13 +89,13 @@ export function DealForm({
       setTitle(deal.title);
       setValue(String(deal.value ?? ""));
       setCurrency(deal.currency || defaultCurrency);
-      // contact_id is nullable when the contact has been deleted
-      // (migration 004: ON DELETE SET NULL). "" means "no selection".
       setContactId(deal.contact_id ?? "");
       setStageId(deal.stage_id);
       setAssignedTo(deal.assigned_to ?? "");
       setExpectedCloseDate(deal.expected_close_date ?? "");
       setNotes(deal.notes ?? "");
+      setCloseReason(deal.close_reason ?? "");
+      setCloseReasonNotes(deal.close_reason_notes ?? "");
     } else {
       setTitle("");
       setValue("");
@@ -101,7 +105,10 @@ export function DealForm({
       setAssignedTo("");
       setExpectedCloseDate("");
       setNotes("");
+      setCloseReason("");
+      setCloseReasonNotes("");
     }
+    setPendingStatus(null);
   }, [open, deal, defaultStageId, stages, defaultCurrency]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
@@ -211,12 +218,24 @@ export function DealForm({
 
   async function handleStatusChange(status: DealStatus) {
     if (!deal) return;
+    if ((status === 'won' || status === 'lost') && !pendingStatus) {
+      setPendingStatus(status);
+      return;
+    }
     setStatusAction(status);
-    const { error } = await supabase
-      .from("deals")
-      .update({ status })
-      .eq("id", deal.id);
+    const patch: Record<string, unknown> = { status };
+    if (status === 'won' || status === 'lost') {
+      patch.close_reason = closeReason || null;
+      patch.close_reason_notes = closeReasonNotes || null;
+      patch.closed_at = new Date().toISOString();
+    } else {
+      patch.close_reason = null;
+      patch.close_reason_notes = null;
+      patch.closed_at = null;
+    }
+    const { error } = await supabase.from("deals").update(patch).eq("id", deal.id);
     setStatusAction(null);
+    setPendingStatus(null);
     if (error) {
       toast.error("Failed to update deal status");
       return;
@@ -379,48 +398,116 @@ export function DealForm({
                 <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Status
                 </p>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    onClick={() => handleStatusChange("won")}
-                    disabled={!!statusAction || deal.status === "won"}
-                    className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-                  >
-                    {statusAction === "won" ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <>
-                        <Check className="mr-1 h-4 w-4" />
-                        Mark as Won
-                      </>
+
+                {pendingStatus ? (
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium text-foreground">
+                      {pendingStatus === 'won' ? 'Why was this deal won?' : 'Why was this deal lost?'}
+                    </p>
+                    <select
+                      value={closeReason}
+                      onChange={e => setCloseReason(e.target.value)}
+                      className="h-9 w-full rounded-lg border border-border bg-muted px-2.5 text-sm text-foreground outline-none focus:border-primary"
+                    >
+                      <option value="">Select a reason...</option>
+                      {pendingStatus === 'won' ? (
+                        <>
+                          <option value="price">Competitive price</option>
+                          <option value="relationship">Existing relationship</option>
+                          <option value="quality">Product/service quality</option>
+                          <option value="speed">Fast response time</option>
+                          <option value="referral">Referral</option>
+                          <option value="other">Other</option>
+                        </>
+                      ) : (
+                        <>
+                          <option value="price">Price too high</option>
+                          <option value="competitor">Chose competitor</option>
+                          <option value="no_budget">No budget</option>
+                          <option value="no_need">No longer needed</option>
+                          <option value="no_response">No response</option>
+                          <option value="timing">Bad timing</option>
+                          <option value="other">Other</option>
+                        </>
+                      )}
+                    </select>
+                    <Textarea
+                      value={closeReasonNotes}
+                      onChange={e => setCloseReasonNotes(e.target.value)}
+                      placeholder="Additional notes (optional)"
+                      className="min-h-[60px] border-border bg-muted text-foreground text-sm"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => setPendingStatus(null)}
+                        className="flex-1 text-muted-foreground"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => handleStatusChange(pendingStatus)}
+                        disabled={!!statusAction}
+                        className={`flex-1 ${pendingStatus === 'won' ? 'bg-primary text-primary-foreground' : 'bg-red-600 text-white hover:bg-red-700'}`}
+                      >
+                        {statusAction ? <Loader2 className="h-4 w-4 animate-spin" /> : `Confirm ${pendingStatus === 'won' ? 'Won' : 'Lost'}`}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        onClick={() => handleStatusChange("won")}
+                        disabled={!!statusAction || deal.status === "won"}
+                        className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                      >
+                        {statusAction === "won" ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Check className="mr-1 h-4 w-4" />
+                            Mark as Won
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => handleStatusChange("lost")}
+                        disabled={!!statusAction || deal.status === "lost"}
+                        className="flex-1 bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                      >
+                        {statusAction === "lost" ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <>
+                            <X className="mr-1 h-4 w-4" />
+                            Mark as Lost
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    {deal.close_reason && (
+                      <p className="text-xs text-muted-foreground">
+                        Reason: <span className="text-foreground">{deal.close_reason}</span>
+                        {deal.close_reason_notes && ` — ${deal.close_reason_notes}`}
+                      </p>
                     )}
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={() => handleStatusChange("lost")}
-                    disabled={!!statusAction || deal.status === "lost"}
-                    className="flex-1 bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
-                  >
-                    {statusAction === "lost" ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <>
-                        <X className="mr-1 h-4 w-4" />
-                        Mark as Lost
-                      </>
+                    {deal.status && deal.status !== "open" && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => handleStatusChange("open")}
+                        disabled={!!statusAction}
+                        className="w-full text-muted-foreground hover:text-foreground"
+                      >
+                        Reopen deal
+                      </Button>
                     )}
-                  </Button>
-                </div>
-                {deal.status && deal.status !== "open" && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => handleStatusChange("open")}
-                    disabled={!!statusAction}
-                    className="w-full text-muted-foreground hover:text-foreground"
-                  >
-                    Reopen deal
-                  </Button>
+                  </>
                 )}
               </div>
             )}

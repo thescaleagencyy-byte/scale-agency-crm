@@ -33,6 +33,7 @@ import { ConversationsChart } from '@/components/dashboard/conversations-chart'
 import { PipelineDonut } from '@/components/dashboard/pipeline-donut'
 import { ResponseTimeChart } from '@/components/dashboard/response-time-chart'
 import { ActivityFeed } from '@/components/dashboard/activity-feed'
+import { RevenueForecast } from '@/components/dashboard/revenue-forecast'
 
 type RangeDays = 7 | 30 | 90
 
@@ -209,6 +210,9 @@ export default function DashboardPage() {
 
       {/* Response time */}
       <ResponseTimeChart data={responseTime} loading={responseTimeLoading} />
+
+      {/* Revenue forecast */}
+      <RevenueForecast currency={defaultCurrency} />
 
       {/* Activity feed */}
       <ActivityFeed items={activity} loading={activityLoading} />

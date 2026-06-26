@@ -33,6 +33,9 @@ import {
   Save,
   X,
   DollarSign,
+  MessageSquare,
+  StickyNote,
+  Clock,
 } from 'lucide-react';
 
 interface ContactDetailViewProps {
@@ -82,6 +85,14 @@ export function ContactDetailView({
   // Deals tab
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loadingDeals, setLoadingDeals] = useState(false);
+
+  // Timeline tab
+  type TimelineItem =
+    | { type: 'note'; at: string; text: string }
+    | { type: 'deal'; at: string; title: string; value: number; currency: string; status: string }
+    | { type: 'message'; at: string; text: string; sender: string };
+  const [timeline, setTimeline] = useState<TimelineItem[]>([]);
+  const [loadingTimeline, setLoadingTimeline] = useState(false);
 
   const fetchContact = useCallback(async () => {
     if (!contactId) return;
@@ -166,6 +177,38 @@ export function ContactDetailView({
     setLoadingDeals(false);
   }, [contactId, supabase]);
 
+  const fetchTimeline = useCallback(async () => {
+    if (!contactId) return;
+    setLoadingTimeline(true);
+    const [notesRes, dealsRes, convsRes] = await Promise.all([
+      supabase.from('contact_notes').select('*').eq('contact_id', contactId).order('created_at', { ascending: false }).limit(20),
+      supabase.from('deals').select('title,value,currency,status,created_at').eq('contact_id', contactId).order('created_at', { ascending: false }),
+      supabase.from('conversations').select('id,created_at').eq('contact_id', contactId).limit(5),
+    ]);
+
+    const items: TimelineItem[] = [];
+    for (const n of notesRes.data ?? []) items.push({ type: 'note', at: n.created_at, text: n.note_text });
+    for (const d of dealsRes.data ?? []) items.push({ type: 'deal', at: d.created_at, title: d.title, value: d.value, currency: d.currency ?? 'USD', status: d.status ?? 'open' });
+
+    const convIds = (convsRes.data ?? []).map(c => c.id);
+    if (convIds.length) {
+      const { data: msgs } = await supabase
+        .from('messages')
+        .select('content_text, sender_type, created_at')
+        .in('conversation_id', convIds)
+        .not('content_text', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      for (const m of msgs ?? []) {
+        items.push({ type: 'message', at: m.created_at, text: m.content_text ?? '', sender: m.sender_type });
+      }
+    }
+
+    items.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+    setTimeline(items);
+    setLoadingTimeline(false);
+  }, [contactId, supabase]);
+
   useEffect(() => {
     if (open && contactId) {
       fetchContact();
@@ -173,8 +216,9 @@ export function ContactDetailView({
       fetchNotes();
       fetchCustomFields();
       fetchDeals();
+      fetchTimeline();
     }
-  }, [open, contactId, fetchContact, fetchTags, fetchNotes, fetchCustomFields, fetchDeals]);
+  }, [open, contactId, fetchContact, fetchTags, fetchNotes, fetchCustomFields, fetchDeals, fetchTimeline]);
 
   async function copyPhone() {
     if (!contact) return;
@@ -416,6 +460,12 @@ export function ContactDetailView({
                   className="data-active:bg-muted data-active:text-primary text-muted-foreground"
                 >
                   Deals
+                </TabsTrigger>
+                <TabsTrigger
+                  value="timeline"
+                  className="data-active:bg-muted data-active:text-primary text-muted-foreground"
+                >
+                  Timeline
                 </TabsTrigger>
               </TabsList>
 
@@ -673,6 +723,49 @@ export function ContactDetailView({
                               {deal.status}
                             </span>
                           )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* Timeline Tab */}
+              <TabsContent value="timeline" className="flex-1 overflow-y-auto px-4 py-3">
+                {loadingTimeline ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                  </div>
+                ) : timeline.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No activity yet</p>
+                ) : (
+                  <div className="relative space-y-0">
+                    <div className="absolute left-3 top-0 bottom-0 w-px bg-border" />
+                    {timeline.map((item, i) => (
+                      <div key={i} className="relative pl-8 pb-4">
+                        <div className="absolute left-1.5 top-1 h-3 w-3 rounded-full border-2 border-background flex items-center justify-center"
+                          style={{ backgroundColor: item.type === 'note' ? '#8b5cf6' : item.type === 'deal' ? '#10b981' : '#3b82f6' }}
+                        />
+                        <div className="rounded-lg border border-border bg-muted/50 p-2.5">
+                          <div className="flex items-center gap-2 mb-1">
+                            {item.type === 'note' && <StickyNote className="h-3 w-3 text-violet-400" />}
+                            {item.type === 'deal' && <DollarSign className="h-3 w-3 text-green-400" />}
+                            {item.type === 'message' && <MessageSquare className="h-3 w-3 text-blue-400" />}
+                            <span className="text-xs font-medium text-foreground capitalize">
+                              {item.type === 'message' ? `${item.sender} message` : item.type}
+                            </span>
+                            <span className="ml-auto text-[10px] text-muted-foreground flex items-center gap-1">
+                              <Clock className="h-2.5 w-2.5" />
+                              {new Date(item.at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' })}
+                            </span>
+                          </div>
+                          {item.type === 'note' && <p className="text-xs text-muted-foreground line-clamp-2">{item.text}</p>}
+                          {item.type === 'deal' && (
+                            <p className="text-xs text-muted-foreground">
+                              {item.title} · {formatCurrency(item.value, item.currency)} · <span className={item.status === 'won' ? 'text-primary' : item.status === 'lost' ? 'text-red-400' : ''}>{item.status}</span>
+                            </p>
+                          )}
+                          {item.type === 'message' && <p className="text-xs text-muted-foreground line-clamp-2">{item.text}</p>}
                         </div>
                       </div>
                     ))}

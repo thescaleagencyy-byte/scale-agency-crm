@@ -224,6 +224,7 @@ export default function BroadcastsPage() {
                 </TableHead>
                 <TableHead className="hidden text-muted-foreground lg:table-cell">Delivery</TableHead>
                 <TableHead className="hidden text-muted-foreground lg:table-cell">Read</TableHead>
+                <TableHead className="hidden text-muted-foreground lg:table-cell">Reply</TableHead>
                 <TableHead className="text-muted-foreground">Status</TableHead>
                 <TableHead className="hidden text-muted-foreground sm:table-cell">Date</TableHead>
               </TableRow>
@@ -258,6 +259,13 @@ export default function BroadcastsPage() {
                         value={broadcast.read_count}
                         total={broadcast.total_recipients}
                         color="bg-blue-500"
+                      />
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell">
+                      <RateCell
+                        value={broadcast.replied_count}
+                        total={broadcast.total_recipients}
+                        color="bg-green-500"
                       />
                     </TableCell>
                     <TableCell>

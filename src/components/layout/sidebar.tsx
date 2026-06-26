@@ -95,6 +95,7 @@ const navItems: NavItem[] = [
   { href: "/leads", label: "Leads", icon: TrendingUp },
   { href: "/pipelines", label: "Pipelines", icon: GitBranch },
   { href: "/broadcasts", label: "Broadcasts", icon: Radio },
+  { href: "/drip", label: "Drip Campaigns", icon: Zap },
   { href: "/automations", label: "Automations", icon: Zap },
   { href: "/flows", label: "Flows", icon: Workflow, beta: true },
   { href: "/n8n", label: "n8n", icon: Workflow },
