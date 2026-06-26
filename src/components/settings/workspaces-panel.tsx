@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 interface Workspace {
   account_id: string;
   role: string;
-  account: { id: string; name: string } | null;
+  account_name: string | null;
 }
 
 export function WorkspacesPanel() {
@@ -27,11 +27,8 @@ export function WorkspacesPanel() {
 
   async function load() {
     const db = createClient();
-    const { data } = await db
-      .from('account_memberships')
-      .select('account_id, role, account:accounts(id, name)')
-      .order('created_at');
-    setWorkspaces((data ?? []) as unknown as Workspace[]);
+    const { data } = await db.rpc('get_my_workspaces');
+    setWorkspaces((data ?? []) as Workspace[]);
     setLoading(false);
   }
 
@@ -72,8 +69,7 @@ export function WorkspacesPanel() {
       ) : (
         <div className="space-y-2">
           {workspaces.map(w => {
-            const acc = Array.isArray(w.account) ? w.account[0] : w.account;
-            const isActive = acc?.id === profile?.account_id;
+            const isActive = w.account_id === profile?.account_id;
             return (
               <div key={w.account_id} className={cn(
                 'flex items-center gap-4 rounded-xl border px-4 py-3 transition-colors',
@@ -86,7 +82,7 @@ export function WorkspacesPanel() {
                   <Building2 className={cn('h-4 w-4', isActive ? 'text-primary' : 'text-muted-foreground')} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground">{acc?.name ?? 'Untitled workspace'}</p>
+                  <p className="text-sm font-semibold text-foreground">{w.account_name ?? 'Untitled workspace'}</p>
                   <p className="text-xs text-muted-foreground capitalize">{w.role}</p>
                 </div>
                 {isActive ? (
@@ -97,11 +93,11 @@ export function WorkspacesPanel() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => switchWorkspace(acc?.id ?? '')}
-                    disabled={switching === acc?.id}
+                    onClick={() => switchWorkspace(w.account_id)}
+                    disabled={switching === w.account_id}
                     className="border-border bg-transparent text-muted-foreground hover:text-foreground shrink-0"
                   >
-                    {switching === acc?.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Switch'}
+                    {switching === w.account_id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Switch'}
                   </Button>
                 )}
               </div>
