@@ -90,7 +90,7 @@ export default function AppointmentsPage() {
   async function createAppointment(e: React.FormEvent) {
     e.preventDefault();
     if (!accountId) { toast.error('Account not loaded yet'); return; }
-    if (!apptService || !apptContact || !apptDate || !apptTime) { toast.error('All fields required'); return; }
+    if (!apptContact || !apptDate || !apptTime) { toast.error('Contact, date and time required'); return; }
     setApptSaving(true);
     const db = createClient();
 
@@ -101,19 +101,19 @@ export default function AppointmentsPage() {
     // Create slot first
     const { data: slot, error: slotErr } = await db.from('booking_slots').insert({
       account_id: accountId,
-      service_id: apptService,
+      service_id: apptService || null,
       start_at: startAt.toISOString(),
       end_at: endAt.toISOString(),
       booked_count: 1,
     }).select().single();
 
-    if (slotErr || !slot) { toast.error('Failed to create slot'); setApptSaving(false); return; }
+    if (slotErr || !slot) { toast.error(slotErr?.message ?? 'Failed to create slot'); setApptSaving(false); return; }
 
     const { error } = await db.from('appointments').insert({
       account_id: accountId,
       slot_id: slot.id,
       contact_id: apptContact,
-      service_id: apptService,
+      service_id: apptService || null,
       notes: apptNotes.trim() || null,
       status: 'confirmed',
     });
@@ -258,11 +258,17 @@ export default function AppointmentsPage() {
             </div>
             <form onSubmit={createAppointment} className="space-y-3">
               <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Service</Label>
-                <select value={apptService} onChange={e => setApptService(e.target.value)} required className="w-full h-10 rounded-lg border border-border bg-muted text-foreground text-sm px-3">
-                  <option value="">Select service...</option>
-                  {services.map(s => <option key={s.id} value={s.id}>{s.name} ({s.duration_minutes}min)</option>)}
-                </select>
+                <Label className="text-xs text-muted-foreground">Service <span className="text-muted-foreground/60">(optional)</span></Label>
+                {services.length === 0 ? (
+                  <div className="flex items-center gap-2 rounded-lg border border-dashed border-border bg-muted/30 px-3 py-2">
+                    <span className="text-xs text-muted-foreground">No services yet — add one below to enable selection.</span>
+                  </div>
+                ) : (
+                  <select value={apptService} onChange={e => setApptService(e.target.value)} className="w-full h-10 rounded-lg border border-border bg-muted text-foreground text-sm px-3">
+                    <option value="">— No specific service —</option>
+                    {services.map(s => <option key={s.id} value={s.id}>{s.name} ({s.duration_minutes}min)</option>)}
+                  </select>
+                )}
               </div>
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">Contact</Label>
