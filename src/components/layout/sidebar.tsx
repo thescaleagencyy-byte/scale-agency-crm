@@ -106,7 +106,7 @@ const navItems: NavItem[] = [
   { href: "/qr-codes", label: "QR Codes", icon: QrCode },
   { href: "/flows-builder", label: "Flow Builder", icon: Brain },
   { href: "/automations", label: "Automations", icon: Zap },
-  { href: "/flows", label: "Flows", icon: Workflow, beta: true },
+  { href: "/flows", label: "Flows", icon: Workflow },
   { href: "/n8n", label: "n8n", icon: Workflow },
 ];
 

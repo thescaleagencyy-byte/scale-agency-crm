@@ -16,7 +16,7 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Copy, Loader2, MessageCircle, Sparkles } from 'lucide-react';
+import { Check, Copy, Loader2, MessageCircle, Sparkles, X as XIcon } from 'lucide-react';
 
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -36,6 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 
 type InviteRole = 'admin' | 'agent' | 'viewer';
@@ -54,13 +55,27 @@ const EXPIRY_OPTIONS: { value: string; label: string }[] = [
   { value: '30', label: '30 days' },
 ];
 
-const ROLE_DESCRIPTIONS: Record<InviteRole, string> = {
-  admin:
-    'Can invite teammates, manage settings, send messages, and edit data.',
-  agent:
-    'Can use the inbox, contacts, broadcasts, automations, and flows. No settings or member access.',
-  viewer: 'Read-only access across every page. Cannot send or edit anything.',
-};
+interface Permission {
+  label: string;
+  admin: boolean;
+  agent: boolean;
+  viewer: boolean;
+}
+
+const PERMISSIONS: Permission[] = [
+  { label: 'Read inbox & conversations', admin: true, agent: true, viewer: true },
+  { label: 'Send messages', admin: true, agent: true, viewer: false },
+  { label: 'Manage contacts & leads', admin: true, agent: true, viewer: false },
+  { label: 'View contacts & leads', admin: true, agent: true, viewer: true },
+  { label: 'Use automations & flows', admin: true, agent: true, viewer: false },
+  { label: 'Send broadcasts', admin: true, agent: true, viewer: false },
+  { label: 'View analytics', admin: true, agent: true, viewer: true },
+  { label: 'Manage appointments', admin: true, agent: true, viewer: false },
+  { label: 'Invite & manage team members', admin: true, agent: false, viewer: false },
+  { label: 'Change workspace settings', admin: true, agent: false, viewer: false },
+  { label: 'Configure WhatsApp & integrations', admin: true, agent: false, viewer: false },
+  { label: 'Manage billing & subscription', admin: true, agent: false, viewer: false },
+];
 
 // Server caps label at 80 chars (see src/app/api/account/invitations/route.ts).
 // Mirror it on the client so we short-circuit before the round-trip
@@ -280,22 +295,49 @@ export function InviteMemberDialog({
             <div className="space-y-4 py-2">
               <div className="space-y-2">
                 <Label className="text-muted-foreground">Role</Label>
-                <Select
-                  value={role}
-                  onValueChange={(v) => v && setRole(v as InviteRole)}
-                >
-                  <SelectTrigger className="w-full bg-muted border-border text-foreground">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="agent">Agent</SelectItem>
-                    <SelectItem value="viewer">Viewer</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  {ROLE_DESCRIPTIONS[role]}
-                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['admin', 'agent', 'viewer'] as InviteRole[]).map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setRole(r)}
+                      className={[
+                        'rounded-lg border py-2 text-xs font-semibold capitalize transition-colors',
+                        role === r
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border bg-muted text-muted-foreground hover:text-foreground',
+                      ].join(' ')}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Permission checklist */}
+              <div className="rounded-lg border border-border bg-muted/30 overflow-hidden">
+                <div className="grid grid-cols-[1fr_auto_auto_auto] text-[10px] font-semibold text-muted-foreground px-3 py-1.5 border-b border-border gap-3">
+                  <span>Permission</span>
+                  <span className={role === 'admin' ? 'text-primary' : ''}>Admin</span>
+                  <span className={role === 'agent' ? 'text-primary' : ''}>Agent</span>
+                  <span className={role === 'viewer' ? 'text-primary' : ''}>Viewer</span>
+                </div>
+                <div className="divide-y divide-border max-h-48 overflow-y-auto">
+                  {PERMISSIONS.map((p) => (
+                    <div key={p.label} className="grid grid-cols-[1fr_auto_auto_auto] items-center px-3 py-1.5 gap-3">
+                      <span className="text-xs text-foreground">{p.label}</span>
+                      {(['admin', 'agent', 'viewer'] as InviteRole[]).map((r) => (
+                        <span key={r} className="flex justify-center">
+                          {p[r] ? (
+                            <Check className={`h-3.5 w-3.5 ${role === r ? 'text-primary' : 'text-emerald-500'}`} />
+                          ) : (
+                            <XIcon className="h-3.5 w-3.5 text-muted-foreground/40" />
+                          )}
+                        </span>
+                      ))}
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className="space-y-2">
