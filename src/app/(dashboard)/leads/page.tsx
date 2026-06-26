@@ -103,7 +103,7 @@ export default function LeadsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Leads</h1>
-        <p className="text-sm text-muted-foreground mt-1">{total} qualified leads from Reem</p>
+        <p className="text-sm text-muted-foreground mt-1">{total} qualified leads captured</p>
       </div>
 
       <div className="flex items-center gap-3 flex-wrap">
@@ -144,7 +144,7 @@ export default function LeadsPage() {
           <div className="flex flex-col items-center justify-center gap-2 py-16">
             <TrendingUp className="h-8 w-8 text-muted-foreground" />
             <p className="text-sm font-medium text-foreground">No leads yet</p>
-            <p className="text-xs text-muted-foreground">Qualified leads from Reem appear here automatically</p>
+            <p className="text-xs text-muted-foreground">Leads from qualified WhatsApp conversations appear here</p>
           </div>
         ) : (
           <Table>
