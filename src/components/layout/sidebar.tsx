@@ -31,6 +31,7 @@ import {
   Brain,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
+import { hasFeature } from "@/lib/features";
 
 // Per-role chip metadata used in the sidebar's account strip + the
 // Members tab roster. Keeping this near both consumers in a single
@@ -86,6 +87,8 @@ interface NavItem {
   href: string;
   label: string;
   icon: typeof LayoutDashboard;
+  /** Feature key — item hidden when that feature is disabled. */
+  feature?: string;
   /**
    * When true, the nav row renders a small "Beta" chip after the label.
    * Purely informational — doesn't affect routing or access.
@@ -93,22 +96,24 @@ interface NavItem {
   beta?: boolean;
 }
 
-const navItems: NavItem[] = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/inbox", label: "Inbox", icon: MessageSquare },
-  { href: "/contacts", label: "Contacts", icon: Users },
-  { href: "/leads", label: "Leads", icon: TrendingUp },
-  { href: "/pipelines", label: "Pipelines", icon: GitBranch },
-  { href: "/broadcasts", label: "Broadcasts", icon: Radio },
-  { href: "/drip", label: "Drip Campaigns", icon: Zap },
-  { href: "/appointments", label: "Appointments", icon: CalendarDays },
-  { href: "/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/qr-codes", label: "QR Codes", icon: QrCode },
-  { href: "/flows-builder", label: "Flow Builder", icon: Brain },
-  { href: "/automations", label: "Automations", icon: Zap },
-  { href: "/flows", label: "Flows", icon: Workflow },
-  { href: "/n8n", label: "n8n", icon: Workflow },
+const ALL_NAV_ITEMS: NavItem[] = [
+  { href: "/dashboard",    label: "Dashboard",     icon: LayoutDashboard, feature: "dashboard" },
+  { href: "/inbox",        label: "Inbox",         icon: MessageSquare,   feature: "inbox" },
+  { href: "/contacts",     label: "Contacts",      icon: Users,           feature: "contacts" },
+  { href: "/leads",        label: "Leads",         icon: TrendingUp,      feature: "leads" },
+  { href: "/pipelines",    label: "Pipelines",     icon: GitBranch,       feature: "pipelines" },
+  { href: "/broadcasts",   label: "Broadcasts",    icon: Radio,           feature: "broadcasts" },
+  { href: "/drip",         label: "Drip Campaigns",icon: Zap,             feature: "drip" },
+  { href: "/appointments", label: "Appointments",  icon: CalendarDays,    feature: "appointments" },
+  { href: "/analytics",    label: "Analytics",     icon: BarChart3,       feature: "analytics" },
+  { href: "/qr-codes",     label: "QR Codes",      icon: QrCode,          feature: "qr-codes" },
+  { href: "/flows-builder",label: "Flow Builder",  icon: Brain,           feature: "flows" },
+  { href: "/automations",  label: "Automations",   icon: Zap,             feature: "automations" },
+  { href: "/flows",        label: "Flows",         icon: Workflow,        feature: "flows" },
+  { href: "/n8n",          label: "n8n",           icon: Workflow,        feature: "n8n" },
 ];
+
+const navItems = ALL_NAV_ITEMS.filter((item) => !item.feature || hasFeature(item.feature));
 
 const bottomNavItems = [
   { href: "/settings", label: "Settings", icon: Settings },

@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { FEATURE_GATING_ENABLED, ENABLED_FEATURES, PATH_FEATURE_MAP } from '@/lib/features'
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -64,6 +65,22 @@ export async function middleware(request: NextRequest) {
   if (!user && request.nextUrl.pathname.startsWith('/api/whatsapp/') &&
       !request.nextUrl.pathname.includes('/webhook')) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // Feature gate — only active when NEXT_PUBLIC_FEATURES is set (client deployments).
+  // Block any path whose feature key isn't in the enabled set; redirect to /dashboard.
+  if (user && FEATURE_GATING_ENABLED) {
+    const pathname = request.nextUrl.pathname
+    const matchedKey = Object.keys(PATH_FEATURE_MAP).find((p) => pathname.startsWith(p))
+    if (matchedKey) {
+      const featureKey = PATH_FEATURE_MAP[matchedKey]
+      if (!ENABLED_FEATURES.has(featureKey)) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/dashboard'
+        url.search = ''
+        return NextResponse.redirect(url)
+      }
+    }
   }
 
   return supabaseResponse
