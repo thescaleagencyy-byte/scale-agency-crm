@@ -252,9 +252,20 @@ export interface N8nExecution {
   startedAt: string;
   stoppedAt?: string;
   finished: boolean;
+  workflowId?: string;
   workflowData?: {
     id: string;
     name: string;
+  };
+  data?: {
+    resultData?: {
+      lastNodeExecuted?: string;
+      error?: {
+        message?: string;
+        description?: string;
+        node?: { name?: string; type?: string };
+      };
+    };
   };
 }
 

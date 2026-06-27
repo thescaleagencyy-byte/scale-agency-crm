@@ -15,6 +15,42 @@ async function resolveAccountId(
   return data.account_id as string
 }
 
+// Paginate n8n executions until we've collected everything since `sinceMs`.
+// Stops early if we've fetched 500 records (safety cap).
+async function fetchSince(
+  apiUrl: string,
+  apiKey: string,
+  sinceMs: number,
+): Promise<unknown[]> {
+  const all: unknown[] = []
+  let cursor: string | null = null
+
+  while (all.length < 500) {
+    const params = new URLSearchParams({ limit: '100' })
+    if (cursor) params.set('cursor', cursor)
+
+    const res = await fetch(`${apiUrl}/api/v1/executions?${params}`, {
+      headers: { 'X-N8N-API-KEY': apiKey, Accept: 'application/json' },
+      signal: AbortSignal.timeout(10000),
+    })
+    if (!res.ok) break
+
+    const page = await res.json()
+    const execs: Array<{ startedAt: string }> = page.data ?? []
+
+    let hitOld = false
+    for (const exec of execs) {
+      if (new Date(exec.startedAt).getTime() < sinceMs) { hitOld = true; break }
+      all.push(exec)
+    }
+
+    if (hitOld || !page.nextCursor) break
+    cursor = page.nextCursor
+  }
+
+  return all
+}
+
 export async function GET(request: Request) {
   try {
     const supabase = await createClient()
@@ -37,32 +73,36 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url)
-    const limit = searchParams.get('limit') ?? '20'
-    const status = searchParams.get('status')
 
-    const params = new URLSearchParams({ limit })
-    if (status) params.set('status', status)
+    // Legacy single-page mode (limit param present, no mode=all)
+    if (searchParams.has('limit') && !searchParams.has('mode')) {
+      const limit = searchParams.get('limit') ?? '20'
+      const status = searchParams.get('status')
+      const params = new URLSearchParams({ limit })
+      if (status) params.set('status', status)
 
-    const res = await fetch(`${creds.apiUrl}/api/v1/executions?${params}`, {
-      headers: {
-        'X-N8N-API-KEY': creds.apiKey,
-        'Accept': 'application/json',
-      },
-      // 8-second timeout — dashboard polling shouldn't stall the UI
-      signal: AbortSignal.timeout(8000),
-    })
-
-    if (!res.ok) {
-      const text = await res.text()
-      console.error('[n8n/executions] n8n API error:', res.status, text)
-      return NextResponse.json(
-        { error: `n8n returned ${res.status}` },
-        { status: res.status },
-      )
+      const res = await fetch(`${creds.apiUrl}/api/v1/executions?${params}`, {
+        headers: { 'X-N8N-API-KEY': creds.apiKey, Accept: 'application/json' },
+        signal: AbortSignal.timeout(8000),
+      })
+      if (!res.ok) {
+        const text = await res.text()
+        console.error('[n8n/executions] n8n API error:', res.status, text)
+        return NextResponse.json({ error: `n8n returned ${res.status}` }, { status: res.status })
+      }
+      const data = await res.json()
+      return NextResponse.json(data)
     }
 
-    const data = await res.json()
-    return NextResponse.json(data)
+    // Default: fetch all executions since start of yesterday (today + yesterday)
+    const now = new Date()
+    const todayMidnight = new Date(now)
+    todayMidnight.setHours(0, 0, 0, 0)
+    const yesterdayMidnight = new Date(todayMidnight)
+    yesterdayMidnight.setDate(yesterdayMidnight.getDate() - 1)
+
+    const execs = await fetchSince(creds.apiUrl, creds.apiKey, yesterdayMidnight.getTime())
+    return NextResponse.json({ data: execs })
   } catch (err) {
     if (err instanceof Error && err.name === 'TimeoutError') {
       return NextResponse.json({ error: 'n8n API timed out' }, { status: 504 })
