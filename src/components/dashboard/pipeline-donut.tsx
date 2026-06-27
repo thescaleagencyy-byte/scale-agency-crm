@@ -11,15 +11,19 @@ interface PipelineDonutProps {
   loading: boolean
   /** Account default currency for the totals. */
   currency: string
+  title?: string
+  subtitle?: string
+  /** Word used for individual pipeline items ("deal", "order", "quote"). */
+  dealWord?: string
 }
 
-export function PipelineDonut({ data, loading, currency }: PipelineDonutProps) {
+export function PipelineDonut({ data, loading, currency, title = 'Pipeline Value', subtitle = 'Open deals by stage', dealWord = 'deal' }: PipelineDonutProps) {
   return (
     <section className="flex h-full flex-col rounded-xl border border-border bg-card">
       <header className="border-b border-border px-5 py-4">
-        <h2 className="text-sm font-semibold text-foreground">Pipeline Value</h2>
+        <h2 className="text-sm font-semibold text-foreground">{title}</h2>
         <p className="mt-0.5 text-xs text-muted-foreground">
-          Open deals by stage
+          {subtitle}
         </p>
       </header>
 
@@ -29,8 +33,8 @@ export function PipelineDonut({ data, loading, currency }: PipelineDonutProps) {
         ) : data.stages.length === 0 ? (
           <EmptyState
             icon={GitBranch}
-            title="No open deals yet"
-            hint="Create deals in Pipelines to see stage breakdowns here."
+            title={`No open ${dealWord}s yet`}
+            hint={`Create ${dealWord}s in Pipelines to see stage breakdowns here.`}
           />
         ) : (
           <>
@@ -45,7 +49,7 @@ export function PipelineDonut({ data, loading, currency }: PipelineDonutProps) {
                   />
                   <span className="flex-1 truncate text-muted-foreground">{s.name}</span>
                   <span className="text-muted-foreground tabular-nums">
-                    {s.dealCount} deal{s.dealCount === 1 ? '' : 's'}
+                    {s.dealCount} {dealWord}{s.dealCount === 1 ? '' : 's'}
                   </span>
                   <span className="w-20 text-right text-muted-foreground tabular-nums">
                     {formatCurrencyShort(s.totalValue, currency)}

@@ -15,6 +15,8 @@ interface ConversationsChartProps {
   loading: boolean
   range: RangeDays
   onRangeChange: (r: RangeDays) => void
+  title?: string
+  subtitle?: string
 }
 
 // ------------------------------------------------------------
@@ -27,7 +29,7 @@ const VB_W = 760
 const VB_H = 240
 const PADDING = { top: 16, right: 16, bottom: 28, left: 40 }
 
-export function ConversationsChart({ series, loading, range, onRangeChange }: ConversationsChartProps) {
+export function ConversationsChart({ series, loading, range, onRangeChange, title = 'Conversations Over Time', subtitle = 'Daily message volume by direction' }: ConversationsChartProps) {
   const data = series[range]
 
   // Memoise the max so per-day hover math doesn't recompute it.
@@ -49,8 +51,8 @@ export function ConversationsChart({ series, loading, range, onRangeChange }: Co
     <section className="flex h-full flex-col rounded-xl border border-border bg-card">
       <header className="flex items-center justify-between border-b border-border px-5 py-4">
         <div>
-          <h2 className="text-sm font-semibold text-foreground">Conversations Over Time</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">Daily message volume by direction</p>
+          <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>
         </div>
         <div className="flex items-center gap-1 rounded-lg bg-muted/60 p-1">
           {[7, 30, 90].map((r) => (

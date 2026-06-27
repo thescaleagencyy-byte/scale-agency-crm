@@ -124,11 +124,45 @@ export default function DashboardPage() {
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
   const heroLabel = CLIENT_NAME || 'the scale agency™'
-  const heroTagline = (() => {
+
+  const labels = (() => {
     const ind = CLIENT_INDUSTRY.toLowerCase()
-    if (ind.includes('restaurant') || ind.includes('food')) return 'Your orders, reservations & guest messages — live.'
-    if (ind.includes('logistic') || ind.includes('transport') || ind.includes('car') || ind.includes('wheel')) return 'Your fleet, leads & delivery messages — live.'
-    return 'Your WhatsApp pipeline — live and ready.'
+    if (ind.includes('restaurant') || ind.includes('food')) return {
+      heroTagline:          'Your orders, reservations & guest messages — live.',
+      activeConversations:  'Active Order Chats',
+      newContacts:          'New Customers Today',
+      openDeals:            'Active Orders Value',
+      dealWord:             'order',
+      messagesSent:         'Replies Sent Today',
+      chartTitle:           'Order Inquiries Over Time',
+      chartSubtitle:        'Daily order & enquiry volume',
+      pipelineTitle:        'Order Pipeline',
+      pipelineSubtitle:     'Active orders by stage',
+    }
+    if (ind.includes('logistic') || ind.includes('transport') || ind.includes('car') || ind.includes('wheel')) return {
+      heroTagline:          'Your fleet, leads & delivery messages — live.',
+      activeConversations:  'Active Lead Chats',
+      newContacts:          'New Leads Today',
+      openDeals:            'Open Quotes Value',
+      dealWord:             'quote',
+      messagesSent:         'Replies Sent Today',
+      chartTitle:           'Lead Inquiries Over Time',
+      chartSubtitle:        'Daily lead & enquiry volume',
+      pipelineTitle:        'Lead Pipeline',
+      pipelineSubtitle:     'Leads by stage',
+    }
+    return {
+      heroTagline:          'Your WhatsApp pipeline — live and ready.',
+      activeConversations:  'Active Conversations',
+      newContacts:          'New Contacts Today',
+      openDeals:            'Open Deals Value',
+      dealWord:             'deal',
+      messagesSent:         'Messages Sent Today',
+      chartTitle:           'Conversations Over Time',
+      chartSubtitle:        'Daily message volume by direction',
+      pipelineTitle:        'Pipeline Value',
+      pipelineSubtitle:     'Open deals by stage',
+    }
   })()
 
   return (
@@ -153,7 +187,7 @@ export default function DashboardPage() {
               {greeting}{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}.
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              {heroTagline}
+              {labels.heroTagline}
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -170,7 +204,7 @@ export default function DashboardPage() {
         ) : (
           <>
             <MetricCard
-              title="Active Conversations"
+              title={labels.activeConversations}
               value={metrics.activeConversations.current.toLocaleString()}
               icon={MessageSquare}
               delta={{
@@ -179,7 +213,7 @@ export default function DashboardPage() {
               }}
             />
             <MetricCard
-              title="New Contacts Today"
+              title={labels.newContacts}
               value={metrics.newContactsToday.current.toLocaleString()}
               icon={UserPlus}
               delta={{
@@ -192,13 +226,13 @@ export default function DashboardPage() {
               }}
             />
             <MetricCard
-              title="Open Deals Value"
+              title={labels.openDeals}
               value={formatCurrency(metrics.openDealsValue, defaultCurrency)}
               icon={DollarSign}
-              subtitle={`${metrics.openDealsCount} open deal${metrics.openDealsCount === 1 ? '' : 's'}`}
+              subtitle={`${metrics.openDealsCount} open ${labels.dealWord}${metrics.openDealsCount === 1 ? '' : 's'}`}
             />
             <MetricCard
-              title="Messages Sent Today"
+              title={labels.messagesSent}
               value={metrics.messagesSentToday.current.toLocaleString()}
               icon={Send}
               delta={{
@@ -231,6 +265,8 @@ export default function DashboardPage() {
             loading={seriesLoading}
             range={range}
             onRangeChange={handleRangeChange}
+            title={labels.chartTitle}
+            subtitle={labels.chartSubtitle}
           />
         </div>
         <div className="h-full lg:col-span-2">
@@ -238,6 +274,9 @@ export default function DashboardPage() {
             data={pipeline}
             loading={pipelineLoading}
             currency={defaultCurrency}
+            title={labels.pipelineTitle}
+            subtitle={labels.pipelineSubtitle}
+            dealWord={labels.dealWord}
           />
         </div>
       </div>
