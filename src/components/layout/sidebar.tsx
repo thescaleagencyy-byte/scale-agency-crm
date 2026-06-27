@@ -31,7 +31,7 @@ import {
   Brain,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
-import { hasFeature } from "@/lib/features";
+import { hasFeature, CLIENT_NAME, CLIENT_INDUSTRY } from "@/lib/features";
 
 // Per-role chip metadata used in the sidebar's account strip + the
 // Members tab roster. Keeping this near both consumers in a single
@@ -202,18 +202,29 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
         {/* Logo row. On mobile we put a close button here; on desktop the
             close button is hidden since the sidebar is always-visible. */}
         <div className="relative flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border px-4">
-          <Link href="/dashboard" className="flex items-center gap-2.5">
-            <Image
-              src="/branding.jpeg"
-              alt="The Scale Agency"
-              width={32}
-              height={32}
-              priority
-              className="rounded-full object-cover shrink-0"
-            />
-            <span className="text-sm font-semibold text-foreground leading-tight">
-              the scale<br />agency™
-            </span>
+          <Link href="/dashboard" className="flex items-center gap-2.5 min-w-0">
+            {CLIENT_NAME ? (
+              <div className="min-w-0">
+                <p className="truncate text-sm font-bold text-foreground leading-tight">{CLIENT_NAME}</p>
+                {CLIENT_INDUSTRY && (
+                  <p className="text-[10px] font-medium uppercase tracking-widest text-primary/70 leading-tight mt-0.5">{CLIENT_INDUSTRY}</p>
+                )}
+              </div>
+            ) : (
+              <>
+                <Image
+                  src="/branding.jpeg"
+                  alt="The Scale Agency"
+                  width={32}
+                  height={32}
+                  priority
+                  className="rounded-full object-cover shrink-0"
+                />
+                <span className="text-sm font-semibold text-foreground leading-tight">
+                  the scale<br />agency™
+                </span>
+              </>
+            )}
           </Link>
           <button
             type="button"

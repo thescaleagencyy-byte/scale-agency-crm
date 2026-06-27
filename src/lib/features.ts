@@ -18,6 +18,11 @@ export function hasFeature(key: string): boolean {
   return ENABLED_FEATURES.has(key)
 }
 
+// Client branding — set on per-client deployments to white-label the UI.
+// Empty string = Scale Agency default branding.
+export const CLIENT_NAME = process.env.NEXT_PUBLIC_CLIENT_NAME ?? ''
+export const CLIENT_INDUSTRY = process.env.NEXT_PUBLIC_CLIENT_INDUSTRY ?? ''
+
 // Path → feature key map used by middleware to block disabled routes.
 export const PATH_FEATURE_MAP: Record<string, string> = {
   '/inbox':         'inbox',

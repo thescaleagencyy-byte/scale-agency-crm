@@ -26,6 +26,7 @@ import type {
   ResponseTimeSummary,
 } from '@/lib/dashboard/types'
 
+import { CLIENT_NAME, CLIENT_INDUSTRY } from '@/lib/features'
 import { MetricCard } from '@/components/dashboard/metric-card'
 import { SkeletonCard } from '@/components/dashboard/skeleton'
 import { QuickActions } from '@/components/dashboard/quick-actions'
@@ -122,6 +123,14 @@ export default function DashboardPage() {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
+  const heroLabel = CLIENT_NAME || 'the scale agency™'
+  const heroTagline = (() => {
+    const ind = CLIENT_INDUSTRY.toLowerCase()
+    if (ind.includes('restaurant') || ind.includes('food')) return 'Your orders, reservations & guest messages — live.'
+    if (ind.includes('logistic') || ind.includes('transport') || ind.includes('car') || ind.includes('wheel')) return 'Your fleet, leads & delivery messages — live.'
+    return 'Your WhatsApp pipeline — live and ready.'
+  })()
+
   return (
     <div className="space-y-5">
       {/* Branded hero */}
@@ -139,12 +148,12 @@ export default function DashboardPage() {
         />
         <div className="relative z-10 flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-primary/70 mb-1">the scale agency™</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-primary/70 mb-1">{heroLabel}</p>
             <h1 className="text-2xl font-bold text-foreground leading-tight">
               {greeting}{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}.
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Your WhatsApp pipeline — live and ready.
+              {heroTagline}
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
