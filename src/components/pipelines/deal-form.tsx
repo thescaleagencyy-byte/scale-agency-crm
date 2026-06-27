@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { CURRENCIES } from "@/lib/currency";
+import { getIndustryTerms } from "@/lib/industry-terms";
 import type {
   Contact,
   Conversation,
@@ -72,6 +73,7 @@ export function DealForm({
   const [closeReason, setCloseReason] = useState('');
   const [closeReasonNotes, setCloseReasonNotes] = useState('');
   const [pendingStatus, setPendingStatus] = useState<DealStatus | null>(null);
+  const t = getIndustryTerms()
 
   const [saving, setSaving] = useState(false);
   const [statusAction, setStatusAction] = useState<DealStatus | null>(null);
@@ -241,7 +243,7 @@ export function DealForm({
       return;
     }
     toast.success(
-      status === "won" ? "Marked as won" : status === "lost" ? "Marked as lost" : "Deal reopened",
+      status === "won" ? `Marked as ${t.wonDeal}` : status === "lost" ? `Marked as ${t.lostDeal}` : `${t.deal.charAt(0).toUpperCase() + t.deal.slice(1)} reopened`,
     );
     onOpenChange(false);
     onSaved();
@@ -402,7 +404,7 @@ export function DealForm({
                 {pendingStatus ? (
                   <div className="space-y-3">
                     <p className="text-sm font-medium text-foreground">
-                      {pendingStatus === 'won' ? 'Why was this deal won?' : 'Why was this deal lost?'}
+                      {pendingStatus === 'won' ? t.wonReason : t.lostReason}
                     </p>
                     <select
                       value={closeReason}
@@ -452,7 +454,7 @@ export function DealForm({
                         disabled={!!statusAction}
                         className={`flex-1 ${pendingStatus === 'won' ? 'bg-primary text-primary-foreground' : 'bg-red-600 text-white hover:bg-red-700'}`}
                       >
-                        {statusAction ? <Loader2 className="h-4 w-4 animate-spin" /> : `Confirm ${pendingStatus === 'won' ? 'Won' : 'Lost'}`}
+                        {statusAction ? <Loader2 className="h-4 w-4 animate-spin" /> : `Confirm ${pendingStatus === 'won' ? t.wonDeal.split(' ')[0].charAt(0).toUpperCase() + t.wonDeal.split(' ')[0].slice(1) : t.lostDeal.split(' ')[0].charAt(0).toUpperCase() + t.lostDeal.split(' ')[0].slice(1)}`}
                       </Button>
                     </div>
                   </div>
@@ -470,7 +472,7 @@ export function DealForm({
                         ) : (
                           <>
                             <Check className="mr-1 h-4 w-4" />
-                            Mark as Won
+                            {t.markAsWon}
                           </>
                         )}
                       </Button>
@@ -485,7 +487,7 @@ export function DealForm({
                         ) : (
                           <>
                             <X className="mr-1 h-4 w-4" />
-                            Mark as Lost
+                            {t.markAsLost}
                           </>
                         )}
                       </Button>
