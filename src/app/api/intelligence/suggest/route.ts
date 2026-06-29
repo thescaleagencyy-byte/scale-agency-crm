@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import OpenAI from 'openai'
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+import { decryptMessages } from '@/lib/crypto'
 
 export async function POST(request: Request) {
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -13,14 +13,16 @@ export async function POST(request: Request) {
   if (!conversation_id) return NextResponse.json({ error: 'conversation_id required' }, { status: 400 })
 
   // Fetch last 20 messages
-  const { data: messages } = await supabase
+  const { data: rawMessages } = await supabase
     .from('messages')
     .select('sender_type, content_text, created_at')
     .eq('conversation_id', conversation_id)
     .order('created_at', { ascending: false })
     .limit(20)
 
-  if (!messages?.length) return NextResponse.json({ suggestions: [] })
+  if (!rawMessages?.length) return NextResponse.json({ suggestions: [] })
+
+  const messages = decryptMessages(rawMessages)
 
   const history = messages
     .reverse()

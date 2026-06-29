@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/flows/admin-client'
 import { findExistingContact } from '@/lib/contacts/dedupe'
 import { normalizePhone } from '@/lib/whatsapp/phone-utils'
+import { encryptContent } from '@/lib/crypto'
 
 /**
  * POST /api/n8n/log
@@ -97,7 +98,7 @@ export async function POST(request: Request) {
       conversation_id: conversationId,
       sender_type: 'agent',
       content_type: 'text',
-      content_text: messageText,
+      content_text: encryptContent(messageText),
       status: 'sent',
       is_automated: true,
     })

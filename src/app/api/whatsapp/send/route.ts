@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { encryptContent } from '@/lib/crypto'
 import {
   sendTextMessage,
   sendTemplateMessage,
@@ -370,7 +371,7 @@ export async function POST(request: Request) {
         conversation_id,
         sender_type: 'agent',
         content_type: message_type,
-        content_text: content_text || null,
+        content_text: encryptContent(content_text || null),
         media_url: media_url || null,
         template_name: template_name || null,
         message_id: waMessageId,

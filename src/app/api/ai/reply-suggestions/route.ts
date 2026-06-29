@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getOpenAIClient } from '@/lib/openai/client'
+import { decryptMessages } from '@/lib/crypto'
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
 
   if (!messages?.length) return NextResponse.json({ suggestions: [] })
 
-  const transcript = messages
+  const transcript = decryptMessages(messages)
     .reverse()
     .filter(m => m.content_text)
     .map(m => `${m.sender_type === 'customer' ? 'Customer' : 'Agent'}: ${m.content_text}`)

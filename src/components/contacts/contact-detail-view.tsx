@@ -192,14 +192,9 @@ export function ContactDetailView({
 
     const convIds = (convsRes.data ?? []).map(c => c.id);
     if (convIds.length) {
-      const { data: msgs } = await supabase
-        .from('messages')
-        .select('content_text, sender_type, created_at')
-        .in('conversation_id', convIds)
-        .not('content_text', 'is', null)
-        .order('created_at', { ascending: false })
-        .limit(20);
-      for (const m of msgs ?? []) {
+      const res = await fetch(`/api/messages?conversation_ids=${convIds.join(',')}`);
+      const msgs = res.ok ? await res.json() : [];
+      for (const m of msgs) {
         items.push({ type: 'message', at: m.created_at, text: m.content_text ?? '', sender: m.sender_type });
       }
     }

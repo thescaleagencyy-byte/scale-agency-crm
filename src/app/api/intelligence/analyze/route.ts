@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createClient as createAdmin } from '@supabase/supabase-js';
 import OpenAI from 'openai';
+import { decryptMessages } from '@/lib/crypto';
 
 function supabaseAdmin() {
   return createAdmin(
@@ -48,8 +49,9 @@ export async function POST() {
     .limit(200);
 
   // Build conversation summaries
+  const decryptedMessages = decryptMessages(messages ?? []);
   const convSummaries = convIds.map(id => {
-    const msgs = (messages ?? []).filter((m: { conversation_id: string }) => m.conversation_id === id).map((m: { content_text: string }) => m.content_text).filter(Boolean);
+    const msgs = decryptedMessages.filter((m: { conversation_id: string }) => m.conversation_id === id).map((m: { content_text?: string | null }) => m.content_text).filter(Boolean);
     return msgs.slice(0, 5).join(' | ');
   }).filter(Boolean);
 

@@ -274,23 +274,19 @@ export function MessageThread({
   useEffect(() => {
     if (!conversationId) return;
 
-    const supabase = createClient();
     let cancelled = false;
 
     (async () => {
       setLoading(true);
 
-      const { data, error } = await supabase
-        .from("messages")
-        .select("*")
-        .eq("conversation_id", conversationId)
-        .order("created_at", { ascending: true });
+      const res = await fetch(`/api/messages?conversation_id=${conversationId}`);
 
       if (cancelled) return;
 
-      if (error) {
-        console.error("Failed to fetch messages:", error);
+      if (!res.ok) {
+        console.error("Failed to fetch messages:", res.status);
       } else {
+        const data = await res.json();
         onMessagesLoadedRef.current(data ?? []);
       }
 

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { encryptContent } from '@/lib/crypto'
 import { sendTextMessage } from '@/lib/whatsapp/meta-api'
 import { decrypt } from '@/lib/whatsapp/encryption'
 import { normalizePhone, sanitizePhoneForMeta, isValidE164, phoneVariants } from '@/lib/whatsapp/phone-utils'
@@ -199,7 +200,7 @@ export async function POST(request: Request) {
       conversation_id: conversation.id,
       sender_type: 'agent',
       content_type: 'text',
-      content_text: message.trim(),
+      content_text: encryptContent(message.trim()),
       message_id: waMessageId,
       status: 'sent',
       is_automated: true,

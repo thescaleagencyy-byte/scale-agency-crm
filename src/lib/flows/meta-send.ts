@@ -8,6 +8,7 @@ import {
   type MediaKind,
 } from '@/lib/whatsapp/meta-api'
 import { decrypt } from '@/lib/whatsapp/encryption'
+import { encryptContent } from '@/lib/crypto'
 import {
   sanitizePhoneForMeta,
   isValidE164,
@@ -124,7 +125,7 @@ export async function engineSendText(
     conversation_id: args.conversationId,
     sender_type: 'bot',
     content_type: 'text',
-    content_text: args.text,
+    content_text: encryptContent(args.text),
     message_id: waMessageId,
     status: 'sent',
   })
@@ -241,7 +242,7 @@ export async function engineSendMedia(
     conversation_id: args.conversationId,
     sender_type: 'bot',
     content_type: args.kind,
-    content_text: args.caption ?? null,
+    content_text: encryptContent(args.caption ?? null),
     message_id: waMessageId,
     status: 'sent',
   })
@@ -413,7 +414,7 @@ async function sendInteractiveViaMeta(
     conversation_id: input.conversationId,
     sender_type: 'bot',
     content_type: 'interactive',
-    content_text: input.bodyText,
+    content_text: encryptContent(input.bodyText),
     message_id: waMessageId,
     status: 'sent',
   })

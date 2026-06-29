@@ -1,18 +1,10 @@
 {
-  "name": "wacrm",
+  "name": "sultan-dashboard",
   "version": "0.2.2",
   "private": true,
-  "description": "Self-hostable CRM template for WhatsApp built on Next.js and Supabase — shared inbox, contacts, sales pipelines, broadcasts, and no-code automations.",
-  "license": "MIT",
-  "author": "Arnas Donauskas",
-  "homepage": "https://github.com/ArnasDon/wacrm",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ArnasDon/wacrm.git"
-  },
-  "bugs": {
-    "url": "https://github.com/ArnasDon/wacrm/issues"
-  },
+  "description": "WhatsApp CRM dashboard for Sultan Yakhni Pulao.",
+  "license": "UNLICENSED",
+  "author": "The Scale Agency",
   "keywords": [
     "crm",
     "whatsapp",

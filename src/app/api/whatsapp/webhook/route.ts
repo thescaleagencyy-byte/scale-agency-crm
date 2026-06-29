@@ -1,6 +1,7 @@
 import { NextResponse, after } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { decrypt, encrypt, isLegacyFormat } from '@/lib/whatsapp/encryption'
+import { encryptContent } from '@/lib/crypto'
 import { getMediaUrl, downloadMedia } from '@/lib/whatsapp/meta-api'
 import { normalizePhone } from '@/lib/whatsapp/phone-utils'
 import { findExistingContact, isUniqueViolation } from '@/lib/contacts/dedupe'
@@ -640,7 +641,7 @@ async function processMessage(
     conversation_id: conversation.id,
     sender_type: 'customer',
     content_type: contentType,
-    content_text: contentText,
+    content_text: encryptContent(contentText),
     media_url: mediaUrl,
     message_id: message.id,
     status: 'delivered',
