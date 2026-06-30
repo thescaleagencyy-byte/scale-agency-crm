@@ -131,7 +131,7 @@ function getBaseUrl(request: Request): string {
       "[POST /api/account/invitations] could not derive base URL from request; falling back to marketing domain",
     );
   }
-  return process.env.NEXT_PUBLIC_SITE_URL ?? "https://sultan-whatsapp-dashboard.vercel.app";
+  return process.env.NEXT_PUBLIC_SITE_URL ?? "https://scale-agency-crm.vercel.app";
 }
 
 const MAX_LABEL_LEN = 80;

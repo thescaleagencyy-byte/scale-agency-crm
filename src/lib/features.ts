@@ -22,6 +22,8 @@ export function hasFeature(key: string): boolean {
 // Empty string = Scale Agency default branding.
 export const CLIENT_NAME = process.env.NEXT_PUBLIC_CLIENT_NAME ?? ''
 export const CLIENT_INDUSTRY = process.env.NEXT_PUBLIC_CLIENT_INDUSTRY ?? ''
+// Human-readable app name shown in UI copy (invites, dialogs, config pages).
+export const APP_NAME = CLIENT_NAME ? `${CLIENT_NAME} Dashboard` : 'Scale Agency CRM'
 
 // Path → feature key map used by middleware to block disabled routes.
 export const PATH_FEATURE_MAP: Record<string, string> = {

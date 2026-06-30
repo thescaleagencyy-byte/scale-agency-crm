@@ -15,6 +15,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { APP_NAME } from '@/lib/features';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -472,7 +473,7 @@ export function WhatsAppConfig() {
                   }
                 >
                   {isRegistered
-                    ? 'Registered — Meta will deliver events to Sultan Dashboard'
+                    ? `Registered — Meta will deliver events to ${APP_NAME}`
                     : 'Not registered — Meta will not deliver events'}
                 </AlertTitle>
               </div>
@@ -653,7 +654,7 @@ export function WhatsAppConfig() {
                   Meta Business Manager → WhatsApp Accounts → Phone
                   Numbers → Two-step verification
                 </strong>
-                , then paste it here so Sultan Dashboard can subscribe the number —
+                {`, then paste it here so ${APP_NAME} can subscribe the number —`}
                 otherwise Meta routes inbound events to whichever app
                 last claimed it (the symptom that hits second numbers
                 under a shared WABA).{' '}

@@ -14,6 +14,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { APP_NAME } from '@/lib/features';
 import {
   uploadAccountMedia,
   MEDIA_MAX_BYTES_BY_KIND,
@@ -1099,8 +1100,8 @@ export function TemplateManager() {
             <DialogTitle className="text-popover-foreground">Delete template?</DialogTitle>
             <DialogDescription className="text-muted-foreground">
               {templateToDelete?.meta_template_id
-                ? `"${templateToDelete?.name}" will be deleted from Meta and from Sultan Dashboard. Active broadcasts using this template will start failing on their next send. This can't be undone.`
-                : `"${templateToDelete?.name}" will be deleted from Sultan Dashboard. It was never submitted to Meta, so no remote cleanup is needed.`}
+                ? `"${templateToDelete?.name}" will be deleted from Meta and from ${APP_NAME}. Active broadcasts using this template will start failing on their next send. This can't be undone.`
+                : `"${templateToDelete?.name}" will be deleted from ${APP_NAME}. It was never submitted to Meta, so no remote cleanup is needed.`}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="bg-popover border-border">
