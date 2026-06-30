@@ -9,6 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UsersRound } from "lucide-react";
+import { CLIENT_NAME, APP_NAME } from "@/lib/features";
+
+const CLIENT_LOGO = CLIENT_NAME
+  ? `/clients/${CLIENT_NAME.toLowerCase().replace(/\s+/g, '')}.png`
+  : "/branding.jpeg";
+const LOGO_ALT = APP_NAME;
 
 export default function LoginPage() {
   return (
@@ -71,8 +77,8 @@ function LoginPageInner() {
         {/* Content */}
         <div className="relative z-10 flex flex-col items-center text-center">
           <Image
-            src="/branding.jpeg"
-            alt="The Scale Agency"
+            src={CLIENT_LOGO}
+            alt={LOGO_ALT}
             width={180}
             height={180}
             priority
@@ -112,8 +118,8 @@ function LoginPageInner() {
           {/* Mobile logo */}
           <div className="flex justify-center mb-8 lg:hidden">
             <Image
-              src="/branding.jpeg"
-              alt="The Scale Agency"
+              src={CLIENT_LOGO}
+              alt={LOGO_ALT}
               width={80}
               height={80}
               priority
