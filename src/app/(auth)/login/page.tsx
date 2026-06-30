@@ -9,12 +9,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UsersRound } from "lucide-react";
-import { CLIENT_NAME, APP_NAME } from "@/lib/features";
+import { CLIENT_NAME, APP_NAME, PRIMARY_COLOR } from "@/lib/features";
 
 const CLIENT_LOGO = CLIENT_NAME
   ? `/clients/${CLIENT_NAME.toLowerCase().replace(/\s+/g, '')}.png`
   : "/branding.jpeg";
 const LOGO_ALT = APP_NAME;
+
+const c = PRIMARY_COLOR; // shorthand for inline styles
 
 export default function LoginPage() {
   return (
@@ -57,11 +59,11 @@ function LoginPageInner() {
       {/* ── Left panel – brand ── */}
       <div className="relative hidden lg:flex lg:w-[55%] flex-col items-center justify-center overflow-hidden p-12">
 
-        {/* Green glow orbs */}
+        {/* Glow orbs */}
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute top-[-10%] left-[-10%] h-[500px] w-[500px] rounded-full bg-[#39ff14] opacity-[0.12] blur-[120px]" />
-          <div className="absolute bottom-[-5%] right-[-5%] h-[400px] w-[400px] rounded-full bg-[#39ff14] opacity-[0.08] blur-[100px]" />
-          <div className="absolute top-[40%] left-[55%] h-[250px] w-[250px] rounded-full bg-[#39ff14] opacity-[0.06] blur-[80px]" />
+          <div className="absolute top-[-10%] left-[-10%] h-[500px] w-[500px] rounded-full opacity-[0.12] blur-[120px]" style={{ background: c }} />
+          <div className="absolute bottom-[-5%] right-[-5%] h-[400px] w-[400px] rounded-full opacity-[0.08] blur-[100px]" style={{ background: c }} />
+          <div className="absolute top-[40%] left-[55%] h-[250px] w-[250px] rounded-full opacity-[0.06] blur-[80px]" style={{ background: c }} />
         </div>
 
         {/* Subtle grid overlay */}
@@ -82,11 +84,14 @@ function LoginPageInner() {
             width={180}
             height={180}
             priority
-            className="rounded-2xl object-cover mb-8 ring-1 ring-white/10 shadow-2xl shadow-[#39ff14]/10"
+            className="rounded-2xl object-contain mb-8 ring-1 ring-white/10 shadow-2xl"
+            style={{ boxShadow: `0 25px 50px ${c}1a` }}
           />
           <h1 className="text-4xl font-bold text-white tracking-tight leading-tight">
-            Scale smarter.<br />
-            <span className="text-[#39ff14]">Close faster.</span>
+            {CLIENT_NAME ? `${CLIENT_NAME}` : 'Scale smarter.'}<br />
+            <span style={{ color: c }}>
+              {CLIENT_NAME ? 'WhatsApp CRM' : 'Close faster.'}
+            </span>
           </h1>
           <p className="mt-4 text-base text-white/40 max-w-sm leading-relaxed">
             Your WhatsApp CRM — built for teams that move fast and convert faster.
@@ -103,11 +108,17 @@ function LoginPageInner() {
                 key={s.label}
                 className="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm backdrop-blur-sm"
               >
-                <span className="font-semibold text-[#39ff14]">{s.value}</span>
+                <span className="font-semibold" style={{ color: c }}>{s.value}</span>
                 <span className="ml-1.5 text-white/50">{s.label}</span>
               </div>
             ))}
           </div>
+
+          {/* Built by */}
+          <p className="mt-10 text-xs text-white/20">
+            Built by{" "}
+            <span className="text-white/40 font-medium">The Scale Agency</span>
+          </p>
         </div>
       </div>
 
@@ -123,14 +134,17 @@ function LoginPageInner() {
               width={80}
               height={80}
               priority
-              className="rounded-xl object-cover ring-1 ring-white/10"
+              className="rounded-xl object-contain ring-1 ring-white/10"
             />
           </div>
 
           {inviteToken ? (
             <div className="mb-6 flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#39ff14]/10 ring-1 ring-[#39ff14]/20">
-                <UsersRound className="h-5 w-5 text-[#39ff14]" />
+              <div
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1"
+                style={{ background: `${c}1a`, borderColor: `${c}33` }}
+              >
+                <UsersRound className="h-5 w-5" style={{ color: c }} />
               </div>
               <div>
                 <p className="text-sm font-semibold text-white">You&apos;re invited</p>
@@ -162,7 +176,8 @@ function LoginPageInner() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="h-11 border-white/10 bg-white/5 text-white placeholder:text-white/20 focus-visible:border-[#39ff14]/50 focus-visible:ring-[#39ff14]/10 rounded-xl"
+                className="h-11 border-white/10 bg-white/5 text-white placeholder:text-white/20 rounded-xl"
+                style={{ ['--tw-ring-color' as string]: `${c}1a` }}
               />
             </div>
 
@@ -171,7 +186,7 @@ function LoginPageInner() {
                 <Label htmlFor="password" className="text-xs font-medium text-white/50 uppercase tracking-wider">
                   Password
                 </Label>
-                <Link href="/forgot-password" className="text-xs text-[#39ff14]/70 hover:text-[#39ff14] transition-colors">
+                <Link href="/forgot-password" className="text-xs transition-colors" style={{ color: `${c}b3` }}>
                   Forgot password?
                 </Link>
               </div>
@@ -182,7 +197,7 @@ function LoginPageInner() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="h-11 border-white/10 bg-white/5 text-white placeholder:text-white/20 focus-visible:border-[#39ff14]/50 focus-visible:ring-[#39ff14]/10 rounded-xl"
+                className="h-11 border-white/10 bg-white/5 text-white placeholder:text-white/20 rounded-xl"
               />
             </div>
 
@@ -192,10 +207,10 @@ function LoginPageInner() {
               className="mt-2 h-11 w-full rounded-xl font-semibold text-sm transition-all"
               style={{
                 background: loading
-                  ? "rgba(57,255,20,0.3)"
-                  : "linear-gradient(135deg, #39ff14 0%, #22c55e 100%)",
+                  ? `${c}4d`
+                  : `linear-gradient(135deg, ${c} 0%, ${c}cc 100%)`,
                 color: "#080808",
-                boxShadow: loading ? "none" : "0 0 24px rgba(57,255,20,0.3)",
+                boxShadow: loading ? "none" : `0 0 24px ${c}4d`,
               }}
             >
               {loading ? "Signing in..." : "Sign in"}
@@ -206,10 +221,16 @@ function LoginPageInner() {
             Don&apos;t have an account?{" "}
             <Link
               href={inviteToken ? `/signup?invite=${encodeURIComponent(inviteToken)}` : "/signup"}
-              className="text-[#39ff14]/70 hover:text-[#39ff14] transition-colors"
+              className="transition-colors"
+              style={{ color: `${c}b3` }}
             >
               Create account
             </Link>
+          </p>
+
+          {/* Built by — mobile */}
+          <p className="mt-8 text-center text-xs text-white/20 lg:hidden">
+            Built by <span className="text-white/40 font-medium">The Scale Agency</span>
           </p>
         </div>
       </div>

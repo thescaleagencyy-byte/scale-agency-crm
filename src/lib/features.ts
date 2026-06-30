@@ -24,6 +24,8 @@ export const CLIENT_NAME = process.env.NEXT_PUBLIC_CLIENT_NAME ?? ''
 export const CLIENT_INDUSTRY = process.env.NEXT_PUBLIC_CLIENT_INDUSTRY ?? ''
 // Human-readable app name shown in UI copy (invites, dialogs, config pages).
 export const APP_NAME = CLIENT_NAME ? `${CLIENT_NAME} Dashboard` : 'Scale Agency CRM'
+// Primary brand color for client deployments. Falls back to Scale Agency neon green.
+export const PRIMARY_COLOR = process.env.NEXT_PUBLIC_PRIMARY_COLOR ?? '#39ff14'
 
 // Path → feature key map used by middleware to block disabled routes.
 export const PATH_FEATURE_MAP: Record<string, string> = {
