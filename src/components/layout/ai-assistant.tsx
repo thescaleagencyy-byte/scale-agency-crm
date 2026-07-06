@@ -287,6 +287,9 @@ export function AIAssistant() {
                 <Send className="h-4 w-4" />
               </button>
             </div>
+            <p className="mt-2 text-center text-[10px] text-muted-foreground/50">
+              Powered by <span className="font-semibold text-muted-foreground/80">The Scale Agency</span>
+            </p>
           </div>
         </div>
       )}

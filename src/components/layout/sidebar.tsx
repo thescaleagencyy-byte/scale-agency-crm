@@ -365,6 +365,16 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
           </ul>
         </nav>
 
+        {/* Agency credit — the quiet referral engine on every screen. */}
+        <div className="shrink-0 border-t border-border px-6 py-2.5">
+          <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/50">
+            Powered by
+          </p>
+          <p className="bg-gradient-to-r from-primary to-primary/50 bg-clip-text text-[11px] font-bold tracking-wide text-transparent">
+            The Scale Agency
+          </p>
+        </div>
+
         {/* User section */}
         <div className="shrink-0 border-t border-border p-3">
           {/* Account name display — surfaced only when the account

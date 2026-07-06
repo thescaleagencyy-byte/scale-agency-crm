@@ -124,6 +124,13 @@ export default function ForgotPasswordPage() {
             <ArrowLeft className="h-4 w-4" />
             Back to sign in
           </Link>
+
+          <p className="mt-6 text-center text-xs text-muted-foreground/60">
+            Powered by{" "}
+            <span className="font-semibold text-muted-foreground">
+              The Scale Agency
+            </span>
+          </p>
         </CardContent>
       </Card>
     </div>

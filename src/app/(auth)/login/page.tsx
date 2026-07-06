@@ -116,7 +116,7 @@ function LoginPageInner() {
 
           {/* Built by */}
           <p className="mt-10 text-xs text-white/20">
-            Built by{" "}
+            Powered by{" "}
             <span className="text-white/40 font-medium">The Scale Agency</span>
           </p>
         </div>
@@ -230,7 +230,7 @@ function LoginPageInner() {
 
           {/* Built by — mobile */}
           <p className="mt-8 text-center text-xs text-white/20 lg:hidden">
-            Built by <span className="text-white/40 font-medium">The Scale Agency</span>
+            Powered by <span className="text-white/40 font-medium">The Scale Agency</span>
           </p>
         </div>
       </div>
