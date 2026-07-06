@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Space_Grotesk } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { ThemeProvider } from "@/hooks/use-theme";
@@ -16,21 +16,36 @@ import {
 const inter = Inter({
   variable: "--font-sans",
   subsets: ["latin"],
+  display: "swap",
 });
+
+// Display face for headings, hero copy, and big metric numbers.
+// Geometric grotesk — reads "engineered" next to Inter's neutral body.
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-display",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const _clientName = process.env.NEXT_PUBLIC_CLIENT_NAME
+const _appTitle = _clientName ? `${_clientName} Dashboard` : "The Scale Agency"
+const _clientIcon = _clientName
+  ? `/clients/${_clientName.toLowerCase().replace(/\s+/g, '')}.png`
+  : "/icon.png"
 
 export const metadata: Metadata = {
   title: {
-    default: "The Scale Agency",
-    template: "%s — The Scale Agency",
+    default: _appTitle,
+    template: `%s — ${_appTitle}`,
   },
-  description: "The Scale Agency CRM",
+  description: `${_appTitle} — powered by The Scale Agency`,
   robots: {
     index: false,
     follow: false,
   },
   icons: {
-    icon: [{ url: "/icon.png", type: "image/png" }],
-    apple: [{ url: "/icon.png" }],
+    icon: [{ url: _clientIcon, type: "image/png" }],
+    apple: [{ url: _clientIcon }],
   },
   formatDetection: {
     email: false,
@@ -86,7 +101,7 @@ export default function RootLayout({
       lang="en"
       data-theme={DEFAULT_THEME}
       data-mode={DEFAULT_MODE}
-      className={`${inter.variable} h-full antialiased`}
+      className={`${inter.variable} ${spaceGrotesk.variable} h-full antialiased`}
       // The `theme-boot` script below rewrites `data-theme` and
       // `data-mode` on <html> from localStorage before React hydrates,
       // so for any non-default choice the client DOM intentionally

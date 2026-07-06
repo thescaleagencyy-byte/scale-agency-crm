@@ -27,7 +27,6 @@ import {
   BarChart3,
   CalendarDays,
   QrCode,
-  Route,
   Brain,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
@@ -100,24 +99,56 @@ interface NavItem {
   beta?: boolean;
 }
 
-const ALL_NAV_ITEMS: NavItem[] = [
-  { href: "/dashboard",    label: "Dashboard",     icon: LayoutDashboard, feature: "dashboard" },
-  { href: "/inbox",        label: "Inbox",         icon: MessageSquare,   feature: "inbox" },
-  { href: "/contacts",     label: "Contacts",      icon: Users,           feature: "contacts" },
-  { href: "/leads",        label: "Leads",         icon: TrendingUp,      feature: "leads" },
-  { href: "/pipelines",    label: "Pipelines",     icon: GitBranch,       feature: "pipelines" },
-  { href: "/broadcasts",   label: "Broadcasts",    icon: Radio,           feature: "broadcasts" },
-  { href: "/drip",         label: "Drip Campaigns",icon: Zap,             feature: "drip" },
-  { href: "/appointments", label: "Appointments",  icon: CalendarDays,    feature: "appointments" },
-  { href: "/analytics",    label: "Analytics",     icon: BarChart3,       feature: "analytics" },
-  { href: "/qr-codes",     label: "QR Codes",      icon: QrCode,          feature: "qr-codes" },
-  { href: "/flows-builder",label: "Flow Builder",  icon: Brain,           feature: "flows" },
-  { href: "/automations",  label: "Automations",   icon: Zap,             feature: "automations" },
-  { href: "/flows",        label: "Flows",         icon: Workflow,        feature: "flows" },
-  { href: "/n8n",          label: "n8n",           icon: Workflow,        feature: "n8n" },
+interface NavGroup {
+  /** Section label rendered above the group. Empty string = no label. */
+  label: string;
+  items: NavItem[];
+}
+
+// Grouped by job-to-be-done: see the business → talk to customers →
+// reach out at scale → let the machines work. Groups whose items are
+// all feature-gated off disappear entirely (label included).
+const ALL_NAV_GROUPS: NavGroup[] = [
+  {
+    label: "Overview",
+    items: [
+      { href: "/dashboard",    label: "Dashboard",     icon: LayoutDashboard, feature: "dashboard" },
+      { href: "/analytics",    label: "Analytics",     icon: BarChart3,       feature: "analytics" },
+    ],
+  },
+  {
+    label: "Engage",
+    items: [
+      { href: "/inbox",        label: "Inbox",         icon: MessageSquare,   feature: "inbox" },
+      { href: "/contacts",     label: "Contacts",      icon: Users,           feature: "contacts" },
+      { href: "/leads",        label: "Leads",         icon: TrendingUp,      feature: "leads" },
+      { href: "/pipelines",    label: "Pipelines",     icon: GitBranch,       feature: "pipelines" },
+      { href: "/appointments", label: "Appointments",  icon: CalendarDays,    feature: "appointments" },
+    ],
+  },
+  {
+    label: "Outreach",
+    items: [
+      { href: "/broadcasts",   label: "Broadcasts",    icon: Radio,           feature: "broadcasts" },
+      { href: "/drip",         label: "Drip Campaigns",icon: Zap,             feature: "drip" },
+      { href: "/qr-codes",     label: "QR Codes",      icon: QrCode,          feature: "qr-codes" },
+    ],
+  },
+  {
+    label: "Automate",
+    items: [
+      { href: "/flows-builder",label: "Flow Builder",  icon: Brain,           feature: "flows" },
+      { href: "/automations",  label: "Automations",   icon: Zap,             feature: "automations" },
+      { href: "/flows",        label: "Flows",         icon: Workflow,        feature: "flows" },
+      { href: "/n8n",          label: "n8n",           icon: Workflow,        feature: "n8n" },
+    ],
+  },
 ];
 
-const navItems = ALL_NAV_ITEMS.filter((item) => !item.feature || hasFeature(item.feature));
+const navGroups = ALL_NAV_GROUPS.map((g) => ({
+  ...g,
+  items: g.items.filter((item) => !item.feature || hasFeature(item.feature)),
+})).filter((g) => g.items.length > 0);
 
 const bottomNavItems = [
   { href: "/settings", label: "Settings", icon: Settings },
@@ -200,7 +231,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
       >
         {/* Brand glow — subtle primary halo at the top of the sidebar */}
         <div className="pointer-events-none absolute left-0 right-0 top-0 h-32 rounded-t-none opacity-60"
-          style={{ background: 'radial-gradient(ellipse 120% 60% at 50% 0%, oklch(0.794 0.247 143 / 0.18) 0%, transparent 100%)' }}
+          style={{ background: 'radial-gradient(ellipse 120% 60% at 50% 0%, color-mix(in oklab, var(--primary) 18%, transparent) 0%, transparent 100%)' }}
         />
 
         {/* Logo row. On mobile we put a close button here; on desktop the
@@ -218,7 +249,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                   className="rounded-full object-cover shrink-0"
                 />
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-bold text-foreground leading-tight">{CLIENT_NAME}</p>
+                  <p className="truncate font-heading text-sm font-bold leading-tight tracking-tight text-foreground">{CLIENT_NAME}</p>
                   {CLIENT_INDUSTRY && (
                     <p className="text-[10px] font-medium uppercase tracking-widest text-primary/70 leading-tight mt-0.5">{CLIENT_INDUSTRY}</p>
                   )}
@@ -252,51 +283,62 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
 
         {/* Main navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-4">
-          <ul className="flex flex-col gap-1">
-            {navItems.map((item) => {
-              const isActive =
-                pathname === item.href ||
-                (item.href !== "/dashboard" && pathname.startsWith(item.href));
+          {navGroups.map((group, gi) => (
+            <div key={group.label} className={gi > 0 ? "mt-5" : undefined}>
+              <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/60">
+                {group.label}
+              </p>
+              <ul className="flex flex-col gap-0.5">
+                {group.items.map((item) => {
+                  const isActive =
+                    pathname === item.href ||
+                    (item.href !== "/dashboard" && pathname.startsWith(item.href));
 
-              const showUnreadDot =
-                item.href === "/inbox" && totalUnread > 0 && !isActive;
+                  const showUnreadDot =
+                    item.href === "/inbox" && totalUnread > 0 && !isActive;
 
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className={cn(
-                      // Taller on mobile so fingers can hit the row reliably (≥44px).
-                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors lg:py-2",
-                      isActive
-                        ? "bg-primary/10 text-primary"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                    )}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    <span className="flex-1">{item.label}</span>
-                    {item.beta && (
-                      <span
-                        aria-label="Beta feature"
-                        className="rounded-full border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-amber-300"
+                  return (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        className={cn(
+                          // Taller on mobile so fingers can hit the row reliably (≥44px).
+                          "relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors lg:py-2",
+                          isActive
+                            ? "bg-primary/10 text-primary"
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                        )}
                       >
-                        Beta
-                      </span>
-                    )}
-                    {showUnreadDot && (
-                      <span
-                        aria-label={`${totalUnread} unread conversation${totalUnread === 1 ? "" : "s"}`}
-                        className="relative flex h-2 w-2"
-                      >
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
-                        <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
-                      </span>
-                    )}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+                        {/* Active rail — anchors the pill to the sidebar edge. */}
+                        {isActive && (
+                          <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-primary" />
+                        )}
+                        <item.icon className="h-4 w-4" />
+                        <span className="flex-1">{item.label}</span>
+                        {item.beta && (
+                          <span
+                            aria-label="Beta feature"
+                            className="rounded-full border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-amber-300"
+                          >
+                            Beta
+                          </span>
+                        )}
+                        {showUnreadDot && (
+                          <span
+                            aria-label={`${totalUnread} unread conversation${totalUnread === 1 ? "" : "s"}`}
+                            className="relative flex h-2 w-2"
+                          >
+                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+                            <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+                          </span>
+                        )}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
 
           <div className="my-4 border-t border-border" />
 
