@@ -43,8 +43,12 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
       <Sidebar open={sidebarOpen} onClose={closeSidebar} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header onOpenSidebar={() => setSidebarOpen(true)} />
-        {/* Thinner horizontal padding on mobile so cards have room to breathe. */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6">{children}</main>
+        {/* Thinner horizontal padding on mobile so cards have room to
+            breathe; capped width on ultra-wide monitors so charts and
+            cards don't stretch into unreadable proportions. */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+          <div className="mx-auto w-full max-w-[1440px]">{children}</div>
+        </main>
       </div>
     </div>
   );

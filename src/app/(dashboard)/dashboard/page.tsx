@@ -120,15 +120,13 @@ export default function DashboardPage() {
     [series],
   )
 
-  const hour = new Date().getHours()
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
-
   const heroLabel = CLIENT_NAME || 'the scale agency™'
 
   const labels = (() => {
-    const ind = CLIENT_INDUSTRY.toLowerCase()
-    if (ind.includes('restaurant') || ind.includes('food')) return {
-      heroTagline:          'Your orders, reservations & guest messages — live.',
+    const ind = (CLIENT_INDUSTRY || CLIENT_NAME).toLowerCase()
+    if (ind.includes('restaurant') || ind.includes('food') || ind.includes('pulao') || ind.includes('sultan')) return {
+      heroHeadline:         'Order Operations',
+      heroTagline:          'Orders, reservations & guest WhatsApp — live.',
       activeConversations:  'Active Order Chats',
       newContacts:          'New Customers Today',
       openDeals:            'Active Orders Value',
@@ -140,18 +138,20 @@ export default function DashboardPage() {
       pipelineSubtitle:     'Active orders by stage',
     }
     if (ind.includes('logistic') || ind.includes('transport') || ind.includes('car') || ind.includes('wheel')) return {
-      heroTagline:          'Your fleet, leads & delivery messages — live.',
-      activeConversations:  'Active Lead Chats',
-      newContacts:          'New Leads Today',
-      openDeals:            'Open Quotes Value',
+      heroHeadline:         'Rental Operations',
+      heroTagline:          'Rental inquiries, lead pipeline & client WhatsApp — live.',
+      activeConversations:  'Active Inquiries',
+      newContacts:          'New Inquiries Today',
+      openDeals:            'Open Rental Quotes',
       dealWord:             'quote',
-      messagesSent:         'Replies Sent Today',
-      chartTitle:           'Lead Inquiries Over Time',
-      chartSubtitle:        'Daily lead & enquiry volume',
-      pipelineTitle:        'Lead Pipeline',
-      pipelineSubtitle:     'Leads by stage',
+      messagesSent:         'Responses Sent Today',
+      chartTitle:           'Rental Inquiries Over Time',
+      chartSubtitle:        'Daily inquiry & response volume',
+      pipelineTitle:        'Quote Pipeline',
+      pipelineSubtitle:     'Active quotes by stage',
     }
     return {
+      heroHeadline:         'Operations Dashboard',
       heroTagline:          'Your WhatsApp pipeline — live and ready.',
       activeConversations:  'Active Conversations',
       newContacts:          'New Contacts Today',
@@ -165,34 +165,60 @@ export default function DashboardPage() {
     }
   })()
 
+  const firstName = (profile?.full_name ?? '').trim().split(/\s+/)[0] || null
+  const hour = new Date().getHours()
+  const greeting =
+    hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+  const dateLine = new Date().toLocaleDateString(undefined, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  })
+
   return (
     <div className="space-y-5">
       {/* Branded hero */}
-      <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-card px-6 py-5">
+      <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-card via-card to-primary/[0.06] px-6 py-7 sm:px-8">
         {/* Glow orbs */}
-        <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-primary opacity-[0.07] blur-[80px]" />
-        <div className="pointer-events-none absolute -bottom-8 left-1/3 h-32 w-48 rounded-full bg-primary opacity-[0.05] blur-[60px]" />
+        <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-primary opacity-[0.10] blur-[90px]" />
+        <div className="pointer-events-none absolute -bottom-12 left-1/4 h-40 w-64 rounded-full bg-primary opacity-[0.06] blur-[70px]" />
         {/* Grid overlay */}
         <div
-          className="pointer-events-none absolute inset-0 opacity-[0.025] rounded-2xl"
+          className="pointer-events-none absolute inset-0 rounded-2xl opacity-[0.03]"
           style={{
-            backgroundImage: 'linear-gradient(var(--color-primary, #33df33) 1px, transparent 1px), linear-gradient(90deg, var(--color-primary, #33df33) 1px, transparent 1px)',
+            backgroundImage: 'linear-gradient(var(--primary) 1px, transparent 1px), linear-gradient(90deg, var(--primary) 1px, transparent 1px)',
             backgroundSize: '40px 40px',
+            maskImage: 'radial-gradient(ellipse 80% 100% at 70% 0%, black 30%, transparent 100%)',
           }}
         />
-        <div className="relative z-10 flex items-center justify-between gap-4 flex-wrap">
+        <div className="relative z-10 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-primary/70 mb-1">{heroLabel}</p>
-            <h1 className="text-2xl font-bold text-foreground leading-tight">
-              {greeting}{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}.
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-primary/80">
+              {heroLabel} · {dateLine}
+            </p>
+            <h1 className="font-heading text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl">
+              {greeting}
+              {firstName ? (
+                <>
+                  ,{' '}
+                  <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                    {firstName}
+                  </span>
+                </>
+              ) : null}
             </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
               {labels.heroTagline}
             </p>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-            <span className="text-xs font-medium text-primary">Live</span>
+          <div className="flex shrink-0 items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3.5 py-1.5">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-70" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+            </span>
+            <span className="text-xs font-semibold text-primary">
+              {labels.heroHeadline} · Live
+            </span>
           </div>
         </div>
       </div>

@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo, type ReactNode } from 'react';
+import { Component, Suspense, useMemo, type ReactNode } from 'react';
+import { Loader2 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import { useAuth } from '@/hooks/use-auth';
@@ -12,6 +13,7 @@ import { SecurityPanel } from '@/components/settings/security-panel';
 import { AppearancePanel } from '@/components/settings/appearance-panel';
 import { WhatsAppConfig } from '@/components/settings/whatsapp-config';
 import { N8nConfig } from '@/components/settings/n8n-config';
+import { AIConfigPanel } from '@/components/settings/ai-config-panel';
 import { TemplateManager } from '@/components/settings/template-manager';
 import { FieldsAndTagsPanel } from '@/components/settings/fields-and-tags-panel';
 import { DealsSettings } from '@/components/settings/deals-settings';
@@ -27,16 +29,55 @@ import {
   type SettingsSection,
 } from '@/components/settings/settings-sections';
 
+interface PanelEBState { hasError: boolean }
+class PanelErrorBoundary extends Component<{ children: ReactNode; label: string }, PanelEBState> {
+  constructor(props: { children: ReactNode; label: string }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError(): PanelEBState { return { hasError: true }; }
+  componentDidCatch(err: unknown, info: { componentStack?: string }) {
+    console.error(`[Settings] panel "${this.props.label}" crashed:`, err, info.componentStack ?? '');
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-6 text-sm">
+          <p className="font-semibold text-destructive">This section failed to load.</p>
+          <button
+            type="button"
+            className="mt-2 text-xs text-destructive underline"
+            onClick={() => this.setState({ hasError: false })}
+          >
+            Retry
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function SettingsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="size-6 animate-spin text-muted-foreground" />
+        </div>
+      }
+    >
+      <SettingsPageInner />
+    </Suspense>
+  );
+}
+
+function SettingsPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { defaultCurrency } = useAuth();
   const { mode } = useTheme();
 
-  // The URL (`?tab=`) is the single source of truth for the active
-  // section — deep-linkable, and it keeps the existing links in the
-  // app sidebar/header working. Legacy tab values (tags, custom-fields)
-  // resolve onto their new home; unknown/empty → the Overview landing.
   const section = resolveSection(searchParams.get('tab'));
 
   const go = (next: SettingsSection) => {
@@ -45,9 +86,6 @@ export default function SettingsPage() {
     router.replace(`/settings?${params.toString()}`, { scroll: false });
   };
 
-  // Cheap, fetch-free rail hints. The Overview landing carries the
-  // full live status/counts; the rail just surfaces the two that are
-  // already in context.
   const hints: Partial<Record<SettingsSection, ReactNode>> = useMemo(
     () => ({
       appearance: mode.charAt(0).toUpperCase() + mode.slice(1),
@@ -63,6 +101,7 @@ export default function SettingsPage() {
     appearance: <AppearancePanel />,
     whatsapp: <WhatsAppConfig />,
     n8n: <N8nConfig />,
+    ai: <AIConfigPanel />,
     templates: <TemplateManager />,
     'saved-replies': <SavedRepliesPanel />,
     routing: <RoutingRulesPanel />,
@@ -89,7 +128,11 @@ export default function SettingsPage() {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[236px_minmax(0,1fr)] lg:items-start">
         <SettingsRail active={section} onSelect={go} hints={hints} />
-        <div className="min-w-0">{panel[section]}</div>
+        <div className="min-w-0">
+          <PanelErrorBoundary key={section} label={section}>
+            {panel[section]}
+          </PanelErrorBoundary>
+        </div>
       </div>
     </div>
   );

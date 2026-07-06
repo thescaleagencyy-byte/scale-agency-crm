@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
+import Anthropic from '@anthropic-ai/sdk';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/server';
 import { getOpenAIClient } from '@/lib/openai/client';
+import { decryptText } from '@/lib/crypto';
 
 // ============================================================
 // /api/ai/assistant — ad-hoc business Q&A chat ("AshWheelz AI").
@@ -168,14 +170,6 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const openai = getOpenAIClient();
-    if (!openai) {
-      return NextResponse.json(
-        { error: 'AI is not configured. Add OPENAI_API_KEY to the deployment.' },
-        { status: 400 },
-      );
-    }
-
     const body = (await request.json().catch(() => null)) as {
       question?: unknown;
       history?: HistoryMessage[];
@@ -192,49 +186,93 @@ export async function POST(request: Request) {
     const account = Array.isArray(profile?.account) ? profile?.account[0] : profile?.account;
     const currency = (account as { default_currency?: string } | null)?.default_currency ?? 'PKR';
 
+    // Engine selection: the workspace Claude key (Settings → AI
+    // Insights) wins; the deployment-wide OpenAI env key is the
+    // fallback so the widget keeps working before a key is saved.
+    let claudeKey: string | null = null;
+    if (profile?.account_id) {
+      const { data: aiConfig } = await supabase
+        .from('ai_config')
+        .select('claude_api_key')
+        .eq('account_id', profile.account_id)
+        .maybeSingle();
+      if (aiConfig?.claude_api_key) {
+        try {
+          claudeKey = decryptText(aiConfig.claude_api_key);
+        } catch {
+          claudeKey = null; // rotated encryption key — fall back
+        }
+      }
+    }
+    const openai = claudeKey ? null : getOpenAIClient();
+    if (!claudeKey && !openai) {
+      return NextResponse.json(
+        { error: 'AI is not configured. Add your Claude API key in Settings → AI Insights.' },
+        { status: 400 },
+      );
+    }
+
     const dataContext = await buildDataContext(supabase, currency);
 
-    // Data context rides in the first user turn only; follow-ups lean
-    // on chat history, mirroring how the widget resends the thread.
-    const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
-      {
-        role: 'system',
-        content: `You are AshWheelz AI — business data terminal for AshWheelz, a car dealership using this WhatsApp CRM.
+    const systemPrompt = `You are AshWheelz AI — business data terminal for AshWheelz, a car dealership using this WhatsApp CRM.
 
 REPLY FORMAT — non-negotiable:
 • Bullet points only. NO paragraphs. Max 8 bullet lines.
 • Lead each bullet with the number/fact in **bold**.
 • No intro, no outro, no "based on the data".
 • Money in ${currency}.
-• If data can't answer the question, say so in one bullet and suggest the closest answerable metric.`,
-      },
-      ...(history.length > 0
+• If data can't answer the question, say so in one bullet and suggest the closest answerable metric.`;
+
+    // Data context rides in the first user turn only; follow-ups lean
+    // on chat history, mirroring how the widget resends the thread.
+    const turns: { role: 'user' | 'assistant'; content: string }[] =
+      history.length > 0
         ? [
             {
-              role: 'user' as const,
+              role: 'user',
               content: `[BUSINESS DATA]\n${dataContext}\n[END DATA]\n\n${history[0].content}`,
             },
             ...history.slice(1).map((m) => ({ role: m.role, content: m.content })),
-            { role: 'user' as const, content: question },
+            { role: 'user', content: question },
           ]
         : [
             {
-              role: 'user' as const,
+              role: 'user',
               content: `[BUSINESS DATA]\n${dataContext}\n[END DATA]\n\n${question}`,
             },
-          ]),
-    ];
+          ];
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages,
-      max_tokens: 600,
-    });
+    let answer: string | undefined;
+    let tokensUsed: number | null = null;
 
-    const answer = completion.choices[0]?.message?.content?.trim();
+    if (claudeKey) {
+      const anthropic = new Anthropic({ apiKey: claudeKey });
+      const response = await anthropic.messages.create({
+        model: 'claude-opus-4-8',
+        max_tokens: 600,
+        thinking: { type: 'adaptive' },
+        system: systemPrompt,
+        messages: turns,
+      });
+      answer = response.content
+        .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+        .map((b) => b.text)
+        .join('')
+        .trim();
+      tokensUsed = response.usage.input_tokens + response.usage.output_tokens;
+    } else if (openai) {
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'system' as const, content: systemPrompt }, ...turns],
+        max_tokens: 600,
+      });
+      answer = completion.choices[0]?.message?.content?.trim();
+      tokensUsed = completion.usage?.total_tokens ?? null;
+    }
+
     if (!answer) return NextResponse.json({ error: 'AI returned an empty answer' }, { status: 500 });
 
-    return NextResponse.json({ answer, tokensUsed: completion.usage?.total_tokens ?? null });
+    return NextResponse.json({ answer, tokensUsed });
   } catch (err) {
     console.error('[ai/assistant POST]', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });

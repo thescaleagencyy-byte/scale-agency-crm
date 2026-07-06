@@ -56,6 +56,7 @@ import { RequireRole } from '@/components/auth/require-role';
 import { useAuth } from '@/hooks/use-auth';
 import type { AccountRole } from '@/lib/auth/roles';
 import { InviteMemberDialog } from './invite-member-dialog';
+import { AddMemberDialog } from './add-member-dialog';
 import { SettingsPanelHead } from './settings-panel-head';
 import { ROLE_META } from './role-meta';
 
@@ -116,6 +117,7 @@ export function MembersTab() {
   const [loading, setLoading] = useState(true);
 
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
   const [removingMember, setRemovingMember] = useState<Member | null>(null);
   const [pendingMemberAction, setPendingMemberAction] = useState<string | null>(
     null,
@@ -268,10 +270,15 @@ export function MembersTab() {
         description="People with access to this account. Roles control what each teammate can do."
         action={
           <RequireRole min="admin">
-            <Button onClick={() => setInviteOpen(true)}>
-              <Plus className="size-4" />
-              Invite member
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" onClick={() => setInviteOpen(true)}>
+                Invite via link
+              </Button>
+              <Button onClick={() => setAddOpen(true)}>
+                <Plus className="size-4" />
+                Add member
+              </Button>
+            </div>
           </RequireRole>
         }
       />
@@ -498,6 +505,12 @@ export function MembersTab() {
       <InviteMemberDialog
         open={inviteOpen}
         onOpenChange={setInviteOpen}
+        onCreated={loadEverything}
+      />
+
+      <AddMemberDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
         onCreated={loadEverything}
       />
 

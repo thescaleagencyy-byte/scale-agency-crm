@@ -15,6 +15,7 @@ import {
   Route,
   ShieldCheck,
   Brush,
+  Sparkles,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -34,6 +35,7 @@ export const SETTINGS_SECTIONS = [
   'whatsapp',
   'number-health',
   'n8n',
+  'ai',
   'templates',
   'saved-replies',
   'routing',
@@ -65,6 +67,7 @@ export const SECTION_META: Record<SettingsSection, SectionMeta> = {
   whatsapp: { id: 'whatsapp', label: 'WhatsApp', icon: PlugZap, group: 'workspace' },
   'number-health': { id: 'number-health', label: 'Number Health', icon: ShieldCheck, group: 'workspace' },
   n8n: { id: 'n8n', label: 'n8n', icon: Workflow, group: 'workspace' },
+  ai: { id: 'ai', label: 'AI Insights', icon: Sparkles, group: 'workspace' },
   templates: { id: 'templates', label: 'Templates', icon: FileText, group: 'workspace' },
   'saved-replies': { id: 'saved-replies', label: 'Saved Replies', icon: MessageSquareText, group: 'workspace' },
   routing: { id: 'routing', label: 'Routing Rules', icon: Route, group: 'workspace' },
