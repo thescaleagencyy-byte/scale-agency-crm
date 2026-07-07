@@ -66,7 +66,11 @@ export const SECTION_META: Record<SettingsSection, SectionMeta> = {
   security: { id: 'security', label: 'Login & security', icon: Shield, group: 'account' },
   appearance: { id: 'appearance', label: 'Appearance', icon: Palette, group: 'account' },
   whatsapp: { id: 'whatsapp', label: 'WhatsApp', icon: PlugZap, group: 'workspace' },
-  'number-health': { id: 'number-health', label: 'Number Health', icon: ShieldCheck, group: 'workspace' },
+  // Account group (not workspace): on client deployments this is the
+  // only WhatsApp surface left after the credentials tab was hidden,
+  // and users look for "is my number healthy?" next to their own
+  // profile, not buried in workspace config.
+  'number-health': { id: 'number-health', label: 'Number Health', icon: ShieldCheck, group: 'account' },
   n8n: { id: 'n8n', label: 'n8n', icon: Workflow, group: 'workspace' },
   ai: { id: 'ai', label: 'AI Insights', icon: Sparkles, group: 'workspace' },
   templates: { id: 'templates', label: 'Templates', icon: FileText, group: 'workspace' },
@@ -103,12 +107,18 @@ export const RAIL_GROUPS: { label: string | null; group: SectionMeta['group'] }[
  * read-only status view for the team; credential changes go through
  * the agency.
  *
- * `saved-replies`, `deals`, `branding` are hidden the same way as
- * `whatsapp`: each is a one-time setup choice for a client deployment
- * (canned-reply library the client doesn't run, currency fixed to the
- * client's own currency, white-label branding that only makes sense
- * on the agency's own resold install), so exposing an always-editable
- * settings tab for it is surface area without a use case.
+ * `saved-replies`, `deals`, `branding`, `webhooks` are hidden the same
+ * way as `whatsapp`: each is a one-time setup choice for a client
+ * deployment (canned-reply library the client doesn't run, currency
+ * fixed to the client's own currency, white-label branding and
+ * webhook/API keys that only the agency touches), so exposing an
+ * always-editable settings tab for it is surface area without a use
+ * case.
+ *
+ * `fields` loses its own rail item on client deployments too — the
+ * Fields & tags panel renders inside the Appearance tab instead
+ * (tag colours read as "how my dashboard looks" to a client team),
+ * see settings/page.tsx. resolveSection maps the old deep link.
  */
 const AGENCY_ONLY_SECTIONS: readonly SettingsSection[] = [
   'workspaces',
@@ -118,6 +128,8 @@ const AGENCY_ONLY_SECTIONS: readonly SettingsSection[] = [
   'saved-replies',
   'deals',
   'branding',
+  'webhooks',
+  'fields',
 ];
 
 /** The rail + overview should only ever render these. */
@@ -141,7 +153,10 @@ function isSection(value: string | null): value is SettingsSection {
  * Overview landing.
  */
 export function resolveSection(raw: string | null): SettingsSection {
-  if (raw === 'tags' || raw === 'custom-fields') return 'fields';
+  if (raw === 'tags' || raw === 'custom-fields') raw = 'fields';
+  // Client deployments fold Fields & tags into the Appearance tab —
+  // keep old deep links landing there instead of bouncing to Overview.
+  if (raw === 'fields' && !isVisibleSection('fields')) return 'appearance';
   if (isSection(raw) && isVisibleSection(raw)) return raw;
   return DEFAULT_SECTION;
 }

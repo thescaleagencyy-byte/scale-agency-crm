@@ -28,6 +28,7 @@ import {
   resolveSection,
   type SettingsSection,
 } from '@/components/settings/settings-sections';
+import { FEATURE_GATING_ENABLED } from '@/lib/features';
 
 interface PanelEBState { hasError: boolean }
 class PanelErrorBoundary extends Component<{ children: ReactNode; label: string }, PanelEBState> {
@@ -98,7 +99,17 @@ function SettingsPageInner() {
     overview: <SettingsOverview onSelect={go} />,
     profile: <ProfileForm />,
     security: <SecurityPanel />,
-    appearance: <AppearancePanel />,
+    // Client deployments have no separate Fields & tags rail item —
+    // the panel folds into Appearance (tag colours read as "how my
+    // dashboard looks" there). Agency installs keep them separate.
+    appearance: FEATURE_GATING_ENABLED ? (
+      <div className="space-y-10">
+        <AppearancePanel />
+        <FieldsAndTagsPanel />
+      </div>
+    ) : (
+      <AppearancePanel />
+    ),
     whatsapp: <WhatsAppConfig />,
     n8n: <N8nConfig />,
     ai: <AIConfigPanel />,
