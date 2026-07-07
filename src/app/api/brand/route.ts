@@ -6,7 +6,7 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: profile } = await supabase.from('profiles').select('account_id').eq('id', user.id).single()
+  const { data: profile } = await supabase.from('profiles').select('account_id').eq('user_id', user.id).single()
   if (!profile?.account_id) return NextResponse.json(null)
 
   const { data } = await supabase.from('brand_config').select('*').eq('account_id', profile.account_id).maybeSingle()
@@ -18,7 +18,7 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: profile } = await supabase.from('profiles').select('account_id').eq('id', user.id).single()
+  const { data: profile } = await supabase.from('profiles').select('account_id').eq('user_id', user.id).single()
   if (!profile?.account_id) return NextResponse.json({ error: 'No account' }, { status: 400 })
 
   const body = await request.json()

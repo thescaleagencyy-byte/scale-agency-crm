@@ -79,7 +79,7 @@ export async function POST(request: Request) {
   })
 
   // 4. Get account_id from profile
-  const { data: profile } = await supabase.from('profiles').select('account_id').eq('id', user.id).single()
+  const { data: profile } = await supabase.from('profiles').select('account_id').eq('user_id', user.id).single()
   if (!profile?.account_id) return NextResponse.json({ error: 'No account found' }, { status: 400 })
 
   // 5. Upsert whatsapp_config

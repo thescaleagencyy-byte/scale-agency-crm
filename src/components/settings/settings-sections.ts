@@ -94,11 +94,20 @@ export const RAIL_GROUPS: { label: string | null; group: SectionMeta['group'] }[
  * deployment (NEXT_PUBLIC_FEATURES set) has none of the surrounding
  * surfaces these depend on, so they're noise at best and a dead
  * "nothing happens" click at worst.
+ *
+ * `whatsapp` joins this list once a deployment's number is connected:
+ * a client deployment has exactly one WhatsApp number for its entire
+ * life, configured once by the agency. Leaving the editable form live
+ * invites a teammate to fat-finger the access token or phone number ID
+ * and take the number offline — `Number Health` stays as the
+ * read-only status view for the team; credential changes go through
+ * the agency.
  */
 const AGENCY_ONLY_SECTIONS: readonly SettingsSection[] = [
   'workspaces',
   'templates',
   'routing',
+  'whatsapp',
 ];
 
 /** The rail + overview should only ever render these. */

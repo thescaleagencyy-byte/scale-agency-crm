@@ -10,7 +10,7 @@ export async function GET() {
   const { data: profile } = await supabase
     .from('profiles')
     .select('account_id')
-    .eq('id', user.id)
+    .eq('user_id', user.id)
     .single()
 
   if (!profile?.account_id) return NextResponse.json({ error: 'No account' }, { status: 400 })
