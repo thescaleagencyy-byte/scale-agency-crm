@@ -4,9 +4,10 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/server';
 import { getOpenAIClient } from '@/lib/openai/client';
 import { decryptText } from '@/lib/crypto';
+import { CLIENT_INDUSTRY, CLIENT_NAME } from '@/lib/features';
 
 // ============================================================
-// /api/ai/assistant — ad-hoc business Q&A chat ("AshWheelz AI").
+// /api/ai/assistant — ad-hoc business Q&A chat.
 //
 // The floating header widget POSTs { question, history } and gets
 // back a terse bullet answer grounded in live account data. All
@@ -15,6 +16,17 @@ import { decryptText } from '@/lib/crypto';
 // Message bodies are intentionally NOT included — they're
 // encrypted at rest and the widget only needs aggregates.
 // ============================================================
+
+const IS_RENTAL_INDUSTRY = (() => {
+  const ind = (CLIENT_INDUSTRY || CLIENT_NAME).toLowerCase();
+  return ind.includes('logistic') || ind.includes('transport') || ind.includes('car') || ind.includes('wheel');
+})();
+const BUSINESS_LABEL = IS_RENTAL_INDUSTRY
+  ? `${CLIENT_NAME || 'this business'}, a heavy equipment/vehicle rental business serving project sites`
+  : CLIENT_INDUSTRY
+    ? `${CLIENT_NAME || 'this business'}, a ${CLIENT_INDUSTRY.toLowerCase()} business`
+    : CLIENT_NAME || 'this business';
+const AI_LABEL = CLIENT_NAME ? `${CLIENT_NAME} AI` : 'Scale Agency AI';
 
 interface HistoryMessage {
   role: 'user' | 'assistant';
@@ -42,7 +54,7 @@ async function buildDataContext(db: SupabaseClient, currency: string): Promise<s
     await Promise.all([
       db
         .from('leads')
-        .select('customer_name, company, service_type, source, status, score, created_at')
+        .select('customer_name, company, service_type, project_site, duration, source, status, score, created_at')
         .order('created_at', { ascending: false })
         .limit(500),
       db
@@ -73,6 +85,8 @@ async function buildDataContext(db: SupabaseClient, currency: string): Promise<s
     customer_name: string | null;
     company: string | null;
     service_type: string | null;
+    project_site: string | null;
+    duration: string | null;
     source: string | null;
     status: string;
     score: number;
@@ -133,7 +147,7 @@ async function buildDataContext(db: SupabaseClient, currency: string): Promise<s
   });
   const upcoming = apptRows.filter((a) => a.start_at && a.start_at >= new Date().toISOString());
 
-  return `ASHWHEELZ — LIVE CRM DATA (currency: ${currency})
+  return `${(CLIENT_NAME || 'BUSINESS').toUpperCase()} — LIVE CRM DATA (currency: ${currency})
 Now: ${new Date().toISOString()}
 
 LEADS
@@ -141,6 +155,7 @@ LEADS
 • By status: ${JSON.stringify(count(leads, 'status'))}
 • 7d by source: ${JSON.stringify(count(leads7, 'source'))}
 • 30d by service type: ${JSON.stringify(count(leads30, 'service_type'))}
+• 30d by project site: ${JSON.stringify(count(leads30, 'project_site'))}
 • Avg score (30d): ${avgScore30}/100
 • Hot new leads (score ≥60): ${hotLeads.length ? hotLeads.join('; ') : 'none'}
 
@@ -214,7 +229,7 @@ export async function POST(request: Request) {
 
     const dataContext = await buildDataContext(supabase, currency);
 
-    const systemPrompt = `You are AshWheelz AI — business data terminal for AshWheelz, a car dealership using this WhatsApp CRM.
+    const systemPrompt = `You are ${AI_LABEL} — business data terminal for ${BUSINESS_LABEL}, using this WhatsApp CRM.
 
 REPLY FORMAT — non-negotiable:
 • Bullet points only. NO paragraphs. Max 8 bullet lines.

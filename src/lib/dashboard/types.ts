@@ -51,6 +51,17 @@ export interface ResponseTimeSummary {
   lastWeekAvg: number | null
 }
 
+export interface DemandSlice {
+  label: string
+  count: number
+}
+
+export interface SiteSlice {
+  label: string
+  count: number
+  lastActivity: string
+}
+
 export type ActivityKind =
   | 'message'
   | 'deal'

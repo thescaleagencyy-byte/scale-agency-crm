@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Loader2, Send, Sparkles, Trash2, X } from 'lucide-react';
-import { CLIENT_NAME, hasFeature } from '@/lib/features';
+import { CLIENT_INDUSTRY, CLIENT_NAME, hasFeature } from '@/lib/features';
 
 // ============================================================
 // Client AI — floating chat widget in the header.
@@ -28,11 +28,19 @@ const AI_NAME = CLIENT_NAME ? `${CLIENT_NAME} AI` : 'Scale Agency AI';
 const STORAGE_KEY = `${(CLIENT_NAME || 'scale_agency').toLowerCase().replace(/\s+/g, '_')}_ai_chat`;
 const MAX_STORED = 40;
 
+const RENTAL_INDUSTRY = (() => {
+  const ind = (CLIENT_INDUSTRY || CLIENT_NAME).toLowerCase();
+  return ind.includes('logistic') || ind.includes('transport') || ind.includes('car') || ind.includes('wheel');
+})();
+
 // Only suggest questions about surfaces this deployment actually has —
 // a gated-off feature would make the AI answer about data the user
-// can't open anywhere in the UI.
+// can't open anywhere in the UI. Rental deployments get equipment/site
+// prompts instead of generic pipeline language that doesn't apply.
 const SUGGESTIONS = [
-  ...(hasFeature('leads')
+  ...(hasFeature('leads') && RENTAL_INDUSTRY
+    ? ['Which equipment type gets requested most?', 'Which project sites are most active this month?', 'How many quotes went out this week, and how many turned into rentals?']
+    : hasFeature('leads')
     ? ['Which leads are hottest right now?', 'How many leads came in this week, and from where?']
     : []),
   ...(hasFeature('pipelines') ? ["What's my open pipeline worth by stage?"] : []),

@@ -18,17 +18,14 @@ import {
 } from 'lucide-react';
 import { LeadNotesPanel } from '@/components/leads/lead-notes-panel';
 import { ReminderDialog } from '@/components/reminders/reminder-dialog';
+import { getLeadStatuses } from '@/lib/lead-status-terms';
 import type { Lead } from '@/types';
 
-const STATUS_LABEL: Record<string, string> = { new: 'New', called: 'Called', won: 'Won', lost: 'Lost' };
-const STATUS_CLASS: Record<string, string> = {
-  new:    'bg-blue-500/15 text-blue-600 border-blue-500/30',
-  called: 'bg-yellow-500/15 text-yellow-600 border-yellow-500/30',
-  won:    'bg-green-500/15 text-green-600 border-green-500/30',
-  lost:   'bg-red-500/15 text-red-600 border-red-500/30',
-};
-const STATUSES = ['new', 'called', 'won', 'lost'] as const;
-type LeadStatus = typeof STATUSES[number];
+type LeadStatus = Lead['status'];
+const LEAD_STATUSES = getLeadStatuses();
+const STATUS_LABEL: Record<string, string> = Object.fromEntries(LEAD_STATUSES.map(s => [s.id, s.label]));
+const STATUS_CLASS: Record<string, string> = Object.fromEntries(LEAD_STATUSES.map(s => [s.id, s.className]));
+const STATUSES = LEAD_STATUSES.map(s => s.id as LeadStatus);
 const PAGE_SIZE = 25;
 
 function ScoreBadge({ score }: { score: number }) {

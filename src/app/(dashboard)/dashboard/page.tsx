@@ -13,8 +13,10 @@ import {
 } from 'lucide-react'
 
 import {
+  loadActiveSites,
   loadActivity,
   loadConversationsSeries,
+  loadEquipmentDemand,
   loadMetrics,
   loadPipelineDonut,
   loadResponseTime,
@@ -22,9 +24,11 @@ import {
 import type {
   ActivityItem,
   ConversationsSeriesPoint,
+  DemandSlice,
   MetricsBundle,
   PipelineDonutData,
   ResponseTimeSummary,
+  SiteSlice,
 } from '@/lib/dashboard/types'
 
 import { CLIENT_NAME, CLIENT_INDUSTRY, hasFeature } from '@/lib/features'
@@ -36,6 +40,13 @@ import { PipelineDonut } from '@/components/dashboard/pipeline-donut'
 import { ResponseTimeChart } from '@/components/dashboard/response-time-chart'
 import { ActivityFeed } from '@/components/dashboard/activity-feed'
 import { RevenueForecast } from '@/components/dashboard/revenue-forecast'
+import { EquipmentDemandPanel } from '@/components/dashboard/equipment-demand-panel'
+import { ActiveSitesPanel } from '@/components/dashboard/active-sites-panel'
+
+const RENTAL_INDUSTRY = (() => {
+  const ind = (CLIENT_INDUSTRY || CLIENT_NAME).toLowerCase()
+  return ind.includes('logistic') || ind.includes('transport') || ind.includes('car') || ind.includes('wheel')
+})()
 
 type RangeDays = 7 | 30 | 90
 
@@ -63,6 +74,12 @@ export default function DashboardPage() {
 
   const [activity, setActivity] = useState<ActivityItem[] | null>(null)
   const [activityLoading, setActivityLoading] = useState(true)
+
+  const [equipmentDemand, setEquipmentDemand] = useState<DemandSlice[] | null>(null)
+  const [equipmentDemandLoading, setEquipmentDemandLoading] = useState(RENTAL_INDUSTRY)
+
+  const [activeSites, setActiveSites] = useState<SiteSlice[] | null>(null)
+  const [activeSitesLoading, setActiveSitesLoading] = useState(RENTAL_INDUSTRY)
 
   const loadAll = useCallback(() => {
     const db = createClient()
@@ -101,6 +118,18 @@ export default function DashboardPage() {
       .then((a) => setActivity(a))
       .catch((err) => console.error('[dashboard] activity failed:', err))
       .finally(() => setActivityLoading(false))
+
+    if (RENTAL_INDUSTRY && hasFeature('leads')) {
+      void loadEquipmentDemand(db)
+        .then((d) => setEquipmentDemand(d))
+        .catch((err) => console.error('[dashboard] equipment demand failed:', err))
+        .finally(() => setEquipmentDemandLoading(false))
+
+      void loadActiveSites(db)
+        .then((s) => setActiveSites(s))
+        .catch((err) => console.error('[dashboard] active sites failed:', err))
+        .finally(() => setActiveSitesLoading(false))
+    }
   }, [])
 
   useEffect(() => {
@@ -332,6 +361,14 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Rental-specific demand + site panels */}
+      {RENTAL_INDUSTRY && hasFeature('leads') && (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <EquipmentDemandPanel data={equipmentDemand} loading={equipmentDemandLoading} />
+          <ActiveSitesPanel data={activeSites} loading={activeSitesLoading} />
+        </div>
+      )}
 
       {/* Response time */}
       <ResponseTimeChart data={responseTime} loading={responseTimeLoading} />

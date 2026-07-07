@@ -604,7 +604,7 @@ export interface Lead {
   duration: string | null;
   quantity: string | null;
   company: string | null;
-  status: 'new' | 'called' | 'won' | 'lost';
+  status: 'new' | 'called' | 'quoted' | 'confirmed' | 'on_rent' | 'returned' | 'won' | 'lost';
   score: number;
   score_factors: Record<string, number> | null;
   contact_id: string | null;

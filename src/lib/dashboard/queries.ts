@@ -10,11 +10,13 @@ import {
 import type {
   ActivityItem,
   ConversationsSeriesPoint,
+  DemandSlice,
   MetricsBundle,
   PipelineDonutData,
   PipelineStageSlice,
   ResponseTimeBucket,
   ResponseTimeSummary,
+  SiteSlice,
 } from './types'
 import { hasFeature } from '@/lib/features'
 
@@ -455,5 +457,68 @@ export async function loadActivity(db: DB, limit = 20): Promise<ActivityItem[]> 
 
   return items
     .sort((a, b) => (a.at > b.at ? -1 : a.at < b.at ? 1 : 0))
+    .slice(0, limit)
+}
+
+// --- 6. Equipment demand (rental-industry deployments) -----------------
+
+/**
+ * Top requested `service_type` values from leads in the last 30 days.
+ * Client-side aggregation — lead volume is low (tens/hundreds), not
+ * worth a SQL RPC yet. Empty/null service_type rows are excluded: an
+ * unqualified lead with no captured equipment type doesn't belong in
+ * a demand ranking.
+ */
+export async function loadEquipmentDemand(db: DB, limit = 6): Promise<DemandSlice[]> {
+  const since = daysAgoStart(29).toISOString()
+  const { data, error } = await db
+    .from('leads')
+    .select('service_type')
+    .gte('created_at', since)
+    .not('service_type', 'is', null)
+  if (error) throw error
+
+  const counts = new Map<string, number>()
+  for (const row of (data ?? []) as { service_type: string | null }[]) {
+    const label = row.service_type?.trim()
+    if (!label) continue
+    counts.set(label, (counts.get(label) ?? 0) + 1)
+  }
+
+  return Array.from(counts.entries())
+    .map(([label, count]) => ({ label, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit)
+}
+
+// --- 7. Active project sites (rental-industry deployments) -------------
+
+/**
+ * Top `project_site` values from leads in the last 30 days, with the
+ * most recent inquiry date per site — surfaces which sites are
+ * recurring/active customers versus one-off inquiries.
+ */
+export async function loadActiveSites(db: DB, limit = 6): Promise<SiteSlice[]> {
+  const since = daysAgoStart(29).toISOString()
+  const { data, error } = await db
+    .from('leads')
+    .select('project_site, created_at')
+    .gte('created_at', since)
+    .not('project_site', 'is', null)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+
+  const sites = new Map<string, { count: number; lastActivity: string }>()
+  for (const row of (data ?? []) as { project_site: string | null; created_at: string }[]) {
+    const label = row.project_site?.trim()
+    if (!label) continue
+    const existing = sites.get(label)
+    if (existing) existing.count += 1
+    else sites.set(label, { count: 1, lastActivity: row.created_at })
+  }
+
+  return Array.from(sites.entries())
+    .map(([label, v]) => ({ label, count: v.count, lastActivity: v.lastActivity }))
+    .sort((a, b) => b.count - a.count)
     .slice(0, limit)
 }
