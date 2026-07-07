@@ -4,17 +4,11 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import type { Conversation, ConversationStatus } from "@/types";
-import { Search, ChevronDown, AlertCircle } from "lucide-react";
+import { Search, AlertCircle, Inbox as InboxIcon } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Input } from "@/components/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
 interface ConversationListProps {
   activeConversationId: string | null;
@@ -146,50 +140,54 @@ export function ConversationList({
     [onSelect]
   );
 
-  const activeFilter = FILTER_OPTIONS.find((o) => o.value === filter);
+  const unreadTotal = conversations.reduce((sum, c) => sum + (c.unread_count > 0 ? 1 : 0), 0);
 
   return (
     // w-full on mobile so the list occupies the whole viewport when it's
     // the single pane showing; fixed 320px on desktop where it shares the
     // row with the thread + contact sidebar.
-    <div className="flex h-full w-full flex-col border-r border-border bg-card lg:w-80">
+    <div className="flex h-full w-full flex-col border-r border-border bg-card lg:w-[22rem]">
+      {/* Header */}
+      <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3.5">
+        <h2 className="font-heading text-base font-semibold text-foreground">Inbox</h2>
+        {unreadTotal > 0 && (
+          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-semibold tabular-nums text-primary-foreground">
+            {unreadTotal}
+          </span>
+        )}
+      </div>
+
       {/* Search + Filter */}
-      <div className="space-y-2 border-b border-border p-3">
+      <div className="space-y-2.5 border-b border-border px-3 py-3">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
             onChange={handleSearchChange}
             placeholder="Search conversations..."
-            className="border-border bg-muted pl-9 text-sm text-foreground placeholder-muted-foreground focus:border-primary/50"
+            className="h-9 border-border bg-muted pl-9 text-sm text-foreground placeholder-muted-foreground focus:border-primary/50"
           />
         </div>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger className="inline-flex items-center justify-center h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground rounded-md hover:bg-muted">
-              {activeFilter?.label ?? "All"}
-              <ChevronDown className="h-3 w-3" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="start"
-            className="border-border bg-popover"
-          >
-            {FILTER_OPTIONS.map((opt) => (
-              <DropdownMenuItem
-                key={opt.value}
-                onClick={() => setFilter(opt.value)}
-                className={cn(
-                  "text-sm",
-                  filter === opt.value
-                    ? "text-primary"
-                    : "text-popover-foreground"
-                )}
-              >
-                {opt.label}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* Segmented filter — visible at a glance beats a dropdown that
+            hides the current view among four others one click away. */}
+        <div className="flex items-center gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {FILTER_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => setFilter(opt.value)}
+              className={cn(
+                "shrink-0 cursor-pointer rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
+                filter === opt.value
+                  ? "border-primary/40 bg-primary-soft text-primary"
+                  : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
+              )}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Conversation Items.
@@ -200,12 +198,23 @@ export function ConversationList({
           parent's overflow-hidden with no scrollbar (issue #229). */}
       <ScrollArea className="min-h-0 flex-1">
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <div className="flex flex-col">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <ConversationSkeletonRow key={i} />
+            ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="px-4 py-12 text-center">
-            <p className="text-sm text-muted-foreground">No conversations found</p>
+          <div className="px-4 py-8">
+            <EmptyState
+              icon={InboxIcon}
+              title={search.trim() ? "No matches" : "No conversations"}
+              hint={
+                search.trim()
+                  ? "Try a different name, number, or message."
+                  : "Conversations from WhatsApp will appear here."
+              }
+              className="border-none bg-transparent"
+            />
           </div>
         ) : (
           <div className="flex flex-col">
@@ -220,6 +229,18 @@ export function ConversationList({
           </div>
         )}
       </ScrollArea>
+    </div>
+  );
+}
+
+function ConversationSkeletonRow() {
+  return (
+    <div className="flex items-start gap-3 px-3.5 py-3">
+      <div className="h-10 w-10 shrink-0 animate-pulse rounded-full bg-muted" />
+      <div className="min-w-0 flex-1 space-y-2 pt-0.5">
+        <div className="h-3 w-2/3 animate-pulse rounded bg-muted" />
+        <div className="h-2.5 w-4/5 animate-pulse rounded bg-muted/70" />
+      </div>
     </div>
   );
 }

@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
 import { ConversationNotes } from "./conversation-notes";
+import type { ComponentType } from "react";
 
 interface ContactSidebarProps {
   contact: Contact | null;
@@ -137,8 +138,8 @@ export function ContactSidebar({ contact, conversationId }: ContactSidebarProps)
         <button
           onClick={() => setActiveTab('info')}
           className={cn(
-            'flex flex-1 items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors',
-            activeTab === 'info' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground hover:text-foreground'
+            'flex flex-1 cursor-pointer items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors',
+            activeTab === 'info' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'
           )}
         >
           <User className="h-3.5 w-3.5" />Contact
@@ -147,8 +148,8 @@ export function ContactSidebar({ contact, conversationId }: ContactSidebarProps)
           <button
             onClick={() => setActiveTab('notes')}
             className={cn(
-              'flex flex-1 items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors',
-              activeTab === 'notes' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground hover:text-foreground'
+              'flex flex-1 cursor-pointer items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors',
+              activeTab === 'notes' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'
             )}
           >
             <MessageSquare className="h-3.5 w-3.5" />Team Notes
@@ -165,7 +166,7 @@ export function ContactSidebar({ contact, conversationId }: ContactSidebarProps)
         <div className="p-4">
           {/* Contact Info */}
           <div className="flex flex-col items-center text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted text-lg font-semibold text-foreground">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-lg font-semibold text-primary ring-1 ring-primary/15">
               {contact.avatar_url ? (
                 <img
                   src={contact.avatar_url}
@@ -185,23 +186,23 @@ export function ContactSidebar({ contact, conversationId }: ContactSidebarProps)
           </div>
 
           {/* Phone */}
-          <div className="mt-4 space-y-2">
+          <div className="mt-4 space-y-1">
             <button
               onClick={handleCopyPhone}
-              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted"
+              className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
-              <Phone className="h-4 w-4 text-muted-foreground" />
-              <span className="flex-1 text-left">{contact.phone}</span>
+              <Phone className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <span className="flex-1 text-left tabular-nums">{contact.phone}</span>
               {copied ? (
-                <Check className="h-3 w-3 text-primary" />
+                <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
               ) : (
-                <Copy className="h-3 w-3 text-muted-foreground" />
+                <Copy className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
               )}
             </button>
 
             {contact.email && (
-              <div className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground">
-                <Mail className="h-4 w-4 text-muted-foreground" />
+              <div className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-muted-foreground">
+                <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <span className="truncate">{contact.email}</span>
               </div>
             )}
@@ -212,28 +213,25 @@ export function ContactSidebar({ contact, conversationId }: ContactSidebarProps)
 
           {/* Tags */}
           <div>
-            <div className="flex items-center gap-2 px-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              <TagIcon className="h-3 w-3" />
-              Tags
-            </div>
-            <div className="mt-2 flex flex-wrap gap-1">
-              {tags.length === 0 ? (
-                <p className="px-1 text-xs text-muted-foreground">No tags</p>
-              ) : (
-                tags.map((tag) => (
+            <SectionHeader icon={TagIcon} label="Tags" />
+            {tags.length === 0 ? (
+              <p className="mt-2 text-xs text-muted-foreground">No tags yet</p>
+            ) : (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {tags.map((tag) => (
                   <span
                     key={tag.contact_tag_id}
-                    className="rounded-full px-2 py-0.5 text-[10px] font-medium"
+                    className="rounded-full px-2.5 py-0.5 text-[11px] font-medium"
                     style={{
-                      backgroundColor: `${tag.color}20`,
+                      backgroundColor: `${tag.color}1a`,
                       color: tag.color,
                     }}
                   >
                     {tag.name}
                   </span>
-                ))
-              )}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Divider */}
@@ -241,32 +239,29 @@ export function ContactSidebar({ contact, conversationId }: ContactSidebarProps)
 
           {/* Active Deals */}
           <div>
-            <div className="flex items-center gap-2 px-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              <DollarSign className="h-3 w-3" />
-              Active Deals
-            </div>
-            <div className="mt-2 space-y-2">
-              {deals.length === 0 ? (
-                <p className="px-1 text-xs text-muted-foreground">No deals</p>
-              ) : (
-                deals.map((deal) => (
+            <SectionHeader icon={DollarSign} label="Active Deals" />
+            {deals.length === 0 ? (
+              <p className="mt-2 text-xs text-muted-foreground">No deals yet</p>
+            ) : (
+              <div className="mt-2 space-y-1.5">
+                {deals.map((deal) => (
                   <div
                     key={deal.id}
-                    className="rounded-lg bg-muted px-3 py-2"
+                    className="rounded-lg border border-border bg-muted/60 px-3 py-2 transition-colors hover:bg-muted"
                   >
-                    <p className="text-sm font-medium text-foreground">
+                    <p className="truncate text-sm font-medium text-foreground">
                       {deal.title}
                     </p>
-                    <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
-                      <span>
+                    <div className="mt-1 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                      <span className="tabular-nums">
                         {deal.currency ?? "$"}
                         {deal.value.toLocaleString()}
                       </span>
                       {deal.stage && (
                         <span
-                          className="rounded-full px-1.5 py-0.5 text-[10px]"
+                          className="shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium"
                           style={{
-                            backgroundColor: `${deal.stage.color}20`,
+                            backgroundColor: `${deal.stage.color}1a`,
                             color: deal.stage.color,
                           }}
                         >
@@ -275,9 +270,9 @@ export function ContactSidebar({ contact, conversationId }: ContactSidebarProps)
                       )}
                     </div>
                   </div>
-                ))
-              )}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Divider */}
@@ -285,10 +280,7 @@ export function ContactSidebar({ contact, conversationId }: ContactSidebarProps)
 
           {/* Notes */}
           <div>
-            <div className="flex items-center gap-2 px-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              <StickyNote className="h-3 w-3" />
-              Notes
-            </div>
+            <SectionHeader icon={StickyNote} label="Notes" />
             <div className="mt-2">
               <div className="flex gap-2">
                 <textarea
@@ -296,38 +288,57 @@ export function ContactSidebar({ contact, conversationId }: ContactSidebarProps)
                   onChange={(e) => setNewNote(e.target.value)}
                   placeholder="Add a note..."
                   rows={2}
-                  className="flex-1 resize-none rounded-lg border border-border bg-muted px-3 py-2 text-xs text-foreground placeholder-muted-foreground outline-none focus:border-primary/50"
+                  className="flex-1 resize-none rounded-lg border border-border bg-muted px-3 py-2 text-xs text-foreground placeholder-muted-foreground outline-none transition-colors focus:border-primary/50"
                 />
                 <Button
                   size="sm"
-                  className="h-auto bg-primary px-2 hover:bg-primary/90"
+                  className="h-auto cursor-pointer self-end bg-primary px-2 py-2 hover:bg-primary/90"
                   onClick={handleAddNote}
                   disabled={!newNote.trim() || addingNote}
                 >
-                  <Plus className="h-3 w-3" />
+                  <Plus className="h-3.5 w-3.5" />
                 </Button>
               </div>
 
-              <div className="mt-2 space-y-2">
-                {notes.map((note) => (
-                  <div
-                    key={note.id}
-                    className="rounded-lg bg-muted px-3 py-2"
-                  >
-                    <p className="whitespace-pre-wrap text-xs text-muted-foreground">
-                      {note.note_text}
-                    </p>
-                    <p className="mt-1 text-[10px] text-muted-foreground">
-                      {format(new Date(note.created_at), "MMM d, yyyy HH:mm")}
-                    </p>
-                  </div>
-                ))}
-              </div>
+              {notes.length === 0 ? (
+                <p className="mt-3 text-xs text-muted-foreground">No notes yet</p>
+              ) : (
+                <div className="mt-3 space-y-1.5">
+                  {notes.map((note) => (
+                    <div
+                      key={note.id}
+                      className="rounded-lg border border-border bg-muted/60 px-3 py-2"
+                    >
+                      <p className="whitespace-pre-wrap text-xs text-foreground">
+                        {note.note_text}
+                      </p>
+                      <p className="mt-1 text-[10px] text-muted-foreground">
+                        {format(new Date(note.created_at), "MMM d, yyyy HH:mm")}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
       </ScrollArea>
       )}
+    </div>
+  );
+}
+
+function SectionHeader({
+  icon: Icon,
+  label,
+}: {
+  icon: ComponentType<{ className?: string }>;
+  label: string;
+}) {
+  return (
+    <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+      <Icon className="h-3 w-3" />
+      {label}
     </div>
   );
 }

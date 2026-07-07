@@ -102,12 +102,22 @@ export const RAIL_GROUPS: { label: string | null; group: SectionMeta['group'] }[
  * and take the number offline — `Number Health` stays as the
  * read-only status view for the team; credential changes go through
  * the agency.
+ *
+ * `saved-replies`, `deals`, `branding` are hidden the same way as
+ * `whatsapp`: each is a one-time setup choice for a client deployment
+ * (canned-reply library the client doesn't run, currency fixed to the
+ * client's own currency, white-label branding that only makes sense
+ * on the agency's own resold install), so exposing an always-editable
+ * settings tab for it is surface area without a use case.
  */
 const AGENCY_ONLY_SECTIONS: readonly SettingsSection[] = [
   'workspaces',
   'templates',
   'routing',
   'whatsapp',
+  'saved-replies',
+  'deals',
+  'branding',
 ];
 
 /** The rail + overview should only ever render these. */

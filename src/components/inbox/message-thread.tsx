@@ -853,10 +853,10 @@ export function MessageThread({
   if (!conversation || !contact) {
     return (
       <div className={cn("flex flex-1 flex-col items-center justify-center", DOODLE_BG_CLASSES)}>
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-          <MessageSquare className="h-8 w-8 text-muted-foreground" />
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 ring-1 ring-primary/15">
+          <MessageSquare className="h-7 w-7 text-primary" />
         </div>
-        <h3 className="mt-4 text-sm font-medium text-muted-foreground">
+        <h3 className="mt-4 text-sm font-medium text-foreground">
           Select a conversation
         </h3>
         <p className="mt-1 text-xs text-muted-foreground">
@@ -887,10 +887,10 @@ export function MessageThread({
     // root shrink lets the bubbles' break-words / max-w caps apply.
     // Issue #257.
     <div className={cn("flex min-w-0 flex-1 flex-col", DOODLE_BG_CLASSES)}>
-      {/* Header — solid card surface sits on top of the doodle so the
-          name/avatar/dropdowns stay legible. */}
-      <div className="flex items-center justify-between gap-2 border-b border-border bg-card px-3 py-3 sm:px-4">
-        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+      {/* Header — glass surface (matches the app-wide header.tsx treatment)
+          sits on top of the doodle so the name/avatar/dropdowns stay legible. */}
+      <div className="flex items-center justify-between gap-2 border-b border-border bg-background/80 px-3 py-3 backdrop-blur-md sm:px-4">
+        <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
           {/* Back-to-list button — mobile only. Hidden on lg+ where the
               conversation list is always visible next to the thread. */}
           {onBack && (
@@ -898,12 +898,12 @@ export function MessageThread({
               type="button"
               onClick={onBack}
               aria-label="Back to conversations"
-              className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground lg:hidden"
+              className="flex h-9 w-9 flex-shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:hidden"
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
           )}
-          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-muted text-sm font-medium text-foreground">
+          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary ring-1 ring-primary/15">
             {displayName.charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0">
@@ -915,8 +915,10 @@ export function MessageThread({
           <Badge
             variant="outline"
             className={cn(
-              "ml-1 hidden gap-1 border-border text-[10px] sm:inline-flex sm:ml-2",
-              sessionInfo.expired ? "text-red-400" : "text-primary"
+              "ml-1 hidden gap-1 text-[10px] sm:ml-2 sm:inline-flex",
+              sessionInfo.expired
+                ? "border-red-500/30 bg-red-500/10 text-red-400"
+                : "border-primary/25 bg-primary/10 text-primary"
             )}
           >
             <Clock className="h-3 w-3" />
@@ -924,7 +926,7 @@ export function MessageThread({
           </Badge>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {/* Contact-panel toggle — desktop only. The contact sidebar
               eats a chunk of horizontal width that crowds the thread on
               smaller laptops; this lets agents reclaim it when they just
@@ -940,7 +942,7 @@ export function MessageThread({
               aria-pressed={contactPanelOpen}
               title={contactPanelOpen ? "Hide contact" : "Show contact"}
               className={cn(
-                "hidden h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-muted hover:text-foreground lg:inline-flex",
+                "hidden h-8 w-8 cursor-pointer items-center justify-center rounded-md transition-colors hover:bg-muted hover:text-foreground lg:inline-flex",
                 contactPanelOpen ? "text-primary" : "text-muted-foreground",
               )}
             >
@@ -965,7 +967,7 @@ export function MessageThread({
               aria-label="Refresh conversation"
               title="Refresh"
               className={cn(
-                "inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-60",
+                "inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-default disabled:opacity-60",
               )}
             >
               <RefreshCw
@@ -974,12 +976,19 @@ export function MessageThread({
             </button>
           )}
 
+          <div className="mx-0.5 h-5 w-px bg-border" aria-hidden />
+
           {/* Status dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger className={cn(
-                  "inline-flex items-center justify-center h-7 gap-1 px-2 text-xs rounded-md hover:bg-muted",
-                  currentStatus?.color ?? "text-muted-foreground"
+                  "inline-flex h-8 cursor-pointer items-center justify-center gap-1 rounded-md border px-2.5 text-xs font-medium transition-colors hover:bg-muted",
+                  currentStatus?.value === "open"
+                    ? "border-primary/25 bg-primary/10 text-primary"
+                    : currentStatus?.value === "pending"
+                      ? "border-amber-500/25 bg-amber-500/10 text-amber-400"
+                      : "border-border text-muted-foreground",
                 )}>
+                <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden />
                 {currentStatus?.label ?? "Status"}
                 <ChevronDown className="h-3 w-3" />
             </DropdownMenuTrigger>
@@ -991,7 +1000,7 @@ export function MessageThread({
                 <DropdownMenuItem
                   key={opt.value}
                   onClick={() => handleStatusChange(opt.value)}
-                  className={cn("text-sm", opt.color)}
+                  className={cn("cursor-pointer text-sm", opt.color)}
                 >
                   {opt.label}
                 </DropdownMenuItem>
@@ -1003,11 +1012,19 @@ export function MessageThread({
           <DropdownMenu>
             <DropdownMenuTrigger
               className={cn(
-                "inline-flex items-center justify-center h-7 gap-1 px-2 text-xs rounded-md hover:bg-muted",
-                assignedAgentId ? "text-primary" : "text-muted-foreground"
+                "inline-flex h-8 cursor-pointer items-center justify-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition-colors hover:bg-muted",
+                assignedAgentId
+                  ? "border-primary/25 bg-primary/10 text-primary"
+                  : "border-border text-muted-foreground",
               )}
             >
-              <UserPlus className="h-3 w-3" />
+              {assignedAgentId ? (
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary/20 text-[9px] font-bold text-primary">
+                  {(currentAssignee?.full_name ?? "?").charAt(0).toUpperCase()}
+                </span>
+              ) : (
+                <UserPlus className="h-3.5 w-3.5" />
+              )}
               <span className="hidden sm:inline">{assignLabel}</span>
               <ChevronDown className="h-3 w-3" />
             </DropdownMenuTrigger>
@@ -1027,7 +1044,7 @@ export function MessageThread({
                       key={p.id}
                       onClick={() => handleAssignChange(p.user_id)}
                       className={cn(
-                        "text-sm",
+                        "cursor-pointer text-sm",
                         isSelected ? "text-primary" : "text-popover-foreground"
                       )}
                     >
@@ -1045,7 +1062,7 @@ export function MessageThread({
                   <DropdownMenuSeparator className="bg-border" />
                   <DropdownMenuItem
                     onClick={() => handleAssignChange(null)}
-                    className="text-sm text-muted-foreground"
+                    className="cursor-pointer text-sm text-muted-foreground"
                   >
                     Unassign
                   </DropdownMenuItem>

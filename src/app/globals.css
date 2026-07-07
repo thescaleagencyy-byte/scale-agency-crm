@@ -264,6 +264,16 @@ html[data-theme="ashwheelz"] {
     color: var(--primary-foreground);
   }
 
+  /* Tailwind's preflight resets <button> to cursor:default to match
+   * native <button> behaviour — but every interactive button in this
+   * app is a custom-styled clickable, not a native form control, so
+   * that reset reads as "is this disabled?" on hover. One rule here
+   * beats hand-adding cursor-pointer to hundreds of buttons. Explicit
+   * disabled buttons opt back out via cursor-not-allowed / :disabled. */
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+
   /* Headings default to the display face. Utility classes can still
    * override per-element (font-sans on dense UI headings). */
   h1, h2, h3 {
