@@ -16,6 +16,7 @@ import type {
   ResponseTimeBucket,
   ResponseTimeSummary,
 } from './types'
+import { hasFeature } from '@/lib/features'
 
 // ------------------------------------------------------------
 // All client-side aggregation. RLS scopes every query to the
@@ -33,6 +34,7 @@ export async function loadMetrics(db: DB): Promise<MetricsBundle> {
   const todayStart = startOfLocalDay().toISOString()
   const yesterdayStart = daysAgoStart(1).toISOString()
 
+  const emptyCount = Promise.resolve({ count: 0, data: [] as never[] })
   const [
     openConvCur,
     newConvToday,
@@ -42,6 +44,8 @@ export async function loadMetrics(db: DB): Promise<MetricsBundle> {
     openDeals,
     messagesToday,
     messagesYesterday,
+    leadsToday,
+    leadsYesterday,
   ] = await Promise.all([
     db.from('conversations').select('id', { count: 'exact', head: true }).eq('status', 'open'),
     db
@@ -73,6 +77,16 @@ export async function loadMetrics(db: DB): Promise<MetricsBundle> {
       .eq('sender_type', 'agent')
       .gte('created_at', yesterdayStart)
       .lt('created_at', todayStart),
+    hasFeature('leads')
+      ? db.from('leads').select('id', { count: 'exact', head: true }).gte('created_at', todayStart)
+      : emptyCount,
+    hasFeature('leads')
+      ? db
+          .from('leads')
+          .select('id', { count: 'exact', head: true })
+          .gte('created_at', yesterdayStart)
+          .lt('created_at', todayStart)
+      : emptyCount,
   ])
 
   const openDealsRows = (openDeals.data ?? []) as { value: number | null }[]
@@ -96,6 +110,12 @@ export async function loadMetrics(db: DB): Promise<MetricsBundle> {
       current: messagesToday.count ?? 0,
       previous: messagesYesterday.count ?? 0,
     },
+    newLeadsToday: hasFeature('leads')
+      ? {
+          current: leadsToday.count ?? 0,
+          previous: leadsYesterday.count ?? 0,
+        }
+      : null,
   }
 }
 
@@ -269,33 +289,55 @@ export async function loadActivity(db: DB, limit = 20): Promise<ActivityItem[]> 
   // Pull ~10 from each source (plenty of headroom after merge-sort),
   // then interleave by timestamp. The individual per-table limits
   // keep the payload small; the final limit is enforced after sort.
-  const [msgs, contacts, deals, broadcasts, autoLogs] = await Promise.all([
-    db
-      .from('messages')
-      .select('id, content_text, sender_type, created_at, conversation_id, conversations(contact_id, contacts(name, phone))')
-      .eq('sender_type', 'customer')
-      .order('created_at', { ascending: false })
-      .limit(10),
-    db
-      .from('contacts')
-      .select('id, name, phone, created_at')
-      .order('created_at', { ascending: false })
-      .limit(10),
-    db
-      .from('deals')
-      .select('id, title, updated_at, stage:pipeline_stages(name)')
-      .order('updated_at', { ascending: false })
-      .limit(10),
-    db
-      .from('broadcasts')
-      .select('id, name, status, total_recipients, created_at')
-      .order('created_at', { ascending: false })
-      .limit(5),
-    db
-      .from('automation_logs')
-      .select('id, trigger_event, status, created_at, automation:automations(name), contact:contacts(name, phone)')
-      .order('created_at', { ascending: false })
-      .limit(10),
+  //
+  // Feature-gated deployments skip sources whose surface the user can't
+  // open — a "Deal moved" row on a deployment without /pipelines would
+  // either dead-end or link to a route the middleware bounces.
+  const emptyRes = Promise.resolve({ data: [] as never[] })
+  const [msgs, contacts, deals, broadcasts, autoLogs, leads] = await Promise.all([
+    hasFeature('inbox')
+      ? db
+          .from('messages')
+          .select('id, content_text, sender_type, created_at, conversation_id, conversations(contact_id, contacts(name, phone))')
+          .eq('sender_type', 'customer')
+          .order('created_at', { ascending: false })
+          .limit(10)
+      : emptyRes,
+    hasFeature('contacts')
+      ? db
+          .from('contacts')
+          .select('id, name, phone, created_at')
+          .order('created_at', { ascending: false })
+          .limit(10)
+      : emptyRes,
+    hasFeature('pipelines')
+      ? db
+          .from('deals')
+          .select('id, title, updated_at, stage:pipeline_stages(name)')
+          .order('updated_at', { ascending: false })
+          .limit(10)
+      : emptyRes,
+    hasFeature('broadcasts')
+      ? db
+          .from('broadcasts')
+          .select('id, name, status, total_recipients, created_at')
+          .order('created_at', { ascending: false })
+          .limit(5)
+      : emptyRes,
+    hasFeature('automations') || hasFeature('n8n')
+      ? db
+          .from('automation_logs')
+          .select('id, trigger_event, status, created_at, automation:automations(name), contact:contacts(name, phone)')
+          .order('created_at', { ascending: false })
+          .limit(10)
+      : emptyRes,
+    hasFeature('leads')
+      ? db
+          .from('leads')
+          .select('id, customer_name, customer_phone, service_type, created_at')
+          .order('created_at', { ascending: false })
+          .limit(10)
+      : emptyRes,
   ])
 
   const items: ActivityItem[] = []
@@ -389,6 +431,25 @@ export async function loadActivity(db: DB, limit = 20): Promise<ActivityItem[]> 
       kind: 'automation',
       text: `Automation "${autoName}" ${l.status === 'failed' ? 'failed for' : 'triggered for'} ${who}`,
       at: l.created_at,
+    })
+  }
+
+  for (const l of (leads.data ?? []) as Array<{
+    id: string
+    customer_name: string | null
+    customer_phone: string
+    service_type: string | null
+    created_at: string
+  }>) {
+    const who = l.customer_name || l.customer_phone
+    items.push({
+      id: `lead-${l.id}`,
+      kind: 'lead',
+      text: l.service_type
+        ? `Lead captured: ${who} — ${l.service_type}`
+        : `Lead captured: ${who}`,
+      at: l.created_at,
+      href: '/leads',
     })
   }
 

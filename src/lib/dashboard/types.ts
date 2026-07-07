@@ -13,6 +13,9 @@ export interface MetricsBundle {
   openDealsValue: number
   openDealsCount: number
   messagesSentToday: MetricDelta
+  /** Only populated when the `leads` feature is enabled — used as the
+   *  third metric card on deployments where `pipelines` is gated off. */
+  newLeadsToday: MetricDelta | null
 }
 
 export interface ConversationsSeriesPoint {
@@ -54,6 +57,7 @@ export type ActivityKind =
   | 'broadcast'
   | 'automation'
   | 'contact'
+  | 'lead'
 
 export interface ActivityItem {
   id: string

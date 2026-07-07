@@ -9,9 +9,11 @@ import {
   Radio,
   Zap,
   Inbox,
+  TrendingUp,
 } from 'lucide-react'
 import type { ComponentType } from 'react'
 import type { ActivityItem, ActivityKind } from '@/lib/dashboard/types'
+import { hasFeature } from '@/lib/features'
 import { cn } from '@/lib/utils'
 import { EmptyState } from './empty-state'
 import { Skeleton } from './skeleton'
@@ -36,6 +38,7 @@ const KIND_THEME: Record<ActivityKind, KindTheme> = {
   deal: { icon: Briefcase, badge: 'bg-primary/10 text-primary' },
   broadcast: { icon: Radio, badge: 'bg-amber-500/10 text-amber-400' },
   automation: { icon: Zap, badge: 'bg-rose-500/10 text-rose-400' },
+  lead: { icon: TrendingUp, badge: 'bg-emerald-500/10 text-emerald-400' },
 }
 
 export function ActivityFeed({ items, loading }: ActivityFeedProps) {
@@ -57,12 +60,14 @@ export function ActivityFeed({ items, loading }: ActivityFeedProps) {
     <section className="rounded-xl border border-border bg-card">
       <header className="flex items-center justify-between border-b border-border px-5 py-4">
         <h2 className="text-sm font-semibold text-foreground">Recent Activity</h2>
-        <Link
-          href="/inbox"
-          className="text-xs font-medium text-primary hover:text-primary/80"
-        >
-          View all →
-        </Link>
+        {hasFeature('inbox') && (
+          <Link
+            href="/inbox"
+            className="text-xs font-medium text-primary hover:text-primary/80"
+          >
+            View all →
+          </Link>
+        )}
       </header>
 
       {loading || !items ? (

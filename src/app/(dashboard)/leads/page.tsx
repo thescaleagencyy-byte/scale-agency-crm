@@ -57,6 +57,14 @@ export default function LeadsPage() {
   const [notesLead, setNotesLead] = useState<Lead | null>(null);
   const [reminderLead, setReminderLead] = useState<Lead | null>(null);
 
+  // Debounce: search fires a Supabase query per change; typing "ahmed"
+  // shouldn't issue five queries. 300ms after the last keystroke.
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
   const load = useCallback(async () => {
     const supabase = createClient();
     setLoading(true);
@@ -68,9 +76,16 @@ export default function LeadsPage() {
         .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
 
       if (filterStatus !== 'all') query = query.eq('status', filterStatus);
-      if (search.trim()) {
+      if (debouncedSearch.trim()) {
+        // PostgREST or() filters treat , ( ) as syntax — strip them so a
+        // search like "Khan (Lahore)" errors out instead of matching.
+        // % and _ are LIKE wildcards; escape so they match literally.
+        const term = debouncedSearch
+          .trim()
+          .replace(/[,()]/g, ' ')
+          .replace(/[%_]/g, '\\$&');
         query = query.or(
-          `customer_name.ilike.%${search.trim()}%,customer_phone.ilike.%${search.trim()}%,company.ilike.%${search.trim()}%`
+          `customer_name.ilike.%${term}%,customer_phone.ilike.%${term}%,company.ilike.%${term}%`
         );
       }
 
@@ -82,7 +97,7 @@ export default function LeadsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, filterStatus]);
+  }, [page, debouncedSearch, filterStatus]);
 
   useEffect(() => { load(); }, [load]);
 

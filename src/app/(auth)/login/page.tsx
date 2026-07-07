@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UsersRound } from "lucide-react";
-import { CLIENT_NAME, APP_NAME, PRIMARY_COLOR } from "@/lib/features";
+import { CLIENT_NAME, APP_NAME, PRIMARY_COLOR, FEATURE_GATING_ENABLED } from "@/lib/features";
 
 const CLIENT_LOGO = CLIENT_NAME
   ? `/clients/${CLIENT_NAME.toLowerCase().replace(/\s+/g, '')}.png`
@@ -217,16 +217,21 @@ function LoginPageInner() {
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-white/30">
-            Don&apos;t have an account?{" "}
-            <Link
-              href={inviteToken ? `/signup?invite=${encodeURIComponent(inviteToken)}` : "/signup"}
-              className="transition-colors"
-              style={{ color: `${c}b3` }}
-            >
-              Create account
-            </Link>
-          </p>
+          {/* Client deployments (feature gating on) are invite-only: the
+              open signup link is hidden unless the visitor arrived via an
+              invite link. Agency/self-hosted deployments keep open signup. */}
+          {(!FEATURE_GATING_ENABLED || inviteToken) && (
+            <p className="mt-6 text-center text-sm text-white/30">
+              Don&apos;t have an account?{" "}
+              <Link
+                href={inviteToken ? `/signup?invite=${encodeURIComponent(inviteToken)}` : "/signup"}
+                className="transition-colors"
+                style={{ color: `${c}b3` }}
+              >
+                Create account
+              </Link>
+            </p>
+          )}
 
           {/* Built by — mobile */}
           <p className="mt-8 text-center text-xs text-white/20 lg:hidden">

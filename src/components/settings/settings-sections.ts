@@ -18,6 +18,7 @@ import {
   Sparkles,
   type LucideIcon,
 } from 'lucide-react';
+import { FEATURE_GATING_ENABLED } from '@/lib/features';
 
 /**
  * Settings information architecture for the redesigned page.
@@ -85,6 +86,31 @@ export const RAIL_GROUPS: { label: string | null; group: SectionMeta['group'] }[
   { label: 'Workspace', group: 'workspace' },
 ];
 
+/**
+ * Sections that only make sense on the agency's own multi-workspace /
+ * multi-team install — Workspaces (multi-brand reseller switching),
+ * Templates (bulk message template library), Routing Rules
+ * (multi-agent conversation assignment). A single-brand client
+ * deployment (NEXT_PUBLIC_FEATURES set) has none of the surrounding
+ * surfaces these depend on, so they're noise at best and a dead
+ * "nothing happens" click at worst.
+ */
+const AGENCY_ONLY_SECTIONS: readonly SettingsSection[] = [
+  'workspaces',
+  'templates',
+  'routing',
+];
+
+/** The rail + overview should only ever render these. */
+export const VISIBLE_SETTINGS_SECTIONS: readonly SettingsSection[] =
+  FEATURE_GATING_ENABLED
+    ? SETTINGS_SECTIONS.filter((s) => !AGENCY_ONLY_SECTIONS.includes(s))
+    : SETTINGS_SECTIONS;
+
+function isVisibleSection(value: SettingsSection): boolean {
+  return VISIBLE_SETTINGS_SECTIONS.includes(value);
+}
+
 function isSection(value: string | null): value is SettingsSection {
   return !!value && (SETTINGS_SECTIONS as readonly string[]).includes(value);
 }
@@ -97,6 +123,6 @@ function isSection(value: string | null): value is SettingsSection {
  */
 export function resolveSection(raw: string | null): SettingsSection {
   if (raw === 'tags' || raw === 'custom-fields') return 'fields';
-  if (isSection(raw)) return raw;
+  if (isSection(raw) && isVisibleSection(raw)) return raw;
   return DEFAULT_SECTION;
 }

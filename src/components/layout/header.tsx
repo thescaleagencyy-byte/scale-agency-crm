@@ -21,11 +21,19 @@ import { AIAssistant } from "@/components/layout/ai-assistant";
 
 const pageTitles: Record<string, string> = {
   "/dashboard": "Dashboard",
+  "/analytics": "Analytics",
   "/inbox": "Inbox",
   "/contacts": "Contacts",
+  "/leads": "Leads",
   "/pipelines": "Pipelines",
+  "/appointments": "Appointments",
   "/broadcasts": "Broadcasts",
+  "/drip": "Drip Campaigns",
+  "/qr-codes": "QR Codes",
+  "/flows-builder": "Flow Builder",
+  "/flows": "Flows",
   "/automations": "Automations",
+  "/n8n": "Automations",
   "/settings": "Settings",
 };
 

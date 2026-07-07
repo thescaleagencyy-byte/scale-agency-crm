@@ -51,11 +51,14 @@ export function DealsSettings() {
   async function handleSave() {
     if (!accountId || !dirty) return;
     setSaving(true);
-    const { error } = await supabase
+    const { data: updated, error } = await supabase
       .from("accounts")
       .update({ default_currency: selected })
-      .eq("id", accountId);
-    if (error) {
+      .eq("id", accountId)
+      .select("default_currency")
+      .maybeSingle();
+    if (error || !updated) {
+      console.error("[DealsSettings] currency save failed:", error?.message ?? "0 rows — RLS block");
       toast.error("Failed to save default currency");
       setSaving(false);
       return;

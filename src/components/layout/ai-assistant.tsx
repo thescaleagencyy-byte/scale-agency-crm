@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Loader2, Send, Sparkles, Trash2, X } from 'lucide-react';
+import { CLIENT_NAME, hasFeature } from '@/lib/features';
 
 // ============================================================
-// AshWheelz AI — floating chat widget in the header.
+// Client AI — floating chat widget in the header.
 //
 // Sparkles button opens a panel where any signed-in user can ask
 // ad-hoc questions about live business data (leads, pipeline,
@@ -21,15 +22,23 @@ interface ChatMessage {
   error?: boolean;
 }
 
-const STORAGE_KEY = 'ashwheelz_ai_chat';
+// Branded per deployment — "AshWheelz AI" on the AshWheelz deploy,
+// "Sultan Yakhni Pulao AI" on Sultan's, "Scale Agency AI" on ours.
+const AI_NAME = CLIENT_NAME ? `${CLIENT_NAME} AI` : 'Scale Agency AI';
+const STORAGE_KEY = `${(CLIENT_NAME || 'scale_agency').toLowerCase().replace(/\s+/g, '_')}_ai_chat`;
 const MAX_STORED = 40;
 
+// Only suggest questions about surfaces this deployment actually has —
+// a gated-off feature would make the AI answer about data the user
+// can't open anywhere in the UI.
 const SUGGESTIONS = [
-  'Which leads are hottest right now?',
-  'How many leads came in this week, and from where?',
-  "What's my open pipeline worth by stage?",
-  'How many appointments are coming up?',
-];
+  ...(hasFeature('leads')
+    ? ['Which leads are hottest right now?', 'How many leads came in this week, and from where?']
+    : []),
+  ...(hasFeature('pipelines') ? ["What's my open pipeline worth by stage?"] : []),
+  ...(hasFeature('appointments') ? ['How many appointments are coming up?'] : []),
+  ...(hasFeature('inbox') ? ['Summarize today’s WhatsApp conversations.'] : []),
+].slice(0, 4);
 
 function loadStored(): ChatMessage[] {
   try {
@@ -172,7 +181,7 @@ export function AIAssistant() {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        aria-label="Open AshWheelz AI"
+        aria-label={`Open ${AI_NAME}`}
         aria-expanded={open}
         className={`relative flex h-10 w-10 items-center justify-center rounded-md transition-colors hover:bg-muted ${
           open ? 'bg-muted text-primary' : 'text-muted-foreground hover:text-foreground'
@@ -191,9 +200,9 @@ export function AIAssistant() {
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-primary" />
               <div>
-                <p className="text-sm font-semibold leading-tight">AshWheelz AI</p>
+                <p className="text-sm font-semibold leading-tight">{AI_NAME}</p>
                 <p className="text-[11px] text-muted-foreground">
-                  Ask about leads, pipeline, appointments
+                  Ask about your live business data
                 </p>
               </div>
             </div>

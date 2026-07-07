@@ -9,6 +9,7 @@ import {
   UserPlus,
   DollarSign,
   Send,
+  TrendingUp,
 } from 'lucide-react'
 
 import {
@@ -26,7 +27,7 @@ import type {
   ResponseTimeSummary,
 } from '@/lib/dashboard/types'
 
-import { CLIENT_NAME, CLIENT_INDUSTRY } from '@/lib/features'
+import { CLIENT_NAME, CLIENT_INDUSTRY, hasFeature } from '@/lib/features'
 import { MetricCard } from '@/components/dashboard/metric-card'
 import { SkeletonCard } from '@/components/dashboard/skeleton'
 import { QuickActions } from '@/components/dashboard/quick-actions'
@@ -79,10 +80,14 @@ export default function DashboardPage() {
       .catch((err) => console.error('[dashboard] series failed:', err))
       .finally(() => setSeriesLoading(false))
 
-    void loadPipelineDonut(db)
-      .then((p) => setPipeline(p))
-      .catch((err) => console.error('[dashboard] pipeline failed:', err))
-      .finally(() => setPipelineLoading(false))
+    if (hasFeature('pipelines')) {
+      void loadPipelineDonut(db)
+        .then((p) => setPipeline(p))
+        .catch((err) => console.error('[dashboard] pipeline failed:', err))
+        .finally(() => setPipelineLoading(false))
+    } else {
+      setPipelineLoading(false)
+    }
 
     void loadResponseTime(db)
       .then((r) => setResponseTime(r))
@@ -129,6 +134,7 @@ export default function DashboardPage() {
       heroTagline:          'Orders, reservations & guest WhatsApp — live.',
       activeConversations:  'Active Order Chats',
       newContacts:          'New Customers Today',
+      newLeads:             'New Leads Today',
       openDeals:            'Active Orders Value',
       dealWord:             'order',
       messagesSent:         'Replies Sent Today',
@@ -141,7 +147,8 @@ export default function DashboardPage() {
       heroHeadline:         'Rental Operations',
       heroTagline:          'Rental inquiries, lead pipeline & client WhatsApp — live.',
       activeConversations:  'Active Inquiries',
-      newContacts:          'New Inquiries Today',
+      newContacts:          'New Customers Today',
+      newLeads:             'Leads Captured Today',
       openDeals:            'Open Rental Quotes',
       dealWord:             'quote',
       messagesSent:         'Responses Sent Today',
@@ -155,6 +162,7 @@ export default function DashboardPage() {
       heroTagline:          'Your WhatsApp pipeline — live and ready.',
       activeConversations:  'Active Conversations',
       newContacts:          'New Contacts Today',
+      newLeads:             'New Leads Today',
       openDeals:            'Open Deals Value',
       dealWord:             'deal',
       messagesSent:         'Messages Sent Today',
@@ -251,12 +259,28 @@ export default function DashboardPage() {
                 ),
               }}
             />
-            <MetricCard
-              title={labels.openDeals}
-              value={formatCurrency(metrics.openDealsValue, defaultCurrency)}
-              icon={DollarSign}
-              subtitle={`${metrics.openDealsCount} open ${labels.dealWord}${metrics.openDealsCount === 1 ? '' : 's'}`}
-            />
+            {hasFeature('pipelines') ? (
+              <MetricCard
+                title={labels.openDeals}
+                value={formatCurrency(metrics.openDealsValue, defaultCurrency)}
+                icon={DollarSign}
+                subtitle={`${metrics.openDealsCount} open ${labels.dealWord}${metrics.openDealsCount === 1 ? '' : 's'}`}
+              />
+            ) : metrics.newLeadsToday ? (
+              <MetricCard
+                title={labels.newLeads}
+                value={metrics.newLeadsToday.current.toLocaleString()}
+                icon={TrendingUp}
+                delta={{
+                  sign:
+                    metrics.newLeadsToday.current - metrics.newLeadsToday.previous,
+                  label: deltaLabel(
+                    metrics.newLeadsToday.current - metrics.newLeadsToday.previous,
+                    'vs yesterday',
+                  ),
+                }}
+              />
+            ) : null}
             <MetricCard
               title={labels.messagesSent}
               value={metrics.messagesSentToday.current.toLocaleString()}
@@ -285,7 +309,7 @@ export default function DashboardPage() {
           this, the pipeline card rendered at its natural (shorter)
           height while the line chart drove the row height. */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-        <div className="h-full lg:col-span-3">
+        <div className={hasFeature('pipelines') ? 'h-full lg:col-span-3' : 'h-full lg:col-span-5'}>
           <ConversationsChart
             series={series}
             loading={seriesLoading}
@@ -295,23 +319,25 @@ export default function DashboardPage() {
             subtitle={labels.chartSubtitle}
           />
         </div>
-        <div className="h-full lg:col-span-2">
-          <PipelineDonut
-            data={pipeline}
-            loading={pipelineLoading}
-            currency={defaultCurrency}
-            title={labels.pipelineTitle}
-            subtitle={labels.pipelineSubtitle}
-            dealWord={labels.dealWord}
-          />
-        </div>
+        {hasFeature('pipelines') && (
+          <div className="h-full lg:col-span-2">
+            <PipelineDonut
+              data={pipeline}
+              loading={pipelineLoading}
+              currency={defaultCurrency}
+              title={labels.pipelineTitle}
+              subtitle={labels.pipelineSubtitle}
+              dealWord={labels.dealWord}
+            />
+          </div>
+        )}
       </div>
 
       {/* Response time */}
       <ResponseTimeChart data={responseTime} loading={responseTimeLoading} />
 
-      {/* Revenue forecast */}
-      <RevenueForecast currency={defaultCurrency} />
+      {/* Revenue forecast — deal-based, meaningless without pipelines */}
+      {hasFeature('pipelines') && <RevenueForecast currency={defaultCurrency} />}
 
       {/* Activity feed */}
       <ActivityFeed items={activity} loading={activityLoading} />

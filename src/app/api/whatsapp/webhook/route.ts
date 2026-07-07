@@ -117,6 +117,17 @@ export async function GET(request: Request) {
 
     if (configError || !configs) {
       console.error('Error fetching configs for verification:', configError)
+      // Fallback: check the WHATSAPP_VERIFY_TOKEN env var. This lets the
+      // webhook pass Meta verification even when the admin Supabase client
+      // is misconfigured (wrong SUPABASE_SERVICE_ROLE_KEY). Set this env var
+      // in Vercel to the same verify_token you enter in Meta's webhook setup.
+      const envToken = process.env.WHATSAPP_VERIFY_TOKEN
+      if (envToken && verifyToken === envToken) {
+        return new Response(challenge, {
+          status: 200,
+          headers: { 'Content-Type': 'text/plain' },
+        })
+      }
       return NextResponse.json(
         { error: 'Verification failed' },
         { status: 403 }
@@ -274,9 +285,7 @@ async function processWebhook(body: { entry?: WhatsAppWebhookEntry[] }) {
 
       if (configError) {
         console.error(
-          'Error fetching whatsapp_config for phone_number_id:',
-          phoneNumberId,
-          configError
+          `[webhook] config fetch failed | phone=${phoneNumberId} | code=${configError.code} | msg=${configError.message} | hint=${configError.hint}`
         )
         continue
       }

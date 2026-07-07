@@ -3,9 +3,14 @@
 import { Check, Moon, Palette, SunMoon, Sun } from "lucide-react";
 
 import { useTheme } from "@/hooks/use-theme";
-import { MODES, THEMES, type Mode, type ThemeId } from "@/lib/themes";
+import { DEFAULT_THEME, MODES, THEMES, type Mode, type ThemeId } from "@/lib/themes";
+import { CLIENT_NAME, FEATURE_GATING_ENABLED } from "@/lib/features";
 import { cn } from "@/lib/utils";
 import { SettingsPanelHead } from "./settings-panel-head";
+
+const CLIENT_LOGO = CLIENT_NAME
+  ? `/clients/${CLIENT_NAME.toLowerCase().replace(/\s+/g, "")}.png`
+  : null;
 
 /**
  * Appearance panel — light/dark mode + accent-color picker.
@@ -15,18 +20,53 @@ import { SettingsPanelHead } from "./settings-panel-head";
  * each change is a single attribute swap on <html>, there's nothing
  * to roll back.
  *
+ * On a branded client deployment (NEXT_PUBLIC_FEATURES set) the accent
+ * grid collapses to the deployment's own signature color — offering
+ * five unrelated brand accents on someone else's white-labeled
+ * dashboard reads as unfinished, not as a feature.
+ *
  * Persistence: localStorage only (device-scoped). The boot script in
  * layout.tsx replays both choices before first paint on subsequent
  * loads.
  */
 export function AppearancePanel() {
   const { theme, setTheme, mode, setMode } = useTheme();
+  const signatureTheme = THEMES.find((t) => t.id === DEFAULT_THEME);
+  const brandLocked = FEATURE_GATING_ENABLED && !!signatureTheme;
+
   return (
     <section className="max-w-3xl animate-in fade-in-50 duration-200">
       <SettingsPanelHead
         title="Appearance"
         description="Set the mode and accent colour used across the app. Saved to this device — try it, it changes live."
       />
+
+      {brandLocked && (
+        <div className="mb-8 flex items-center gap-4 rounded-xl border border-primary/25 bg-primary/5 p-4">
+          {CLIENT_LOGO ? (
+            <img
+              src={CLIENT_LOGO}
+              alt={CLIENT_NAME}
+              className="h-12 w-12 shrink-0 rounded-lg border border-border bg-card object-contain p-1"
+            />
+          ) : (
+            <span
+              aria-hidden
+              className="h-12 w-12 shrink-0 rounded-lg"
+              style={{ background: signatureTheme!.swatch }}
+            />
+          )}
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-foreground">
+              {CLIENT_NAME || "This workspace"}'s signature theme
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Your dashboard is branded to match {CLIENT_NAME || "your"} identity —
+              set below, not picked from a generic palette.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-4">
         <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
@@ -57,7 +97,7 @@ export function AppearancePanel() {
         </h3>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {THEMES.map((t) => (
+          {(brandLocked ? [signatureTheme!] : THEMES).map((t) => (
             <ThemeCard
               key={t.id}
               id={t.id}

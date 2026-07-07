@@ -15,6 +15,7 @@
 
 export const THEME_IDS = [
   "scale",
+  "ashwheelz",
   "violet",
   "emerald",
   "cobalt",
@@ -24,7 +25,19 @@ export const THEME_IDS = [
 
 export type ThemeId = (typeof THEME_IDS)[number];
 
-export const DEFAULT_THEME: ThemeId = "scale";
+/**
+ * Per-deployment default accent. Client deployments set
+ * NEXT_PUBLIC_DEFAULT_THEME (e.g. "ashwheelz") so the dashboard boots
+ * in the client's brand color; unset or invalid falls back to the
+ * Scale Agency brand. Users can still pick another accent in Settings —
+ * a saved localStorage choice always wins over this default.
+ */
+const _envTheme = process.env.NEXT_PUBLIC_DEFAULT_THEME;
+export const DEFAULT_THEME: ThemeId = (THEME_IDS as ReadonlyArray<string>).includes(
+  _envTheme ?? "",
+)
+  ? (_envTheme as ThemeId)
+  : "scale";
 
 export const STORAGE_KEY = "sultan.theme";
 
@@ -73,6 +86,12 @@ export const THEMES: ReadonlyArray<ThemeMeta> = [
     name: "Scale (Brand)",
     tagline: "The Scale Agency — neon green, dark, premium.",
     swatch: "oklch(0.794 0.247 143)",
+  },
+  {
+    id: "ashwheelz",
+    name: "AshWheelz (Brand)",
+    tagline: "AshWheelz logo orange — warm, energetic, automotive.",
+    swatch: "oklch(0.74 0.17 60)",
   },
   {
     id: "violet",

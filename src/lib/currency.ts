@@ -38,6 +38,7 @@ export const CURRENCIES: CurrencyOption[] = [
   { code: "BRL", label: "Brazilian Real", symbol: "R$" },
   { code: "JPY", label: "Japanese Yen", symbol: "¥" },
   { code: "CNY", label: "Chinese Yuan", symbol: "¥" },
+  { code: "SAR", label: "Saudi Riyal", symbol: "﷼" },
   { code: "AED", label: "UAE Dirham", symbol: "د.إ" },
   { code: "ZAR", label: "South African Rand", symbol: "R" },
   { code: "NGN", label: "Nigerian Naira", symbol: "₦" },

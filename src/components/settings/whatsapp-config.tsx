@@ -133,7 +133,10 @@ export function WhatsAppConfig() {
       // Then verify health via the API (decrypts token + pings Meta)
       if (data) {
         try {
-          const res = await fetch('/api/whatsapp/config', { method: 'GET' });
+          const ctrl = new AbortController();
+          const tid = setTimeout(() => ctrl.abort(), 10_000);
+          const res = await fetch('/api/whatsapp/config', { method: 'GET', signal: ctrl.signal });
+          clearTimeout(tid);
           const payload = await res.json();
 
           if (payload.connected) {
@@ -162,19 +165,21 @@ export function WhatsAppConfig() {
     }
   }, [supabase]);
 
+  const [loadingTimedOut, setLoadingTimedOut] = useState(false);
   useEffect(() => {
-    // Need both the auth session (`!authLoading`) AND the profile
-    // (`!profileLoading`, which carries `accountId`). Without the
-    // second guard, the effect would fire with `accountId === null`
-    // for the first render window and bail without ever retrying
-    // once the profile arrives.
-    if (authLoading || profileLoading) return;
+    if (!authLoading && !profileLoading) return;
+    const t = setTimeout(() => setLoadingTimedOut(true), 8_000);
+    return () => clearTimeout(t);
+  }, [authLoading, profileLoading]);
+
+  useEffect(() => {
+    if (authLoading || (profileLoading && !loadingTimedOut)) return;
     if (!user || !accountId) {
       setLoading(false);
       return;
     }
     fetchConfig(accountId);
-  }, [authLoading, profileLoading, user, accountId, fetchConfig]);
+  }, [authLoading, profileLoading, loadingTimedOut, user, accountId, fetchConfig]);
 
   async function handleSave() {
     if (!phoneNumberId.trim()) {

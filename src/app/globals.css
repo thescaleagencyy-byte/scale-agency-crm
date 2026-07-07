@@ -232,6 +232,21 @@ html[data-theme="scale"] {
   --sidebar-ring: oklch(0.794 0.247 143);
 }
 
+/* AshWheelz brand — logo orange #F7941D */
+html[data-theme="ashwheelz"] {
+  --primary: oklch(0.74 0.17 60);
+  --primary-foreground: oklch(0.17 0.03 60);
+  --primary-hover: oklch(0.79 0.16 60);
+  --primary-soft: oklch(0.74 0.17 60 / 0.12);
+  --primary-soft-2: oklch(0.74 0.17 60 / 0.22);
+  --ring: oklch(0.74 0.17 60);
+  --chart-1: oklch(0.74 0.17 60);
+  --chart-2: oklch(0.66 0.15 40);
+  --sidebar-primary: oklch(0.74 0.17 60);
+  --sidebar-primary-foreground: oklch(0.17 0.03 60);
+  --sidebar-ring: oklch(0.74 0.17 60);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

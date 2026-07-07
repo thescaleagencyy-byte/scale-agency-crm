@@ -18,3 +18,11 @@ CREATE TABLE IF NOT EXISTS ai_config (
 ALTER TABLE ai_config ENABLE ROW LEVEL SECURITY;
 CREATE POLICY ai_config_policy ON ai_config FOR ALL
   USING (is_account_member(account_id));
+
+-- RLS policies are only reachable once the table grants privileges to
+-- the role in the first place — without this, every request hits
+-- "permission denied for table ai_config" before RLS even evaluates.
+-- Every other domain table in this schema grants `authenticated`;
+-- this one was missed, which is what broke Save-key on both the
+-- AshWheelz and (pending) Sultan deployments.
+GRANT SELECT, INSERT, UPDATE, DELETE ON ai_config TO authenticated;

@@ -103,6 +103,14 @@ export default function InboxPage() {
     knownConvIdsRef.current = next;
   }, [conversations]);
 
+  // Synchronous mirror of the active conversation id, for async handlers
+  // (like the decrypt refetch above) that must check "is this thread still
+  // open?" at resolve time rather than capture time.
+  const activeConvIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    activeConvIdRef.current = activeConversation?.id ?? null;
+  }, [activeConversation?.id]);
+
   // Pull the conversation row with its `contact` joined and merge it
   // into state. Needed because Supabase Realtime payloads only carry the
   // row's own columns — a brand-new conversation arrives without a
@@ -201,20 +209,30 @@ export default function InboxPage() {
       const newMsg = event.new;
 
       if (event.eventType === "INSERT") {
-        // Add to messages if it belongs to active conversation
+        // Messages are stored AES-encrypted in the DB. The realtime payload
+        // carries the raw ciphertext — we must fetch the decrypted version
+        // via the API route rather than using newMsg.content_text directly.
         if (
           activeConversation &&
           newMsg.conversation_id === activeConversation.id
         ) {
-          setMessages((prev) => {
-            // Avoid duplicates
-            if (prev.some((m) => m.id === newMsg.id)) return prev;
-            // Replace optimistic message if it exists
-            const withoutOptimistic = prev.filter(
-              (m) => !m.id.startsWith("temp-")
-            );
-            return [...withoutOptimistic, newMsg];
-          });
+          // Remove any optimistic temp message immediately so the UI
+          // doesn't stutter, then replace with decrypted fetch result.
+          setMessages((prev) => prev.filter((m) => !m.id.startsWith("temp-")));
+          fetch(`/api/messages?conversation_id=${newMsg.conversation_id}`)
+            .then((r) => r.json())
+            .then((decrypted) => {
+              // Guard against a thread switch while the fetch was in
+              // flight — without this, the previous conversation's
+              // messages would overwrite the newly opened thread.
+              if (
+                Array.isArray(decrypted) &&
+                activeConvIdRef.current === newMsg.conversation_id
+              ) {
+                setMessages(decrypted);
+              }
+            })
+            .catch(() => {});
         }
 
         // Update conversation list preview. We need to know *synchronously*
@@ -222,13 +240,16 @@ export default function InboxPage() {
         // the preview and triggering a hydrate — see the comment on
         // knownConvIdsRef for why a closure flag inside the updater would
         // always read false here.
+        // NOTE: last_message_text is intentionally omitted here — content_text
+        // in the realtime payload is encrypted ciphertext. The conversations
+        // UPDATE event (fired by the send route after the message INSERT)
+        // carries the plain-text last_message_text and will patch it shortly.
         if (knownConvIdsRef.current.has(newMsg.conversation_id)) {
           setConversations((prev) =>
             prev.map((c) =>
               c.id === newMsg.conversation_id
                 ? {
                     ...c,
-                    last_message_text: newMsg.content_text ?? "",
                     last_message_at: newMsg.created_at,
                     unread_count:
                       activeConversation?.id === newMsg.conversation_id
@@ -249,9 +270,18 @@ export default function InboxPage() {
       }
 
       if (event.eventType === "UPDATE") {
-        // Update message status
+        // Only merge non-content fields — content_text in the realtime payload
+        // is encrypted ciphertext. Preserve the decrypted value already in state.
         setMessages((prev) =>
-          prev.map((m) => (m.id === newMsg.id ? { ...m, ...newMsg } : m))
+          prev.map((m) =>
+            m.id === newMsg.id
+              ? {
+                  ...m,
+                  status: newMsg.status,
+                  reply_to_message_id: newMsg.reply_to_message_id,
+                }
+              : m,
+          ),
         );
       }
     },

@@ -21,6 +21,7 @@ async function fetchSince(
   apiUrl: string,
   apiKey: string,
   sinceMs: number,
+  workflowId?: string,
 ): Promise<unknown[]> {
   const all: unknown[] = []
   let cursor: string | null = null
@@ -28,6 +29,7 @@ async function fetchSince(
   while (all.length < 500) {
     const params = new URLSearchParams({ limit: '100' })
     if (cursor) params.set('cursor', cursor)
+    if (workflowId) params.set('workflowId', workflowId)
 
     const res = await fetch(`${apiUrl}/api/v1/executions?${params}`, {
       headers: { 'X-N8N-API-KEY': apiKey, Accept: 'application/json' },
@@ -80,6 +82,8 @@ export async function GET(request: Request) {
       const status = searchParams.get('status')
       const params = new URLSearchParams({ limit })
       if (status) params.set('status', status)
+      const wfId = process.env.N8N_WORKFLOW_ID
+      if (wfId) params.set('workflowId', wfId)
 
       const res = await fetch(`${creds.apiUrl}/api/v1/executions?${params}`, {
         headers: { 'X-N8N-API-KEY': creds.apiKey, Accept: 'application/json' },
@@ -101,7 +105,8 @@ export async function GET(request: Request) {
     const yesterdayMidnight = new Date(todayMidnight)
     yesterdayMidnight.setDate(yesterdayMidnight.getDate() - 1)
 
-    const execs = await fetchSince(creds.apiUrl, creds.apiKey, yesterdayMidnight.getTime())
+    const workflowId = process.env.N8N_WORKFLOW_ID ?? undefined
+    const execs = await fetchSince(creds.apiUrl, creds.apiKey, yesterdayMidnight.getTime(), workflowId)
     return NextResponse.json({ data: execs })
   } catch (err) {
     if (err instanceof Error && err.name === 'TimeoutError') {

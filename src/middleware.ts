@@ -53,6 +53,21 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // Client deployments (feature gating on) are invite-only. Direct hits
+  // on /signup without an invite token bounce to /login — hiding the
+  // login-page link alone wouldn't stop someone typing the URL. Invitees
+  // keep signup so the /join/<token> flow works end to end.
+  if (
+    FEATURE_GATING_ENABLED &&
+    request.nextUrl.pathname === '/signup' &&
+    !request.nextUrl.searchParams.get('invite')
+  ) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
+    url.search = ''
+    return NextResponse.redirect(url)
+  }
+
   // Protected pages - redirect to login if not authenticated
   const protectedPaths = ['/dashboard', '/inbox', '/contacts', '/leads', '/pipelines', '/broadcasts', '/automations', '/settings', '/drip', '/appointments', '/analytics', '/qr-codes', '/flows-builder', '/onboarding']
   if (!user && protectedPaths.some(path => request.nextUrl.pathname.startsWith(path))) {

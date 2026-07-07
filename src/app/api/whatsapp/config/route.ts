@@ -218,14 +218,14 @@ export async function POST(request: Request) {
       .maybeSingle()
 
     if (claimedError) {
-      console.error('Error checking phone_number_id ownership:', claimedError)
-      return NextResponse.json(
-        { error: 'Failed to validate configuration' },
-        { status: 500 }
-      )
+      // Non-fatal: admin client may fail if SUPABASE_SERVICE_ROLE_KEY is
+      // misconfigured. Log and proceed without the duplicate-number check
+      // rather than blocking the entire save. The UNIQUE constraint on
+      // whatsapp_config.phone_number_id still prevents actual duplicates.
+      console.error('[whatsapp/config POST] Admin ownership check failed (proceeding):', claimedError.message, claimedError.code)
     }
 
-    if (claimed) {
+    if (!claimedError && claimed) {
       return NextResponse.json(
         {
           error:
@@ -269,14 +269,21 @@ export async function POST(request: Request) {
       )
     }
 
-    // Look up any pre-existing row for this account so we know whether
-    // this number is already registered with Meta — if so we can skip
-    // /register when the user didn't provide a PIN this time around.
-    const { data: existing } = await supabase
+    // Look up any pre-existing row. Try account_id first (post-017); fall back
+    // to user_id if the account_id column hasn't been migrated yet.
+    let { data: existing } = await supabase
       .from('whatsapp_config')
       .select('id, registered_at, phone_number_id')
       .eq('account_id', accountId)
       .maybeSingle()
+    if (!existing) {
+      const { data: byUser } = await supabase
+        .from('whatsapp_config')
+        .select('id, registered_at, phone_number_id')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      existing = byUser
+    }
 
     const sameNumber =
       existing?.phone_number_id === phone_number_id &&
@@ -367,36 +374,63 @@ export async function POST(request: Request) {
       updated_at: new Date().toISOString(),
     }
 
+    // Minimal row — only columns that exist in the original migration 001
+    // schema. Used as fallback when newer columns (account_id, webhook_url,
+    // registered_at, etc.) haven't been added yet via migrations 015/017/024.
+    const minimalRow = {
+      phone_number_id,
+      waba_id: waba_id || null,
+      access_token: encryptedAccessToken,
+      verify_token: encryptedVerifyToken,
+      status: baseRow.status,
+      connected_at: baseRow.connected_at,
+      updated_at: baseRow.updated_at,
+    }
+
     if (existing) {
-      const { error: updateError } = await supabase
+      let { error: updateError } = await supabase
         .from('whatsapp_config')
         .update(baseRow)
         .eq('account_id', accountId)
 
+      if (updateError?.code === '42703') {
+        // account_id column or another newer column missing — fall back to
+        // minimal update keyed on user_id (original schema).
+        console.warn('[whatsapp/config POST] UPDATE fallback (missing column):', updateError.message)
+        const { error: fallbackErr } = await supabase
+          .from('whatsapp_config')
+          .update(minimalRow)
+          .eq('user_id', user.id)
+        updateError = fallbackErr ?? null
+      }
+
       if (updateError) {
         console.error('Error updating whatsapp_config:', updateError)
         return NextResponse.json(
-          { error: 'Failed to update configuration' },
+          { error: `Failed to update configuration: ${updateError.message}` },
           { status: 500 }
         )
       }
     } else {
-      // Insert with both columns: `account_id` is the tenancy key
-      // (NOT NULL post-017, UNIQUE so duplicates trip the constraint
-      // up-front), `user_id` is the audit column identifying which
-      // member of the account saved the config.
-      const { error: insertError } = await supabase
+      let { error: insertError } = await supabase
         .from('whatsapp_config')
-        .insert({
-          account_id: accountId,
-          user_id: user.id,
-          ...baseRow,
-        })
+        .insert({ account_id: accountId, user_id: user.id, ...baseRow })
+
+      if (insertError?.code === '42703') {
+        // Newer columns (account_id, webhook_url, registered_at, etc.) missing
+        // because migrations 015/017/024 haven't run on this Supabase project.
+        // Fall back to the original schema so the core credentials still save.
+        console.warn('[whatsapp/config POST] INSERT fallback (missing column):', insertError.message)
+        const { error: fallbackErr } = await supabase
+          .from('whatsapp_config')
+          .insert({ user_id: user.id, ...minimalRow })
+        insertError = fallbackErr ?? null
+      }
 
       if (insertError) {
         console.error('Error inserting whatsapp_config:', insertError)
         return NextResponse.json(
-          { error: 'Failed to save configuration' },
+          { error: `Failed to save configuration: ${insertError.message}` },
           { status: 500 }
         )
       }

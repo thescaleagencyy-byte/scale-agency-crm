@@ -128,15 +128,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const supabase = createClient();
     setProfileLoading(true);
     try {
+      // Left join (no !inner) so the profile row is always returned
+      // even when the accounts row is invisible due to an RLS gap.
+      // !inner would exclude the entire profile row if accounts can't
+      // be joined, making profileLoading settle with no data and
+      // every derived value (accountId, defaultCurrency) stuck at null/PKR.
       const { data, error } = await supabase
         .from("profiles")
         .select(
-          // `account:accounts!inner(id, name)` — explicit join on the
-          // single FK profiles.account_id → accounts.id. `!inner` so a
-          // missing account collapses to null rather than a half-
-          // populated row (shouldn't happen post-017 NOT NULL, but
-          // belt-and-braces against forks running older schemas).
-          "id, full_name, email, avatar_url, role, beta_features, account_id, account_role, account:accounts!inner(id, name, default_currency)",
+          "id, full_name, email, avatar_url, role, beta_features, account_id, account_role, account:accounts(id, name, default_currency)",
         )
         .eq("user_id", userId)
         .maybeSingle();
@@ -148,40 +148,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           hint: error.hint,
           code: error.code,
         });
+        // Still try a profiles-only fallback so the user isn't locked out
+        const { data: d2 } = await supabase
+          .from("profiles")
+          .select("id, full_name, email, avatar_url, role, beta_features, account_id, account_role")
+          .eq("user_id", userId)
+          .maybeSingle();
+        if (d2) {
+          const accountRole = isAccountRole(d2.account_role) ? d2.account_role : null;
+          setProfile({
+            id: d2.id, full_name: d2.full_name, email: d2.email,
+            avatar_url: d2.avatar_url, role: d2.role,
+            beta_features: d2.beta_features ?? [],
+            account_id: d2.account_id ?? null, account_role: accountRole,
+          });
+          // Try fetching account row separately for default_currency
+          if (d2.account_id) {
+            const { data: acct } = await supabase
+              .from("accounts").select("id, name, default_currency")
+              .eq("id", d2.account_id).maybeSingle();
+            setAccount(acct ? { id: acct.id, name: acct.name, default_currency: acct.default_currency ?? DEFAULT_CURRENCY } : null);
+          }
+        }
         return;
       }
 
       if (data) {
-        // Supabase's typed client surfaces an embedded `!inner` row
-        // as either an object or a single-element array depending on
-        // the schema's inferred cardinality — normalise to the object
-        // form before reading.
         const accountRaw = Array.isArray(data.account)
           ? data.account[0] ?? null
-          : (data.account as {
-              id: string;
-              name: string;
-              default_currency: string | null;
-            } | null);
-        // Narrow default_currency defensively: forks running pre-021
-        // schemas won't have the column, so a missing/null value reads
-        // as the safe USD fallback rather than crashing the picker.
+          : (data.account as { id: string; name: string; default_currency: string | null } | null);
+
         const accountRow: AccountSummary | null = accountRaw
-          ? {
-              id: accountRaw.id,
-              name: accountRaw.name,
-              default_currency: accountRaw.default_currency ?? DEFAULT_CURRENCY,
-            }
+          ? { id: accountRaw.id, name: accountRaw.name, default_currency: accountRaw.default_currency ?? DEFAULT_CURRENCY }
           : null;
 
-        // Narrow the DB enum into our AccountRole union. The DB
-        // constraint should make this unconditional, but a future
-        // migration that broadens the enum without updating TS would
-        // otherwise crash here — fall back to null and let UI gates
-        // treat the caller as least-privileged.
-        const accountRole = isAccountRole(data.account_role)
-          ? data.account_role
-          : null;
+        // If accounts join returned null (RLS gap), fetch separately so
+        // default_currency is always read from DB, never stuck at fallback.
+        const resolvedAccount = accountRow ?? (data.account_id ? await supabase
+          .from("accounts").select("id, name, default_currency")
+          .eq("id", data.account_id).maybeSingle()
+          .then(({ data: a }) => a ? { id: a.id, name: a.name, default_currency: a.default_currency ?? DEFAULT_CURRENCY } : null)
+          : null);
+
+        const accountRole = isAccountRole(data.account_role) ? data.account_role : null;
 
         setProfile({
           id: data.id,
@@ -189,15 +198,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           email: data.email,
           avatar_url: data.avatar_url,
           role: data.role,
-          // `beta_features` is `NOT NULL DEFAULT ARRAY[]` in the DB, but
-          // narrow defensively in case the column hasn't been migrated yet
-          // (older deployments running 011 lazily) — `null` reads as no
-          // opt-ins, which is the safe default for any future beta gate.
           beta_features: data.beta_features ?? [],
           account_id: data.account_id ?? null,
           account_role: accountRole,
         });
-        setAccount(accountRow);
+        setAccount(resolvedAccount);
       }
     } catch (err) {
       console.error("[AuthProvider] fetchProfile threw:", err);
