@@ -45,6 +45,7 @@ import { deleteAccountMedia } from "@/lib/storage/upload-media";
 import { TemplatePicker } from "./template-picker";
 import { buildReplyPreview } from "./reply-quote";
 import { toast } from "sonner";
+import { CLIENT_NAME } from "@/lib/features";
 
 interface ReplyDraft {
   id: string;
@@ -137,15 +138,24 @@ const STATUS_OPTIONS: { label: string; value: ConversationStatus; color: string 
 
 /**
  * WhatsApp-style doodle background applied to the chat area (both the
- * active thread and the empty state). The SVG tile lives at
- * `/public/inbox-doodle.svg`; the slate-950 colour sits underneath so
- * the doodles read as a subtle pattern rather than a stark grid.
+ * active thread and the empty state). Clients with a bespoke tile in
+ * /public/clients/<slug>-doodle.svg get their own motif (AshWheelz:
+ * trucks, cranes, forklifts); everyone else keeps the generic doodle.
+ * Allow-list rather than convention so a client without a custom file
+ * never 404s into a blank background.
  *
  * Defined once at module scope so the two render paths can't drift —
  * if we ever switch the asset, both spots update together.
  */
-const DOODLE_BG_CLASSES =
-  "bg-background bg-[url('/inbox-doodle.svg')] bg-repeat";
+const CLIENTS_WITH_DOODLE = ["ashwheelz"];
+const DOODLE_SLUG = CLIENT_NAME.toLowerCase().replace(/\s+/g, "");
+const DOODLE_URL = CLIENTS_WITH_DOODLE.includes(DOODLE_SLUG)
+  ? `/clients/${DOODLE_SLUG}-doodle.svg`
+  : "/inbox-doodle.svg";
+// Inline style (not a Tailwind arbitrary value): the URL is computed at
+// module load, and Tailwind's JIT can't compile dynamic class strings.
+const DOODLE_BG_CLASSES = "bg-background bg-repeat";
+const DOODLE_BG_STYLE = { backgroundImage: `url('${DOODLE_URL}')` } as const;
 
 export function MessageThread({
   conversation,
@@ -852,7 +862,7 @@ export function MessageThread({
   // pattern under the user's eye.
   if (!conversation || !contact) {
     return (
-      <div className={cn("flex flex-1 flex-col items-center justify-center", DOODLE_BG_CLASSES)}>
+      <div className={cn("flex flex-1 flex-col items-center justify-center", DOODLE_BG_CLASSES)} style={DOODLE_BG_STYLE}>
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 ring-1 ring-primary/15">
           <MessageSquare className="h-7 w-7 text-primary" />
         </div>
@@ -886,7 +896,7 @@ export function MessageThread({
     // clipped and the hover toolbar overlaps the Tags panel. Letting the
     // root shrink lets the bubbles' break-words / max-w caps apply.
     // Issue #257.
-    <div className={cn("flex min-w-0 flex-1 flex-col", DOODLE_BG_CLASSES)}>
+    <div className={cn("flex min-w-0 flex-1 flex-col", DOODLE_BG_CLASSES)} style={DOODLE_BG_STYLE}>
       {/* Header — glass surface (matches the app-wide header.tsx treatment)
           sits on top of the doodle so the name/avatar/dropdowns stay legible. */}
       <div className="flex items-center justify-between gap-2 border-b border-border bg-background/80 px-3 py-3 backdrop-blur-md sm:px-4">

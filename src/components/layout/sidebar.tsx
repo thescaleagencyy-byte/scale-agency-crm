@@ -36,6 +36,15 @@ const CLIENT_LOGO = CLIENT_NAME
   ? `/clients/${CLIENT_NAME.toLowerCase().replace(/\s+/g, '')}.png`
   : "/branding.jpeg";
 
+// Heavy-vehicle livery detail for rental/logistics deployments — a thin
+// chevron strip under the logo row, echoing equipment marking tape. Part
+// of the client-specific identity kit (see also the dashboard hero and
+// the inbox equipment doodle).
+const RENTAL_INDUSTRY = (() => {
+  const ind = (CLIENT_INDUSTRY || CLIENT_NAME).toLowerCase();
+  return ind.includes('logistic') || ind.includes('transport') || ind.includes('car') || ind.includes('wheel');
+})();
+
 // Per-role chip metadata used in the sidebar's account strip + the
 // Members tab roster. Keeping this near both consumers in a single
 // place avoids drift between the two surfaces — when a designer
@@ -280,6 +289,18 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
             <X className="h-5 w-5" />
           </button>
         </div>
+
+        {/* Livery chevron strip — rental deployments only */}
+        {RENTAL_INDUSTRY && (
+          <div
+            aria-hidden
+            className="h-[3px] w-full shrink-0 opacity-35"
+            style={{
+              backgroundImage:
+                'repeating-linear-gradient(135deg, var(--primary) 0 8px, transparent 8px 16px)',
+            }}
+          />
+        )}
 
         {/* Main navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-4">

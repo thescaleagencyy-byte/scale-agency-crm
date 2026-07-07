@@ -219,15 +219,58 @@ export default function DashboardPage() {
         {/* Glow orbs */}
         <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-primary opacity-[0.10] blur-[90px]" />
         <div className="pointer-events-none absolute -bottom-12 left-1/4 h-40 w-64 rounded-full bg-primary opacity-[0.06] blur-[70px]" />
-        {/* Grid overlay */}
-        <div
-          className="pointer-events-none absolute inset-0 rounded-2xl opacity-[0.03]"
-          style={{
-            backgroundImage: 'linear-gradient(var(--primary) 1px, transparent 1px), linear-gradient(90deg, var(--primary) 1px, transparent 1px)',
-            backgroundSize: '40px 40px',
-            maskImage: 'radial-gradient(ellipse 80% 100% at 70% 0%, black 30%, transparent 100%)',
-          }}
-        />
+        {/* Pattern overlay — rental deployments get a heavy-vehicle livery
+            treatment (diagonal hazard chevrons + a crane silhouette
+            watermark) instead of the generic SaaS grid, so the hero reads
+            "fleet operations", not "template". */}
+        {RENTAL_INDUSTRY ? (
+          <>
+            <div
+              className="pointer-events-none absolute inset-0 rounded-2xl opacity-[0.05]"
+              style={{
+                backgroundImage:
+                  'repeating-linear-gradient(135deg, var(--primary) 0 14px, transparent 14px 42px)',
+                maskImage:
+                  'radial-gradient(ellipse 70% 130% at 100% 0%, black 0%, transparent 65%)',
+              }}
+            />
+            {/* Chevron livery strip along the bottom edge */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-1.5 opacity-40"
+              style={{
+                backgroundImage:
+                  'repeating-linear-gradient(135deg, var(--primary) 0 10px, transparent 10px 20px)',
+              }}
+            />
+            {/* Crane silhouette watermark */}
+            <svg
+              aria-hidden
+              viewBox="0 0 120 100"
+              className="pointer-events-none absolute -bottom-2 right-6 hidden h-28 w-auto text-primary opacity-[0.07] sm:block"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M20 96V20h72" />
+              <path d="M36 20L20 40M52 20L32 44M68 20L48 44M84 20v18" />
+              <path d="M84 38a7 7 0 1 0 0 .1" />
+              <path d="M8 96h48" />
+              <path d="M14 20h12" />
+            </svg>
+          </>
+        ) : (
+          <div
+            className="pointer-events-none absolute inset-0 rounded-2xl opacity-[0.03]"
+            style={{
+              backgroundImage: 'linear-gradient(var(--primary) 1px, transparent 1px), linear-gradient(90deg, var(--primary) 1px, transparent 1px)',
+              backgroundSize: '40px 40px',
+              maskImage: 'radial-gradient(ellipse 80% 100% at 70% 0%, black 30%, transparent 100%)',
+            }}
+          />
+        )}
         <div className="relative z-10 flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="mb-2 flex flex-wrap items-center gap-x-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-primary/80">

@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="480" viewBox="0 0 480 480">
+  <!-- AshWheelz inbox doodle — heavy-equipment fleet motif.
+       Icons stroked at ~3.5% white so the tile reads as texture on the
+       dark chat surface, mirroring WhatsApp's doodle density. -->
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.05" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+    <!-- flatbed truck -->
+    <g transform="translate(30,40) rotate(-8)">
+      <path d="M2 26h16V10h14l8 8v8h6"/>
+      <circle cx="12" cy="30" r="4"/>
+      <circle cx="36" cy="30" r="4"/>
+      <path d="M18 10v16"/>
+    </g>
+
+    <!-- crane hook -->
+    <g transform="translate(150,20) rotate(6)">
+      <path d="M4 40L28 4h4v10"/>
+      <path d="M28 4L8 12"/>
+      <path d="M32 14v10a5 5 0 1 1-8 4"/>
+    </g>
+
+    <!-- forklift -->
+    <g transform="translate(280,50) rotate(-5)">
+      <path d="M4 28V12h12l6 10v6"/>
+      <path d="M26 6v22h12"/>
+      <circle cx="10" cy="32" r="4"/>
+      <circle cx="24" cy="32" r="3"/>
+    </g>
+
+    <!-- location pin -->
+    <g transform="translate(400,30) rotate(10)">
+      <path d="M14 2a12 12 0 0 1 12 12c0 8-12 20-12 20S2 22 2 14A12 12 0 0 1 14 2z"/>
+      <circle cx="14" cy="14" r="4"/>
+    </g>
+
+    <!-- gear -->
+    <g transform="translate(80,150) rotate(14)">
+      <circle cx="16" cy="16" r="6"/>
+      <path d="M16 2v6M16 24v6M2 16h6M24 16h6M6 6l4 4M22 22l4 4M26 6l-4 4M10 22l-4 4"/>
+    </g>
+
+    <!-- traffic cone -->
+    <g transform="translate(210,140) rotate(-12)">
+      <path d="M14 4l10 26H4z"/>
+      <path d="M2 32h24"/>
+      <path d="M9 18h10"/>
+    </g>
+
+    <!-- generator bolt -->
+    <g transform="translate(330,160) rotate(8)">
+      <rect x="2" y="8" width="32" height="22" rx="3"/>
+      <path d="M20 12l-6 8h6l-4 6"/>
+      <path d="M8 8V4M28 8V4"/>
+    </g>
+
+    <!-- steering wheel -->
+    <g transform="translate(430,140) rotate(-6)">
+      <circle cx="16" cy="16" r="14"/>
+      <circle cx="16" cy="16" r="4"/>
+      <path d="M16 2v10M4 22l8-4M28 22l-8-4"/>
+    </g>
+
+    <!-- lowbed trailer -->
+    <g transform="translate(40,270) rotate(6)">
+      <path d="M2 18h10l4-8h14v8h12"/>
+      <circle cx="30" cy="22" r="3.5"/>
+      <circle cx="38" cy="22" r="3.5"/>
+      <circle cx="8" cy="22" r="3.5"/>
+    </g>
+
+    <!-- wrench -->
+    <g transform="translate(180,260) rotate(-16)">
+      <path d="M26 6a8 8 0 0 0-11 10L4 27l5 5 11-11a8 8 0 0 0 10-11l-5 5-5-1-1-5z"/>
+    </g>
+
+    <!-- manlift / boom -->
+    <g transform="translate(290,270) rotate(4)">
+      <path d="M4 30h18M8 30l8-12 10-6"/>
+      <rect x="24" y="8" width="10" height="6"/>
+      <circle cx="9" cy="33" r="3"/>
+      <circle cx="19" cy="33" r="3"/>
+    </g>
+
+    <!-- hard hat -->
+    <g transform="translate(400,280) rotate(-10)">
+      <path d="M4 22a14 14 0 0 1 28 0"/>
+      <path d="M2 22h32"/>
+      <path d="M18 8v-4"/>
+    </g>
+
+    <!-- chat bubble (keep one messaging cue) -->
+    <g transform="translate(100,380) rotate(8)">
+      <path d="M28 4H6a4 4 0 0 0-4 4v12a4 4 0 0 0 4 4h4v6l8-6h10a4 4 0 0 0 4-4V8a4 4 0 0 0-4-4z"/>
+    </g>
+
+    <!-- fuel pump -->
+    <g transform="translate(220,390) rotate(-6)">
+      <rect x="4" y="4" width="16" height="26" rx="2"/>
+      <path d="M8 10h8M20 12h4l4 4v10a3 3 0 0 1-6 0V16"/>
+    </g>
+
+    <!-- tower crane -->
+    <g transform="translate(330,380) rotate(5)">
+      <path d="M6 32V6h28M14 6L6 14M22 6l-8 8M30 6v8M30 14a4 4 0 1 0 0 .1"/>
+    </g>
+
+    <!-- clipboard / quote -->
+    <g transform="translate(430,400) rotate(-8)">
+      <rect x="2" y="4" width="22" height="28" rx="3"/>
+      <path d="M8 2h10v6H8zM7 14h12M7 20h12M7 26h8"/>
+    </g>
+  </g>
+</svg>
