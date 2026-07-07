@@ -35,6 +35,7 @@ type DB = SupabaseClient
 export async function loadMetrics(db: DB): Promise<MetricsBundle> {
   const todayStart = startOfLocalDay().toISOString()
   const yesterdayStart = daysAgoStart(1).toISOString()
+  const sevenDayStart = daysAgoStart(6).toISOString()
 
   const emptyCount = Promise.resolve({ count: 0, data: [] as never[] })
   const [
@@ -48,6 +49,9 @@ export async function loadMetrics(db: DB): Promise<MetricsBundle> {
     messagesYesterday,
     leadsToday,
     leadsYesterday,
+    contacts7d,
+    messages7d,
+    leads7d,
   ] = await Promise.all([
     db.from('conversations').select('id', { count: 'exact', head: true }).eq('status', 'open'),
     db
@@ -89,6 +93,15 @@ export async function loadMetrics(db: DB): Promise<MetricsBundle> {
           .gte('created_at', yesterdayStart)
           .lt('created_at', todayStart)
       : emptyCount,
+    db.from('contacts').select('id', { count: 'exact', head: true }).gte('created_at', sevenDayStart),
+    db
+      .from('messages')
+      .select('id', { count: 'exact', head: true })
+      .eq('sender_type', 'agent')
+      .gte('created_at', sevenDayStart),
+    hasFeature('leads')
+      ? db.from('leads').select('id', { count: 'exact', head: true }).gte('created_at', sevenDayStart)
+      : emptyCount,
   ])
 
   const openDealsRows = (openDeals.data ?? []) as { value: number | null }[]
@@ -118,6 +131,9 @@ export async function loadMetrics(db: DB): Promise<MetricsBundle> {
           previous: leadsYesterday.count ?? 0,
         }
       : null,
+    newContacts7d: contacts7d.count ?? 0,
+    messagesSent7d: messages7d.count ?? 0,
+    newLeads7d: hasFeature('leads') ? leads7d.count ?? 0 : null,
   }
 }
 

@@ -155,6 +155,36 @@ export function SettingsOverview({
     subtitle: ReactNode;
   }[] = [
     {
+      section: 'profile',
+      loading: false,
+      subtitle: displayName,
+    },
+    {
+      section: 'security',
+      loading: false,
+      subtitle: 'Password, sessions & two-factor auth',
+    },
+    {
+      section: 'appearance',
+      loading: false,
+      subtitle: `${cap(mode)} mode · ${themeName} accent`,
+    },
+    {
+      section: 'number-health',
+      loading: whatsappLoading,
+      subtitle: !whatsapp?.configured ? (
+        'WhatsApp number quality'
+      ) : whatsapp.connected ? (
+        <>
+          <StatusDot tone="ok" /> Number connected
+        </>
+      ) : (
+        <>
+          <StatusDot tone="muted" /> Needs attention
+        </>
+      ),
+    },
+    {
       section: 'whatsapp',
       loading: whatsappLoading,
       subtitle: !whatsapp?.configured ? (
@@ -168,6 +198,16 @@ export function SettingsOverview({
           <StatusDot tone="muted" /> Needs reconnecting
         </>
       ),
+    },
+    {
+      section: 'n8n',
+      loading: false,
+      subtitle: 'Automation engine & executions',
+    },
+    {
+      section: 'ai',
+      loading: false,
+      subtitle: 'AI assistant engine & API key',
     },
     {
       section: 'members',
@@ -211,9 +251,9 @@ export function SettingsOverview({
             } custom field${counts?.customFields === 1 ? '' : 's'}`,
     },
     {
-      section: 'appearance',
+      section: 'webhooks',
       loading: false,
-      subtitle: `${cap(mode)} mode · ${themeName} accent`,
+      subtitle: 'API keys & outbound webhooks',
     },
   ];
 

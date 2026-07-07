@@ -16,6 +16,12 @@ export interface MetricsBundle {
   /** Only populated when the `leads` feature is enabled — used as the
    *  third metric card on deployments where `pipelines` is gated off. */
   newLeadsToday: MetricDelta | null
+  /** Rolling 7-day windows. Low-volume deployments show zeros on
+   *  today-vs-yesterday cards most mornings — a dead dashboard. The
+   *  cards lead with the 7-day number and show today as the delta. */
+  newContacts7d: number
+  messagesSent7d: number
+  newLeads7d: number | null
 }
 
 export interface ConversationsSeriesPoint {

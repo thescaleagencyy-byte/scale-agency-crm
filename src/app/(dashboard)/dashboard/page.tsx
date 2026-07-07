@@ -162,11 +162,11 @@ export default function DashboardPage() {
       heroHeadline:         'Order Operations',
       heroTagline:          'Orders, reservations & guest WhatsApp — live.',
       activeConversations:  'Active Order Chats',
-      newContacts:          'New Customers Today',
-      newLeads:             'New Leads Today',
+      newContacts:          'New Customers · 7 Days',
+      newLeads:             'New Leads · 7 Days',
       openDeals:            'Active Orders Value',
       dealWord:             'order',
-      messagesSent:         'Replies Sent Today',
+      messagesSent:         'Replies Sent · 7 Days',
       chartTitle:           'Order Inquiries Over Time',
       chartSubtitle:        'Daily order & enquiry volume',
       pipelineTitle:        'Order Pipeline',
@@ -176,11 +176,11 @@ export default function DashboardPage() {
       heroHeadline:         'Rental Operations',
       heroTagline:          'Rental inquiries, lead pipeline & client WhatsApp — live.',
       activeConversations:  'Active Inquiries',
-      newContacts:          'New Customers Today',
-      newLeads:             'Leads Captured Today',
+      newContacts:          'New Customers · 7 Days',
+      newLeads:             'Leads Captured · 7 Days',
       openDeals:            'Open Rental Quotes',
       dealWord:             'quote',
-      messagesSent:         'Responses Sent Today',
+      messagesSent:         'Responses Sent · 7 Days',
       chartTitle:           'Rental Inquiries Over Time',
       chartSubtitle:        'Daily inquiry & response volume',
       pipelineTitle:        'Quote Pipeline',
@@ -190,11 +190,11 @@ export default function DashboardPage() {
       heroHeadline:         'Operations Dashboard',
       heroTagline:          'Your WhatsApp pipeline — live and ready.',
       activeConversations:  'Active Conversations',
-      newContacts:          'New Contacts Today',
-      newLeads:             'New Leads Today',
+      newContacts:          'New Contacts · 7 Days',
+      newLeads:             'New Leads · 7 Days',
       openDeals:            'Open Deals Value',
       dealWord:             'deal',
-      messagesSent:         'Messages Sent Today',
+      messagesSent:         'Messages Sent · 7 Days',
       chartTitle:           'Conversations Over Time',
       chartSubtitle:        'Daily message volume by direction',
       pipelineTitle:        'Pipeline Value',
@@ -230,8 +230,12 @@ export default function DashboardPage() {
         />
         <div className="relative z-10 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-primary/80">
-              {heroLabel} · {dateLine}
+            <p className="mb-2 flex flex-wrap items-center gap-x-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-primary/80">
+              <span>{heroLabel} · {dateLine}</span>
+              <span aria-hidden className="hidden h-3 w-px bg-primary/30 sm:inline-block" />
+              <span className="bg-gradient-to-r from-primary to-primary/50 bg-clip-text text-transparent">
+                Built by The Scale Agency
+              </span>
             </p>
             <h1 className="font-heading text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl">
               {greeting}
@@ -277,15 +281,11 @@ export default function DashboardPage() {
             />
             <MetricCard
               title={labels.newContacts}
-              value={metrics.newContactsToday.current.toLocaleString()}
+              value={metrics.newContacts7d.toLocaleString()}
               icon={UserPlus}
               delta={{
-                sign:
-                  metrics.newContactsToday.current - metrics.newContactsToday.previous,
-                label: deltaLabel(
-                  metrics.newContactsToday.current - metrics.newContactsToday.previous,
-                  'vs yesterday',
-                ),
+                sign: metrics.newContactsToday.current,
+                label: todayLabel(metrics.newContactsToday.current),
               }}
             />
             {hasFeature('pipelines') ? (
@@ -295,32 +295,24 @@ export default function DashboardPage() {
                 icon={DollarSign}
                 subtitle={`${metrics.openDealsCount} open ${labels.dealWord}${metrics.openDealsCount === 1 ? '' : 's'}`}
               />
-            ) : metrics.newLeadsToday ? (
+            ) : metrics.newLeads7d != null && metrics.newLeadsToday ? (
               <MetricCard
                 title={labels.newLeads}
-                value={metrics.newLeadsToday.current.toLocaleString()}
+                value={metrics.newLeads7d.toLocaleString()}
                 icon={TrendingUp}
                 delta={{
-                  sign:
-                    metrics.newLeadsToday.current - metrics.newLeadsToday.previous,
-                  label: deltaLabel(
-                    metrics.newLeadsToday.current - metrics.newLeadsToday.previous,
-                    'vs yesterday',
-                  ),
+                  sign: metrics.newLeadsToday.current,
+                  label: todayLabel(metrics.newLeadsToday.current),
                 }}
               />
             ) : null}
             <MetricCard
               title={labels.messagesSent}
-              value={metrics.messagesSentToday.current.toLocaleString()}
+              value={metrics.messagesSent7d.toLocaleString()}
               icon={Send}
               delta={{
-                sign:
-                  metrics.messagesSentToday.current - metrics.messagesSentToday.previous,
-                label: deltaLabel(
-                  metrics.messagesSentToday.current - metrics.messagesSentToday.previous,
-                  'vs yesterday',
-                ),
+                sign: metrics.messagesSentToday.current,
+                label: todayLabel(metrics.messagesSentToday.current),
               }}
             />
           </>
@@ -388,4 +380,11 @@ function deltaLabel(delta: number, suffix: string): string {
   if (delta === 0) return `No change ${suffix}`
   const sign = delta > 0 ? '+' : ''
   return `${sign}${delta.toLocaleString()} ${suffix}`
+}
+
+// Delta line for the rolling-7-day cards: the big number is the week,
+// the delta is today's contribution to it.
+function todayLabel(count: number): string {
+  if (count === 0) return 'None yet today'
+  return `+${count.toLocaleString()} today`
 }
