@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   Brush,
   Sparkles,
+  RefreshCcw,
   type LucideIcon,
 } from 'lucide-react';
 import { FEATURE_GATING_ENABLED } from '@/lib/features';
@@ -48,6 +49,7 @@ export const SETTINGS_SECTIONS = [
   'workspaces',
   'branding',
   'billing',
+  'recovery',
 ] as const;
 
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
@@ -85,6 +87,7 @@ export const SECTION_META: Record<SettingsSection, SectionMeta> = {
   workspaces: { id: 'workspaces', label: 'Workspaces', icon: Building2, group: 'workspace' },
   branding: { id: 'branding', label: 'Branding', icon: Brush, group: 'workspace' },
   billing: { id: 'billing', label: 'Billing', icon: CreditCard, group: 'workspace' },
+  recovery: { id: 'recovery', label: 'Lead Recovery', icon: RefreshCcw, group: 'workspace' },
 };
 
 export const RAIL_GROUPS: { label: string | null; group: SectionMeta['group'] }[] = [

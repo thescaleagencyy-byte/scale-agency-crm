@@ -25,6 +25,7 @@ import { RoutingRulesPanel } from '@/components/settings/routing-rules-panel';
 import { NumberHealthPanel } from '@/components/settings/number-health-panel';
 import { BrandConfigPanel } from '@/components/settings/brand-config-panel';
 import { BillingPanel } from '@/components/settings/billing-panel';
+import { RecoveryPanel } from '@/components/settings/recovery-panel';
 import {
   resolveSection,
   type SettingsSection,
@@ -125,6 +126,7 @@ function SettingsPageInner() {
     'number-health': <NumberHealthPanel />,
     branding: <BrandConfigPanel />,
     billing: <BillingPanel />,
+    recovery: <RecoveryPanel />,
   };
 
   return (
