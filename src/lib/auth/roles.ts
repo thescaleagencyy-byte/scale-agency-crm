@@ -107,3 +107,8 @@ export function canDeleteAccount(role: AccountRole): boolean {
 export function canTransferOwnership(role: AccountRole): boolean {
   return role === "owner";
 }
+
+/** Owner only: view/change plan, payment method, invoices. */
+export function canManageBilling(role: AccountRole): boolean {
+  return role === "owner";
+}

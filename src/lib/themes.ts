@@ -78,6 +78,17 @@ export interface ThemeMeta {
    * theme in globals.css.
    */
   swatch: string;
+  /**
+   * True for a specific client's named brand color (e.g. "AshWheelz").
+   * These exist so that client's own deployment can boot in their
+   * brand color via NEXT_PUBLIC_DEFAULT_THEME — they're not a generic
+   * palette option. The agency's own (unrestricted) Appearance picker
+   * filters these out; offering another business's name as a pickable
+   * accent color on Scale Agency's own CRM is a bug, not a feature.
+   * "scale" is exempt — that's the agency's own brand, so it's a
+   * legitimate generic option on its own product.
+   */
+  isClientBrand?: boolean;
 }
 
 export const THEMES: ReadonlyArray<ThemeMeta> = [
@@ -92,6 +103,7 @@ export const THEMES: ReadonlyArray<ThemeMeta> = [
     name: "AshWheelz (Brand)",
     tagline: "AshWheelz logo orange — warm, energetic, automotive.",
     swatch: "oklch(0.74 0.17 60)",
+    isClientBrand: true,
   },
   {
     id: "violet",

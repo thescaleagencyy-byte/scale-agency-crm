@@ -24,6 +24,9 @@ export const CLIENT_NAME = process.env.NEXT_PUBLIC_CLIENT_NAME ?? ''
 export const CLIENT_INDUSTRY = process.env.NEXT_PUBLIC_CLIENT_INDUSTRY ?? ''
 // Human-readable app name shown in UI copy (invites, dialogs, config pages).
 export const APP_NAME = CLIENT_NAME ? `${CLIENT_NAME} Dashboard` : 'Scale Agency CRM'
+// Header AI widget's display name — single source of truth so it can't
+// drift between the widget itself and settings copy that references it.
+export const AI_NAME = CLIENT_NAME ? `${CLIENT_NAME} AI` : 'Scale Agency AI'
 // Primary brand color for client deployments. Falls back to Scale Agency neon green.
 export const PRIMARY_COLOR = process.env.NEXT_PUBLIC_PRIMARY_COLOR ?? '#39ff14'
 
@@ -36,6 +39,7 @@ export const PATH_FEATURE_MAP: Record<string, string> = {
   '/broadcasts':    'broadcasts',
   '/drip':          'drip',
   '/appointments':  'appointments',
+  '/contracts':     'contracts',
   '/analytics':     'analytics',
   '/qr-codes':      'qr-codes',
   '/flows':         'flows',

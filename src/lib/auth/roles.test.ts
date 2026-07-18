@@ -4,6 +4,7 @@ import {
   type AccountRole,
   canDeleteAccount,
   canEditSettings,
+  canManageBilling,
   canManageMembers,
   canSendMessages,
   canTransferOwnership,
@@ -119,6 +120,13 @@ describe("capability predicates", () => {
     expect(canDeleteAccount("admin")).toBe(false);
     expect(canDeleteAccount("agent")).toBe(false);
     expect(canDeleteAccount("viewer")).toBe(false);
+  });
+
+  it("canManageBilling: owner only", () => {
+    expect(canManageBilling("owner")).toBe(true);
+    expect(canManageBilling("admin")).toBe(false);
+    expect(canManageBilling("agent")).toBe(false);
+    expect(canManageBilling("viewer")).toBe(false);
   });
 
   it("canTransferOwnership: owner only", () => {

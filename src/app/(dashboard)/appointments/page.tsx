@@ -7,9 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Plus, Calendar, Clock, X, CheckCircle, Pencil } from 'lucide-react';
+import { Loader2, Plus, Calendar, Clock, X, CheckCircle, Pencil, Copy, RefreshCw, CalendarClock } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useCan } from '@/hooks/use-can';
 
 interface Service {
   id: string;
@@ -37,9 +38,12 @@ const STATUS_COLOR: Record<string, string> = {
 
 export default function AppointmentsPage() {
   const { accountId } = useAuth();
+  const canManageFeed = useCan('edit-settings');
   const [services, setServices] = useState<Service[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [icsToken, setIcsToken] = useState<string | null>(null);
+  const [regenerating, setRegenerating] = useState(false);
 
   // New service form
   const [showServiceForm, setShowServiceForm] = useState(false);
@@ -72,6 +76,32 @@ export default function AppointmentsPage() {
   }
 
   useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    fetch('/api/appointments/ics').then(r => r.json()).then(data => {
+      if (data.token) setIcsToken(data.token);
+    }).catch(() => {});
+  }, []);
+
+  function icsUrl(token: string): string {
+    return `${window.location.origin}/api/appointments/ics/${token}`;
+  }
+
+  async function copyFeedUrl() {
+    if (!icsToken) return;
+    await navigator.clipboard.writeText(icsUrl(icsToken));
+    toast.success('Calendar feed URL copied');
+  }
+
+  async function regenerateFeed() {
+    setRegenerating(true);
+    const res = await fetch('/api/appointments/ics/regenerate', { method: 'POST' });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) { toast.error(json.error ?? 'Failed to regenerate feed link'); setRegenerating(false); return; }
+    setIcsToken(json.token);
+    toast.success('Feed link regenerated — old link no longer works');
+    setRegenerating(false);
+  }
 
   async function createService(e: React.FormEvent) {
     e.preventDefault();
@@ -144,6 +174,32 @@ export default function AppointmentsPage() {
           <Plus className="h-4 w-4 mr-2" />Book Appointment
         </Button>
       </div>
+
+      {/* Calendar subscribe feed */}
+      {icsToken && (
+        <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card p-4 flex-wrap">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+              <CalendarClock className="h-4 w-4 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-foreground">Subscribe in Google/Apple Calendar</p>
+              <p className="truncate text-xs text-muted-foreground font-mono">{icsUrl(icsToken)}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button variant="outline" size="sm" onClick={copyFeedUrl} className="border-border bg-transparent text-muted-foreground hover:text-foreground text-xs">
+              <Copy className="h-3.5 w-3.5 mr-1.5" />Copy link
+            </Button>
+            {canManageFeed && (
+              <Button variant="outline" size="sm" onClick={regenerateFeed} disabled={regenerating} className="border-border bg-transparent text-muted-foreground hover:text-foreground text-xs">
+                {regenerating ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5 mr-1.5" />}
+                Regenerate
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Services */}
       <div className="space-y-3">

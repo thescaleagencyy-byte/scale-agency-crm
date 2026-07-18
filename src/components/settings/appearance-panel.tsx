@@ -33,6 +33,12 @@ export function AppearancePanel() {
   const { theme, setTheme, mode, setMode } = useTheme();
   const signatureTheme = THEMES.find((t) => t.id === DEFAULT_THEME);
   const brandLocked = FEATURE_GATING_ENABLED && !!signatureTheme;
+  // On the agency's own (unrestricted) deployment, a client's named
+  // brand color (e.g. "AshWheelz") has no business in a generic accent
+  // picker — filter it out. Client deployments never reach this list
+  // at all (brandLocked collapses the picker to their one signature
+  // color), so this only affects Scale Agency's own Appearance tab.
+  const pickerThemes = FEATURE_GATING_ENABLED ? THEMES : THEMES.filter((t) => !t.isClientBrand);
 
   return (
     <section className="max-w-3xl animate-in fade-in-50 duration-200">
@@ -97,7 +103,7 @@ export function AppearancePanel() {
         </h3>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {(brandLocked ? [signatureTheme!] : THEMES).map((t) => (
+          {(brandLocked ? [signatureTheme!] : pickerThemes).map((t) => (
             <ThemeCard
               key={t.id}
               id={t.id}

@@ -22,6 +22,9 @@ import {
 } from '@/lib/rate-limit'
 import type { MessageTemplate } from '@/types'
 import { isMessageTemplate } from '@/lib/whatsapp/template-row-guard'
+import { FEATURE_GATING_ENABLED } from '@/lib/features'
+import { limitsForPlan, UNLIMITED } from '@/lib/billing/plans'
+import { countMonthlyOutboundMessages } from '@/lib/billing/usage'
 
 export async function POST(request: Request) {
   try {
@@ -61,6 +64,36 @@ export async function POST(request: Request) {
         { error: 'Your profile is not linked to an account.' },
         { status: 403 },
       )
+    }
+
+    // Plan message cap — Scale Agency's own deployment only. Client
+    // deployments (AshWheelz, Sultan, Qissah) run on a manual retainer,
+    // not a self-serve plan, so this whole block is a no-op there.
+    // Fails OPEN on any error counting usage or reading the plan —
+    // a bug in a new billing feature must never be able to block a
+    // real customer's message.
+    if (!FEATURE_GATING_ENABLED) {
+      try {
+        const { data: sub } = await supabase
+          .from('subscriptions')
+          .select('plan_name')
+          .eq('account_id', accountId)
+          .maybeSingle()
+        const limits = limitsForPlan(sub?.plan_name ?? 'free')
+        if (limits.monthlyMessages !== UNLIMITED) {
+          const used = await countMonthlyOutboundMessages(supabase, accountId)
+          if (used >= limits.monthlyMessages) {
+            return NextResponse.json(
+              {
+                error: `Monthly message limit reached (${limits.monthlyMessages}). Upgrade your plan in Settings → Billing to keep sending.`,
+              },
+              { status: 402 },
+            )
+          }
+        }
+      } catch (limitErr) {
+        console.error('[POST /api/whatsapp/send] plan limit check failed, allowing send:', limitErr)
+      }
     }
 
     const body = await request.json()

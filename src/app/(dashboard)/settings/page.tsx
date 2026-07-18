@@ -24,6 +24,7 @@ import { WorkspacesPanel } from '@/components/settings/workspaces-panel';
 import { RoutingRulesPanel } from '@/components/settings/routing-rules-panel';
 import { NumberHealthPanel } from '@/components/settings/number-health-panel';
 import { BrandConfigPanel } from '@/components/settings/brand-config-panel';
+import { BillingPanel } from '@/components/settings/billing-panel';
 import {
   resolveSection,
   type SettingsSection,
@@ -123,6 +124,7 @@ function SettingsPageInner() {
     workspaces: <WorkspacesPanel />,
     'number-health': <NumberHealthPanel />,
     branding: <BrandConfigPanel />,
+    billing: <BillingPanel />,
   };
 
   return (

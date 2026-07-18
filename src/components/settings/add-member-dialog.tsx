@@ -128,7 +128,7 @@ export function AddMemberDialog({ open, onOpenChange, onCreated }: AddMemberDial
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="ali@ashwheelz.com"
+              placeholder="ali@yourcompany.com"
               autoComplete="off"
               disabled={submitting}
               required

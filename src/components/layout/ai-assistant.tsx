@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Loader2, Send, Sparkles, Trash2, X } from 'lucide-react';
-import { CLIENT_INDUSTRY, CLIENT_NAME, hasFeature } from '@/lib/features';
+import { AI_NAME, CLIENT_INDUSTRY, CLIENT_NAME, hasFeature } from '@/lib/features';
 
 // ============================================================
 // Client AI — floating chat widget in the header.
@@ -24,7 +24,8 @@ interface ChatMessage {
 
 // Branded per deployment — "AshWheelz AI" on the AshWheelz deploy,
 // "Sultan Yakhni Pulao AI" on Sultan's, "Scale Agency AI" on ours.
-const AI_NAME = CLIENT_NAME ? `${CLIENT_NAME} AI` : 'Scale Agency AI';
+// (AI_NAME itself now lives in @/lib/features so settings copy that
+// references it can't drift out of sync — see ai-config-panel.tsx.)
 const STORAGE_KEY = `${(CLIENT_NAME || 'scale_agency').toLowerCase().replace(/\s+/g, '_')}_ai_chat`;
 const MAX_STORED = 40;
 

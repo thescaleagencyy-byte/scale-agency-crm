@@ -32,6 +32,9 @@ import {
   rateLimitResponse,
   RATE_LIMITS,
 } from "@/lib/rate-limit";
+import { FEATURE_GATING_ENABLED } from "@/lib/features";
+import { limitsForPlan, UNLIMITED } from "@/lib/billing/plans";
+import { countAccountSeats } from "@/lib/billing/usage";
 
 // Resolve the base URL we publish invite links under.
 //
@@ -177,6 +180,37 @@ export async function POST(request: Request) {
       RATE_LIMITS.adminAction,
     );
     if (!limit.success) return rateLimitResponse(limit);
+
+    // Seat cap — Scale Agency's own deployment only (see plans.ts).
+    // Fails OPEN: a bug counting seats must never block a legitimate
+    // admin action on a client deployment or in the unlikely event
+    // the count query itself errors.
+    if (!FEATURE_GATING_ENABLED) {
+      try {
+        const { data: sub } = await ctx.supabase
+          .from("subscriptions")
+          .select("plan_name")
+          .eq("account_id", ctx.accountId)
+          .maybeSingle();
+        const limits = limitsForPlan(sub?.plan_name ?? "free");
+        if (limits.seats !== UNLIMITED) {
+          const seats = await countAccountSeats(ctx.supabase, ctx.accountId);
+          if (seats >= limits.seats) {
+            return NextResponse.json(
+              {
+                error: `Seat limit reached (${limits.seats}). Upgrade your plan in Settings → Billing to add more teammates.`,
+              },
+              { status: 402 },
+            );
+          }
+        }
+      } catch (limitErr) {
+        console.error(
+          "[POST /api/account/invitations] seat limit check failed, allowing invite:",
+          limitErr,
+        );
+      }
+    }
 
     const body = (await request.json().catch(() => null)) as
       | { role?: unknown; expiresInDays?: unknown; label?: unknown }

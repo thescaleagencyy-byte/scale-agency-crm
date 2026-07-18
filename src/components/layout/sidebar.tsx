@@ -28,6 +28,7 @@ import {
   CalendarDays,
   QrCode,
   Brain,
+  FileSignature,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
 import { hasFeature, CLIENT_NAME, CLIENT_INDUSTRY, APP_NAME } from "@/lib/features";
@@ -133,6 +134,7 @@ const ALL_NAV_GROUPS: NavGroup[] = [
       { href: "/leads",        label: "Leads",         icon: TrendingUp,      feature: "leads" },
       { href: "/pipelines",    label: "Pipelines",     icon: GitBranch,       feature: "pipelines" },
       { href: "/appointments", label: "Appointments",  icon: CalendarDays,    feature: "appointments" },
+      { href: "/contracts",    label: "Contracts",     icon: FileSignature,   feature: "contracts" },
     ],
   },
   {

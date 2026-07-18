@@ -54,7 +54,29 @@ const PAGE_SIZE = 25;
 
 interface ContactWithTags extends Contact {
   tags?: Tag[];
+  lastActivityAt?: string | null;
 }
+
+type HealthBucket = 'active' | 'cooling' | 'at-risk' | 'cold' | 'new';
+
+function getHealthBucket(lastActivityAt: string | null | undefined, createdAt: string): HealthBucket {
+  const reference = lastActivityAt ?? createdAt;
+  if (!reference) return 'new';
+  const daysSince = (Date.now() - new Date(reference).getTime()) / 86400000;
+  if (!lastActivityAt) return daysSince <= 3 ? 'new' : 'cold';
+  if (daysSince <= 3) return 'active';
+  if (daysSince <= 7) return 'cooling';
+  if (daysSince <= 14) return 'at-risk';
+  return 'cold';
+}
+
+const HEALTH_STYLES: Record<HealthBucket, { label: string; className: string }> = {
+  new: { label: 'New', className: 'bg-primary/10 text-primary' },
+  active: { label: 'Active', className: 'bg-primary/10 text-primary' },
+  cooling: { label: 'Cooling', className: 'bg-amber-500/15 text-amber-500' },
+  'at-risk': { label: 'At risk', className: 'bg-orange-500/15 text-orange-500' },
+  cold: { label: 'Cold', className: 'bg-red-500/15 text-red-500' },
+};
 
 export default function ContactsPage() {
   const supabase = createClient();
@@ -146,11 +168,28 @@ export default function ContactsPage() {
       tagsByContact[ct.contact_id].push(ct.tag_id);
     });
 
+    // Latest conversation activity per contact — drives the health badge.
+    // A contact can have >1 conversation row; take the most recent.
+    const { data: convRows } = await supabase
+      .from('conversations')
+      .select('contact_id, last_message_at')
+      .in('contact_id', contactIds);
+
+    const lastActivityByContact: Record<string, string> = {};
+    convRows?.forEach((row) => {
+      if (!row.last_message_at) return;
+      const existing = lastActivityByContact[row.contact_id];
+      if (!existing || new Date(row.last_message_at) > new Date(existing)) {
+        lastActivityByContact[row.contact_id] = row.last_message_at;
+      }
+    });
+
     const enriched: ContactWithTags[] = data.map((c) => ({
       ...c,
       tags: (tagsByContact[c.id] ?? [])
         .map((tid) => tagsMap[tid])
         .filter(Boolean),
+      lastActivityAt: lastActivityByContact[c.id] ?? null,
     }));
 
     setContacts(enriched);
@@ -382,13 +421,14 @@ export default function ContactsPage() {
               >
                 Score {sortBy === 'lead_score' ? '↓' : ''}
               </TableHead>
+              <TableHead className="text-muted-foreground hidden lg:table-cell">Health</TableHead>
               <TableHead className="text-muted-foreground w-12" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow className="border-border">
-                <TableCell colSpan={8} className="text-center py-12">
+                <TableCell colSpan={9} className="text-center py-12">
                   <div className="flex flex-col items-center gap-2">
                     <Loader2 className="size-6 animate-spin text-primary" />
                     <p className="text-sm text-muted-foreground">Loading contacts...</p>
@@ -397,7 +437,7 @@ export default function ContactsPage() {
               </TableRow>
             ) : contacts.length === 0 ? (
               <TableRow className="border-border">
-                <TableCell colSpan={8} className="text-center py-12">
+                <TableCell colSpan={9} className="text-center py-12">
                   <div className="flex flex-col items-center gap-2">
                     <Users className="size-8 text-muted-foreground" />
                     <p className="text-sm text-muted-foreground">
@@ -486,6 +526,17 @@ export default function ContactsPage() {
                           </div>
                           <span className={`text-xs font-mono ${color}`}>{score}</span>
                         </div>
+                      );
+                    })()}
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell">
+                    {(() => {
+                      const bucket = getHealthBucket(contact.lastActivityAt, contact.created_at);
+                      const { label, className } = HEALTH_STYLES[bucket];
+                      return (
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${className}`}>
+                          {label}
+                        </span>
                       );
                     })()}
                   </TableCell>

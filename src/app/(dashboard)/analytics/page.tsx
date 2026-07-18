@@ -133,6 +133,8 @@ export default function AnalyticsPage() {
 
       // Per-agent stats
       const agentMap: Record<string, AgentStat> = {};
+      const agentFirstReplyMins: Record<string, number[]> = {};
+      const agentResolutionMins: Record<string, number[]> = {};
       for (const c of convs) {
         const key = c.assigned_agent_id ?? '__unassigned__';
         if (!agentMap[key]) {
@@ -144,9 +146,22 @@ export default function AnalyticsPage() {
             avg_first_reply_mins: null,
             avg_resolution_mins: null,
           };
+          agentFirstReplyMins[key] = [];
+          agentResolutionMins[key] = [];
         }
         agentMap[key].total++;
         if (c.resolved_at) agentMap[key].resolved++;
+        if (c.first_replied_at && c.created_at) {
+          agentFirstReplyMins[key].push((new Date(c.first_replied_at).getTime() - new Date(c.created_at).getTime()) / 60000);
+        }
+        if (c.resolved_at && c.created_at) {
+          agentResolutionMins[key].push((new Date(c.resolved_at).getTime() - new Date(c.created_at).getTime()) / 60000);
+        }
+      }
+      const avg = (nums: number[]) => nums.length > 0 ? nums.reduce((a, b) => a + b, 0) / nums.length : null;
+      for (const key of Object.keys(agentMap)) {
+        agentMap[key].avg_first_reply_mins = avg(agentFirstReplyMins[key]);
+        agentMap[key].avg_resolution_mins = avg(agentResolutionMins[key]);
       }
       setAgents(Object.values(agentMap).sort((a, b) => b.total - a.total));
       setLoading(false);
@@ -393,6 +408,8 @@ export default function AnalyticsPage() {
                     <th className="text-right text-xs text-muted-foreground px-4 py-2.5 font-medium">Assigned</th>
                     <th className="text-right text-xs text-muted-foreground px-4 py-2.5 font-medium">Resolved</th>
                     <th className="text-right text-xs text-muted-foreground px-4 py-2.5 font-medium">Resolution %</th>
+                    <th className="text-right text-xs text-muted-foreground px-4 py-2.5 font-medium">Avg First Reply</th>
+                    <th className="text-right text-xs text-muted-foreground px-4 py-2.5 font-medium">Avg Resolution Time</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -413,10 +430,12 @@ export default function AnalyticsPage() {
                           {a.total > 0 ? Math.round((a.resolved / a.total) * 100) : 0}%
                         </span>
                       </td>
+                      <td className="px-4 py-3 text-right text-foreground">{fmt(a.avg_first_reply_mins)}</td>
+                      <td className="px-4 py-3 text-right text-foreground">{fmt(a.avg_resolution_mins)}</td>
                     </tr>
                   ))}
                   {agents.length === 0 && (
-                    <tr><td colSpan={4} className="px-4 py-8 text-center text-sm text-muted-foreground">No conversation data yet</td></tr>
+                    <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">No conversation data yet</td></tr>
                   )}
                 </tbody>
               </table>

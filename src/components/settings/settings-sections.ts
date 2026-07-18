@@ -1,5 +1,6 @@
 import {
   Coins,
+  CreditCard,
   FileText,
   LayoutGrid,
   Palette,
@@ -46,6 +47,7 @@ export const SETTINGS_SECTIONS = [
   'webhooks',
   'workspaces',
   'branding',
+  'billing',
 ] as const;
 
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
@@ -82,6 +84,7 @@ export const SECTION_META: Record<SettingsSection, SectionMeta> = {
   webhooks: { id: 'webhooks', label: 'Webhooks & API', icon: Webhook, group: 'workspace' },
   workspaces: { id: 'workspaces', label: 'Workspaces', icon: Building2, group: 'workspace' },
   branding: { id: 'branding', label: 'Branding', icon: Brush, group: 'workspace' },
+  billing: { id: 'billing', label: 'Billing', icon: CreditCard, group: 'workspace' },
 };
 
 export const RAIL_GROUPS: { label: string | null; group: SectionMeta['group'] }[] = [
@@ -115,6 +118,12 @@ export const RAIL_GROUPS: { label: string | null; group: SectionMeta['group'] }[
  * always-editable settings tab for it is surface area without a use
  * case.
  *
+ * `billing` is agency-only too: client deployments run on a manual
+ * setup-fee + retainer arrangement, not self-serve Stripe checkout —
+ * showing an "Upgrade plan" button there would be a dead click. It's
+ * only meaningful on the agency's own multi-tenant install, where
+ * `accounts` are Umer's paying customers.
+ *
  * `fields` loses its own rail item on client deployments too — the
  * Fields & tags panel renders inside the Appearance tab instead
  * (tag colours read as "how my dashboard looks" to a client team),
@@ -130,6 +139,7 @@ const AGENCY_ONLY_SECTIONS: readonly SettingsSection[] = [
   'branding',
   'webhooks',
   'fields',
+  'billing',
 ];
 
 /** The rail + overview should only ever render these. */

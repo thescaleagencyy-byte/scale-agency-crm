@@ -15,12 +15,14 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { SettingsPanelHead } from './settings-panel-head';
+import { AI_NAME } from '@/lib/features';
 
 // ============================================================
 // AI Insights settings — the workspace Claude API key that powers
-// the AshWheelz AI header widget. The key is write-only from this
-// panel's perspective: the server stores it encrypted and only
-// ever returns a ••••XXXX hint.
+// the header AI widget (see AI_NAME in @/lib/features — "AshWheelz
+// AI", "Scale Agency AI", etc, per deployment). The key is write-only
+// from this panel's perspective: the server stores it encrypted and
+// only ever returns a ••••XXXX hint.
 // ============================================================
 
 export function AIConfigPanel() {
@@ -69,7 +71,7 @@ export function AIConfigPanel() {
       setConfigured(true);
       setHint(data.hint ?? null);
       setKeyInput('');
-      toast.success('Claude API key saved — AshWheelz AI now runs on Claude');
+      toast.success(`Claude API key saved — ${AI_NAME} now runs on Claude`);
     } catch {
       toast.error('Could not reach the server');
     } finally {
@@ -104,7 +106,7 @@ export function AIConfigPanel() {
     <section className="max-w-2xl animate-in fade-in-50 space-y-4 duration-200">
       <SettingsPanelHead
         title="AI Insights"
-        description="Power the AshWheelz AI assistant in the header. Ask anything about leads, pipeline, appointments and conversations — answers come from your live CRM data."
+        description={`Power the ${AI_NAME} assistant in the header. Ask anything about leads, pipeline, appointments and conversations — answers come from your live CRM data.`}
       />
 
       <Card>

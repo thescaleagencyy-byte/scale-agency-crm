@@ -141,6 +141,11 @@ export const RATE_LIMITS = {
    *  while still bounding accidental abuse from a script run in a
    *  loop or a compromised admin session spamming role flips. */
   adminAction: { limit: 30, windowMs: 60_000 },
+  /** Public status page (public, per-IP). Same reasoning as
+   *  invitationPeek — account_id is a UUID (unguessable, not
+   *  secret), but rate limiting is cheap insurance against
+   *  scraping/enumeration. */
+  statusPeek: { limit: 30, windowMs: 60_000 },
 } as const;
 
 /** Test-only helper. Clears the in-memory state so unit tests don't
