@@ -62,12 +62,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Failed to create upgrade request" }, { status: 500 });
     }
 
+    const reference = `INV-${data.id.slice(0, 8).toUpperCase()}`;
+
+    // Fire-and-forget alert so Umer doesn't have to poll Supabase to
+    // find out someone wants to pay. Never blocks or fails the
+    // request — a notification outage must not stop the actual
+    // upgrade-request record from being created.
+    const webhookUrl = process.env.N8N_UPGRADE_WEBHOOK_URL;
+    const webhookSecret = process.env.N8N_UPGRADE_WEBHOOK_SECRET;
+    if (webhookUrl && webhookSecret) {
+      fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-webhook-secret": webhookSecret },
+        body: JSON.stringify({ accountName: ctx.account.name, planName, reference }),
+      }).catch((err) => {
+        console.error("[POST /api/billing/request-upgrade] alert webhook failed:", err);
+      });
+    }
+
     return NextResponse.json(
       {
         invoice: data,
         // Short, human-shareable reference for a bank transfer memo /
         // JazzCash payment note, and for Umer to find the row.
-        reference: `INV-${data.id.slice(0, 8).toUpperCase()}`,
+        reference,
         requestedPlan: planName,
       },
       { status: 201 },

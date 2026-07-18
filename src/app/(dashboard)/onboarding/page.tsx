@@ -204,6 +204,19 @@ export default function OnboardingPage() {
                   <li>Pop-ups must be allowed for this site</li>
                 </ul>
               </div>
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-1.5 text-xs">
+                <p className="font-semibold text-foreground text-sm">Won&apos;t this take over my personal WhatsApp?</p>
+                <p className="text-muted-foreground">
+                  No. The standard setup uses a <span className="text-foreground font-medium">second number</span> dedicated
+                  to the CRM — your current WhatsApp keeps working exactly as it does today, untouched. A second SIM/eSIM is
+                  cheap and this is how most businesses run it.
+                </p>
+                <p className="text-muted-foreground">
+                  If the signup flow offers &ldquo;connect your existing WhatsApp Business app account,&rdquo; that means Meta&apos;s
+                  Coexistence feature is available for your account — it lets one number run both the app and this CRM
+                  together, message history synced. Only shows up when eligible; the second-number path always works.
+                </p>
+              </div>
               <Button
                 onClick={launchEmbeddedSignup}
                 disabled={connecting || !fbLoaded}
