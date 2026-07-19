@@ -12,8 +12,8 @@ import {
   GitBranch,
   LayoutDashboard,
   LogOut,
-  MessageSquare,
-  TrendingUp,
+  MessageCircle,
+  Target,
   Radio,
   Settings,
   Shield,
@@ -130,9 +130,9 @@ const ALL_NAV_GROUPS: NavGroup[] = [
   {
     label: "Engage",
     items: [
-      { href: "/inbox",        label: "Inbox",         icon: MessageSquare,   feature: "inbox" },
+      { href: "/inbox",        label: "Inbox",         icon: MessageCircle,   feature: "inbox" },
       { href: "/contacts",     label: "Contacts",      icon: Users,           feature: "contacts" },
-      { href: "/leads",        label: "Leads",         icon: TrendingUp,      feature: "leads" },
+      { href: "/leads",        label: "Leads",         icon: Target,          feature: "leads" },
       { href: "/pipelines",    label: "Pipelines",     icon: GitBranch,       feature: "pipelines" },
       { href: "/appointments", label: "Appointments",  icon: CalendarDays,    feature: "appointments" },
       { href: "/contracts",    label: "Contracts",     icon: FileSignature,   feature: "contracts" },
