@@ -145,6 +145,42 @@ html[data-mode="light"] {
   --sidebar-border: oklch(0.922 0.004 260);
 }
 
+/* ---- Sidebar deliberately INVERTS against the page mode: a dark
+   rail on the light theme, a light rail on the dark theme. Scoped
+   custom-property overrides on .sidebar-invert — every Tailwind
+   class inside the sidebar (bg-card, text-muted-foreground,
+   border-border, ...) already resolves through these same variable
+   names, so the whole rail flips for free without a token-by-token
+   className rewrite. Portaled content (the account dropdown menu)
+   renders outside this DOM subtree via React portal, so it correctly
+   keeps the page's normal (non-inverted) theme. ---- */
+html[data-mode="light"] .sidebar-invert {
+  --background: oklch(0.13 0.01 260);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.18 0.01 260);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.18 0.01 260);
+  --popover-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.22 0.01 260);
+  --muted-foreground: oklch(0.65 0.01 260);
+  --accent: oklch(0.22 0.01 260);
+  --accent-foreground: oklch(0.985 0 0);
+  --border: oklch(0.28 0.01 260);
+}
+html[data-mode="dark"] .sidebar-invert {
+  --background: oklch(0.99 0.002 260);
+  --foreground: oklch(0.21 0.01 260);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.21 0.01 260);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.21 0.01 260);
+  --muted: oklch(0.967 0.003 260);
+  --muted-foreground: oklch(0.52 0.015 260);
+  --accent: oklch(0.96 0.004 260);
+  --accent-foreground: oklch(0.25 0.01 260);
+  --border: oklch(0.922 0.004 260);
+}
+
 /* ---- Dashboard KPI card tints/chips (light mode only — dark mode
    falls back to bg-card / bg-primary/10, which already reads fine on
    dark backgrounds without a dedicated dark palette). ---- */
