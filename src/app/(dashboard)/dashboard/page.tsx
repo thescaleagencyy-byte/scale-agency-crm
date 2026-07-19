@@ -353,6 +353,9 @@ export default function DashboardPage() {
               title={labels.activeConversations}
               value={metrics.activeConversations.current.toLocaleString()}
               icon={MessageSquare}
+              variant="hero"
+              animationDelayMs={0}
+              sparkline={last14(series[30], (p) => p.incoming + p.outgoing)}
               delta={{
                 sign: metrics.activeConversations.previous,
                 label: deltaLabel(metrics.activeConversations.previous, 'new today vs yesterday'),
@@ -362,6 +365,8 @@ export default function DashboardPage() {
               title={labels.newContacts}
               value={metrics.newContacts7d.toLocaleString()}
               icon={UserPlus}
+              variant="tint1"
+              animationDelayMs={60}
               delta={{
                 sign: metrics.newContactsToday.current,
                 label: todayLabel(metrics.newContactsToday.current),
@@ -372,6 +377,8 @@ export default function DashboardPage() {
                 title={labels.openDeals}
                 value={formatCurrency(metrics.openDealsValue, defaultCurrency)}
                 icon={DollarSign}
+                variant="tint2"
+                animationDelayMs={120}
                 subtitle={`${metrics.openDealsCount} open ${labels.dealWord}${metrics.openDealsCount === 1 ? '' : 's'}`}
               />
             ) : metrics.newLeads7d != null && metrics.newLeadsToday ? (
@@ -379,6 +386,8 @@ export default function DashboardPage() {
                 title={labels.newLeads}
                 value={metrics.newLeads7d.toLocaleString()}
                 icon={TrendingUp}
+                variant="tint2"
+                animationDelayMs={120}
                 delta={{
                   sign: metrics.newLeadsToday.current,
                   label: todayLabel(metrics.newLeadsToday.current),
@@ -389,6 +398,9 @@ export default function DashboardPage() {
               title={labels.messagesSent}
               value={metrics.messagesSent7d.toLocaleString()}
               icon={Send}
+              variant="tint3"
+              animationDelayMs={180}
+              sparkline={last14(series[30], (p) => p.outgoing)}
               delta={{
                 sign: metrics.messagesSentToday.current,
                 label: todayLabel(metrics.messagesSentToday.current),
@@ -466,4 +478,16 @@ function deltaLabel(delta: number, suffix: string): string {
 function todayLabel(count: number): string {
   if (count === 0) return 'None yet today'
   return `+${count.toLocaleString()} today`
+}
+
+// Trailing-14-day sparkline values for a MetricCard, derived from the
+// already-fetched 30-day series — no extra query. Returns undefined
+// (no sparkline rendered) rather than fabricating history when the
+// series hasn't loaded yet.
+function last14(
+  points: ConversationsSeriesPoint[] | null,
+  pick: (p: ConversationsSeriesPoint) => number
+): number[] | undefined {
+  if (!points || points.length === 0) return undefined
+  return points.slice(-14).map(pick)
 }

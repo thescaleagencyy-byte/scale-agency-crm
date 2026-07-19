@@ -145,6 +145,19 @@ html[data-mode="light"] {
   --sidebar-border: oklch(0.922 0.004 260);
 }
 
+/* ---- Dashboard KPI card tints/chips (light mode only — dark mode
+   falls back to bg-card / bg-primary/10, which already reads fine on
+   dark backgrounds without a dedicated dark palette). ---- */
+html[data-mode="light"] .kpi-tint-1 { background: rgb(253, 241, 227); }
+html[data-mode="light"] .kpi-tint-2 { background: rgb(239, 243, 230); }
+html[data-mode="light"] .kpi-tint-3 { background: rgb(251, 239, 242); }
+html[data-mode="light"] .kpi-tint-1,
+html[data-mode="light"] .kpi-tint-2,
+html[data-mode="light"] .kpi-tint-3 { --tw-ring-color: transparent; }
+html[data-mode="light"] .kpi-chip-1 { color: rgb(138, 90, 30); background: rgb(245, 221, 188); }
+html[data-mode="light"] .kpi-chip-2 { color: rgb(85, 101, 31); background: rgb(221, 230, 195); }
+html[data-mode="light"] .kpi-chip-3 { color: rgb(150, 57, 92); background: rgb(244, 214, 224); }
+
 /* ---- ACCENT: primary color ---- */
 
 :root,
