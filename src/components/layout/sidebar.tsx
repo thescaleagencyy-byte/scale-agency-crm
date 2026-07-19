@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useTotalUnread } from "@/hooks/use-total-unread";
@@ -29,6 +29,7 @@ import {
   QrCode,
   Brain,
   FileSignature,
+  ChevronLeft,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
 import { hasFeature, CLIENT_NAME, CLIENT_INDUSTRY, APP_NAME } from "@/lib/features";
@@ -175,6 +176,10 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { profile, profileLoading, account, accountRole, signOut } = useAuth();
   const totalUnread = useTotalUnread();
+  // Desktop-only collapse — icons stay, labels/footer hide. Purely a
+  // width toggle so it can't desync from the responsive drawer logic
+  // that already handles mobile.
+  const [collapsed, setCollapsed] = useState(false);
   // Only surface the account-name strip when it actually carries
   // information. A solo user's personal account is named after them
   // (the 017 signup trigger seeds it from `full_name`), so showing it
@@ -236,7 +241,9 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
           "transition-transform duration-200 ease-out will-change-transform",
           open ? "translate-x-0" : "-translate-x-full",
           // Desktop: static, always visible — reset all the mobile framing.
-          "lg:static lg:z-0 lg:w-60 lg:translate-x-0 lg:transition-none",
+          // width transitions (not translate) so collapse doesn't fight the mobile slide.
+          "lg:static lg:z-0 lg:translate-x-0 lg:transition-[width] lg:duration-200 lg:ease-out",
+          collapsed ? "lg:w-[72px]" : "lg:w-60",
         )}
         aria-label="Primary"
       >
@@ -244,6 +251,17 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
         <div className="pointer-events-none absolute left-0 right-0 top-0 h-32 rounded-t-none opacity-60"
           style={{ background: 'radial-gradient(ellipse 120% 60% at 50% 0%, color-mix(in oklab, var(--primary) 18%, transparent) 0%, transparent 100%)' }}
         />
+
+        {/* Collapse toggle — desktop only, floats on the right edge. */}
+        <button
+          type="button"
+          onClick={() => setCollapsed((v) => !v)}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className="absolute -right-3 top-16 z-10 hidden h-6 w-6 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm transition-colors hover:border-primary/40 hover:text-primary lg:flex"
+        >
+          <ChevronLeft className={cn("h-3.5 w-3.5 transition-transform duration-200", collapsed && "rotate-180")} />
+        </button>
 
         {/* Logo row. On mobile we put a close button here; on desktop the
             close button is hidden since the sidebar is always-visible. */}
@@ -259,12 +277,14 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                   priority
                   className="rounded-full object-cover shrink-0"
                 />
-                <div className="min-w-0">
-                  <p className="truncate font-heading text-sm font-bold leading-tight tracking-tight text-foreground">{CLIENT_NAME}</p>
-                  {CLIENT_INDUSTRY && (
-                    <p className="text-[10px] font-medium uppercase tracking-widest text-primary/70 leading-tight mt-0.5">{CLIENT_INDUSTRY}</p>
-                  )}
-                </div>
+                {!collapsed && (
+                  <div className="min-w-0">
+                    <p className="truncate font-heading text-sm font-bold leading-tight tracking-tight text-foreground">{CLIENT_NAME}</p>
+                    {CLIENT_INDUSTRY && (
+                      <p className="text-[10px] font-medium uppercase tracking-widest text-primary/70 leading-tight mt-0.5">{CLIENT_INDUSTRY}</p>
+                    )}
+                  </div>
+                )}
               </>
             ) : (
               <>
@@ -276,9 +296,11 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                   priority
                   className="rounded-full object-cover shrink-0"
                 />
-                <span className="text-sm font-semibold text-foreground leading-tight">
-                  the scale<br />agency™
-                </span>
+                {!collapsed && (
+                  <span className="text-sm font-semibold text-foreground leading-tight">
+                    the scale<br />agency™
+                  </span>
+                )}
               </>
             )}
           </Link>
@@ -308,10 +330,12 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           {navGroups.map((group, gi) => (
             <div key={group.label} className={gi > 0 ? "mt-5" : undefined}>
-              <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/60">
-                {group.label}
-              </p>
-              <ul className="flex flex-col gap-0.5">
+              {!collapsed && (
+                <p className="mb-1.5 px-3 text-[9px] font-medium uppercase tracking-[0.1em] text-muted-foreground/40">
+                  {group.label}
+                </p>
+              )}
+              <ul className="flex flex-col gap-1">
                 {group.items.map((item) => {
                   const isActive =
                     pathname === item.href ||
@@ -324,21 +348,34 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                     <li key={item.href}>
                       <Link
                         href={item.href}
+                        title={collapsed ? item.label : undefined}
                         className={cn(
-                          // Taller on mobile so fingers can hit the row reliably (≥44px).
-                          "relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors lg:py-2",
+                          "group/navitem relative flex items-center gap-3 overflow-hidden rounded-xl px-3 py-2.5 text-sm font-medium transition-colors duration-200 lg:py-2",
+                          // Sliding pill reveal on hover — a ::before layer so it can
+                          // animate scale-x without fighting the active-state background.
+                          "before:absolute before:inset-0 before:-z-10 before:scale-x-0 before:rounded-xl before:bg-muted before:transition-transform before:duration-200 before:ease-out before:[transform-origin:left] hover:before:scale-x-100",
                           isActive
-                            ? "bg-primary/10 text-primary"
-                            : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                            ? "text-primary"
+                            : "text-muted-foreground hover:text-foreground",
                         )}
                       >
-                        {/* Active rail — anchors the pill to the sidebar edge. */}
                         {isActive && (
-                          <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-primary" />
+                          <>
+                            <span className="absolute inset-0 -z-10 rounded-xl bg-primary/10 duration-300 animate-in fade-in" />
+                            <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-primary duration-300 animate-in fade-in slide-in-from-left-1" />
+                          </>
                         )}
-                        <item.icon className="h-4 w-4" />
-                        <span className="flex-1">{item.label}</span>
-                        {item.beta && (
+                        <span
+                          aria-hidden="true"
+                          className={cn(
+                            "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-all duration-200 group-hover/navitem:scale-105",
+                            isActive ? "bg-primary/15 text-primary" : "bg-transparent"
+                          )}
+                        >
+                          <item.icon className="h-[17px] w-[17px]" strokeWidth={isActive ? 2.2 : 1.8} />
+                        </span>
+                        {!collapsed && <span className="flex-1">{item.label}</span>}
+                        {!collapsed && item.beta && (
                           <span
                             aria-label="Beta feature"
                             className="rounded-full border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-amber-300"
@@ -346,7 +383,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                             Beta
                           </span>
                         )}
-                        {showUnreadDot && (
+                        {!collapsed && showUnreadDot && (
                           <span
                             aria-label={`${totalUnread} unread conversation${totalUnread === 1 ? "" : "s"}`}
                             className="relative flex h-2 w-2"
@@ -389,14 +426,16 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
         </nav>
 
         {/* Agency credit — the quiet referral engine on every screen. */}
-        <div className="shrink-0 border-t border-border px-6 py-2.5">
-          <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/50">
-            Powered by
-          </p>
-          <p className="bg-gradient-to-r from-primary to-primary/50 bg-clip-text text-[11px] font-bold tracking-wide text-transparent">
-            The Scale Agency
-          </p>
-        </div>
+        {!collapsed && (
+          <div className="shrink-0 border-t border-border px-6 py-2.5">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/50">
+              Powered by
+            </p>
+            <p className="bg-gradient-to-r from-primary to-primary/50 bg-clip-text text-[11px] font-bold tracking-wide text-transparent">
+              The Scale Agency
+            </p>
+          </div>
+        )}
 
         {/* User section */}
         <div className="shrink-0 border-t border-border p-3">
@@ -406,7 +445,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
               match, so we hide it to avoid duplicating the user name
               below; for renamed or shared accounts it tells the user
               which account they're acting in. */}
-          {showAccountStrip && account?.name ? (
+          {!collapsed && showAccountStrip && account?.name ? (
             <div className="mb-2 flex items-center gap-2 px-3 text-xs text-muted-foreground">
               <UsersRound className="size-3.5 shrink-0" />
               {/* `title=` exposes the full name on hover when it
@@ -450,14 +489,16 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                     "U"}
                 </AvatarFallback>
               </Avatar>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-foreground">
-                  {profile?.full_name ?? "User"}
-                </p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {profile?.email ?? ""}
-                </p>
-              </div>
+              {!collapsed && (
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-foreground">
+                    {profile?.full_name ?? "User"}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {profile?.email ?? ""}
+                  </p>
+                </div>
+              )}
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
