@@ -275,10 +275,10 @@ export default function DashboardPage() {
         )}
         <div className="relative z-10 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="mb-2 flex flex-wrap items-center gap-x-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-primary/80">
+            <p className="mb-2 flex flex-wrap items-center gap-x-2 text-[11px] font-semibold uppercase tracking-[0.2em] hero-accent-solid opacity-80">
               <span>{heroLabel} · {dateLine}</span>
               <span aria-hidden className="hidden h-3 w-px bg-primary/30 sm:inline-block" />
-              <span className="bg-gradient-to-r from-primary to-primary/50 bg-clip-text text-transparent">
+              <span className="hero-accent-gradient">
                 Built by The Scale Agency
               </span>
             </p>
@@ -287,7 +287,7 @@ export default function DashboardPage() {
               {firstName ? (
                 <>
                   ,{' '}
-                  <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                  <span className="hero-accent-gradient">
                     {firstName}
                   </span>
                 </>
@@ -302,7 +302,7 @@ export default function DashboardPage() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-70" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
             </span>
-            <span className="text-xs font-semibold text-primary">
+            <span className="text-xs font-semibold hero-accent-solid">
               {labels.heroHeadline} · Live
             </span>
           </div>

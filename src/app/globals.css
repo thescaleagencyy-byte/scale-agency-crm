@@ -181,6 +181,25 @@ html[data-mode="dark"] .sidebar-invert {
   --border: oklch(0.922 0.004 260);
 }
 
+/* ---- Hero accent text — pale/light accent color reads great on the
+   dark theme's hero card but loses contrast against the light theme's
+   pale-tinted hero background. Dark mode keeps the gradient/color pop;
+   light mode falls back to solid foreground for legibility. ---- */
+.hero-accent-gradient {
+  background: linear-gradient(to right, var(--primary), color-mix(in oklab, var(--primary) 50%, transparent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+html[data-mode="light"] .hero-accent-gradient {
+  background: none;
+  -webkit-background-clip: unset;
+  background-clip: unset;
+  color: var(--foreground);
+}
+.hero-accent-solid { color: var(--primary); }
+html[data-mode="light"] .hero-accent-solid { color: var(--foreground); }
+
 /* ---- Dashboard KPI card tints/chips (light mode only — dark mode
    falls back to bg-card / bg-primary/10, which already reads fine on
    dark backgrounds without a dedicated dark palette). ---- */
