@@ -81,7 +81,6 @@ export default function DashboardPage() {
   const [activeSites, setActiveSites] = useState<SiteSlice[] | null>(null)
   const [activeSitesLoading, setActiveSitesLoading] = useState(RENTAL_INDUSTRY)
 
-  const [recoveryStats, setRecoveryStats] = useState<{ recoveredCount: number; recoveredValue: number } | null>(null)
 
   const loadAll = useCallback(() => {
     const db = createClient()
@@ -138,12 +137,6 @@ export default function DashboardPage() {
     loadAll()
   }, [loadAll])
 
-  useEffect(() => {
-    fetch('/api/recovery/stats')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => { if (data) setRecoveryStats(data) })
-      .catch(() => {})
-  }, [])
 
   // Range switch handler — kept in an event callback (not an effect)
   // so the setState calls stay out of the react-hooks/set-state-in-effect
@@ -315,33 +308,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-
-      {/* Recovery banner — the "would've been lost" number, kept
-          visually distinct (border-primary) from the routine metric
-          grid below since it's the number meant to be bragged about. */}
-      {recoveryStats && recoveryStats.recoveredCount > 0 ? (
-        <div className="flex items-center justify-between flex-wrap gap-3 rounded-2xl border border-primary/20 bg-primary/5 p-4">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-primary/70">Recovered this month</p>
-            <p className="text-2xl font-bold text-primary">
-              {recoveryStats.recoveredValue > 0 ? formatCurrency(recoveryStats.recoveredValue, defaultCurrency) : recoveryStats.recoveredCount}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {recoveryStats.recoveredCount} conversation{recoveryStats.recoveredCount === 1 ? '' : 's'} that had gone quiet, automatically re-engaged
-            </p>
-          </div>
-        </div>
-      ) : recoveryStats && recoveryStats.recoveredCount === 0 ? (
-        <a
-          href="/settings?tab=recovery"
-          className="flex items-center justify-between flex-wrap gap-3 rounded-2xl border border-dashed border-border p-4 hover:border-primary/40 transition-colors"
-        >
-          <div>
-            <p className="text-sm font-medium text-foreground">Turn on automatic lead recovery</p>
-            <p className="text-xs text-muted-foreground">Re-engage conversations that go quiet before the lead is lost. Takes 2 minutes to set up.</p>
-          </div>
-        </a>
-      ) : null}
 
       {/* Metric cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
