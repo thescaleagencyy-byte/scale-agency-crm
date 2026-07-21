@@ -3,14 +3,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
-import { formatCurrency } from '@/lib/currency'
-import {
-  MessageSquare,
-  UserPlus,
-  DollarSign,
-  Send,
-  TrendingUp,
-} from 'lucide-react'
 
 import {
   loadActiveSites,
@@ -32,8 +24,7 @@ import type {
 } from '@/lib/dashboard/types'
 
 import { CLIENT_NAME, CLIENT_INDUSTRY, hasFeature } from '@/lib/features'
-import { MetricCard } from '@/components/dashboard/metric-card'
-import { SkeletonCard } from '@/components/dashboard/skeleton'
+import { HeroStatsRow } from '@/components/dashboard/hero-stats-row'
 import { QuickActions } from '@/components/dashboard/quick-actions'
 import { ConversationsChart } from '@/components/dashboard/conversations-chart'
 import { PipelineDonut } from '@/components/dashboard/pipeline-donut'
@@ -309,72 +300,21 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Metric cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {metricsLoading || !metrics ? (
-          Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
-        ) : (
-          <>
-            <MetricCard
-              title={labels.activeConversations}
-              value={metrics.activeConversations.current.toLocaleString()}
-              icon={MessageSquare}
-              variant="hero"
-              animationDelayMs={0}
-              sparkline={last14(series[30], (p) => p.incoming + p.outgoing)}
-              delta={{
-                sign: metrics.activeConversations.previous,
-                label: deltaLabel(metrics.activeConversations.previous, 'new today vs yesterday'),
-              }}
-            />
-            <MetricCard
-              title={labels.newContacts}
-              value={metrics.newContacts7d.toLocaleString()}
-              icon={UserPlus}
-              variant="tint1"
-              animationDelayMs={60}
-              delta={{
-                sign: metrics.newContactsToday.current,
-                label: todayLabel(metrics.newContactsToday.current),
-              }}
-            />
-            {hasFeature('pipelines') ? (
-              <MetricCard
-                title={labels.openDeals}
-                value={formatCurrency(metrics.openDealsValue, defaultCurrency)}
-                icon={DollarSign}
-                variant="tint2"
-                animationDelayMs={120}
-                subtitle={`${metrics.openDealsCount} open ${labels.dealWord}${metrics.openDealsCount === 1 ? '' : 's'}`}
-              />
-            ) : metrics.newLeads7d != null && metrics.newLeadsToday ? (
-              <MetricCard
-                title={labels.newLeads}
-                value={metrics.newLeads7d.toLocaleString()}
-                icon={TrendingUp}
-                variant="tint2"
-                animationDelayMs={120}
-                delta={{
-                  sign: metrics.newLeadsToday.current,
-                  label: todayLabel(metrics.newLeadsToday.current),
-                }}
-              />
-            ) : null}
-            <MetricCard
-              title={labels.messagesSent}
-              value={metrics.messagesSent7d.toLocaleString()}
-              icon={Send}
-              variant="tint3"
-              animationDelayMs={180}
-              sparkline={last14(series[30], (p) => p.outgoing)}
-              delta={{
-                sign: metrics.messagesSentToday.current,
-                label: todayLabel(metrics.messagesSentToday.current),
-              }}
-            />
-          </>
-        )}
-      </div>
+      {/* Hero stat row — floating light panel (3 real metrics) + dark
+          messaging callout. See components/dashboard/hero-stats-row. */}
+      <HeroStatsRow
+        metrics={metrics}
+        loading={metricsLoading}
+        currency={defaultCurrency}
+        hasPipelines={hasFeature('pipelines')}
+        labels={{
+          activeConversations: labels.activeConversations,
+          newContacts: labels.newContacts,
+          openDeals: labels.openDeals,
+          dealWord: labels.dealWord,
+          newLeads: labels.newLeads,
+        }}
+      />
 
       {/* Quick actions */}
       <QuickActions />
@@ -429,31 +369,4 @@ export default function DashboardPage() {
       <ActivityFeed items={activity} loading={activityLoading} />
     </div>
   )
-}
-
-// ------------------------------------------------------------
-
-function deltaLabel(delta: number, suffix: string): string {
-  if (delta === 0) return `No change ${suffix}`
-  const sign = delta > 0 ? '+' : ''
-  return `${sign}${delta.toLocaleString()} ${suffix}`
-}
-
-// Delta line for the rolling-7-day cards: the big number is the week,
-// the delta is today's contribution to it.
-function todayLabel(count: number): string {
-  if (count === 0) return 'None yet today'
-  return `+${count.toLocaleString()} today`
-}
-
-// Trailing-14-day sparkline values for a MetricCard, derived from the
-// already-fetched 30-day series — no extra query. Returns undefined
-// (no sparkline rendered) rather than fabricating history when the
-// series hasn't loaded yet.
-function last14(
-  points: ConversationsSeriesPoint[] | null,
-  pick: (p: ConversationsSeriesPoint) => number
-): number[] | undefined {
-  if (!points || points.length === 0) return undefined
-  return points.slice(-14).map(pick)
 }

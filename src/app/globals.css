@@ -88,32 +88,41 @@
 
 :root,
 html[data-mode="dark"] {
-  --background: oklch(0.13 0.01 260);
+  /* Deeper, slightly blue-black base (was 0.13 flat gray-black) — gives
+   * the premium fintech "near-black navy" read the redesign targets,
+   * with more headroom below --card so elevated surfaces actually pop. */
+  --background: oklch(0.1 0.014 264);
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.18 0.01 260);
-  --card-2: oklch(0.205 0.01 260);
+  --card: oklch(0.155 0.014 264);
+  --card-2: oklch(0.19 0.014 264);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.18 0.01 260);
+  --popover: oklch(0.17 0.014 264);
   --popover-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.22 0.01 260);
+  --secondary: oklch(0.2 0.013 264);
   --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.22 0.01 260);
-  --muted-foreground: oklch(0.65 0.01 260);
-  --accent: oklch(0.22 0.01 260);
+  --muted: oklch(0.2 0.013 264);
+  --muted-foreground: oklch(0.62 0.012 264);
+  --accent: oklch(0.2 0.013 264);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.28 0.01 260);
-  --input: oklch(0.28 0.01 260);
+  --border: oklch(0.245 0.014 264);
+  --input: oklch(0.245 0.014 264);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.16 0.01 260);
+  /* Rounder base radius — premium fintech surfaces read softer/bigger
+   * than the previous 0.625rem default. */
+  --radius: 0.875rem;
+  --sidebar: oklch(0.09 0.014 264);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.22 0.01 260);
+  --sidebar-accent: oklch(0.2 0.013 264);
   --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.28 0.01 260);
+  --sidebar-border: oklch(0.245 0.014 264);
+  /* Layered elevation shadow — soft ambient + tighter contact shadow.
+   * Used by .card-elevated / .panel-float instead of Tailwind's flat
+   * shadow-* utilities, which read thin against a near-black page. */
+  --shadow-elevated: 0 1px 1px rgba(0,0,0,0.3), 0 8px 24px -8px rgba(0,0,0,0.55), 0 24px 48px -16px rgba(0,0,0,0.4);
 }
 
 html[data-mode="light"] {
@@ -137,12 +146,13 @@ html[data-mode="light"] {
   --chart-3: oklch(0.7 0.06 260);
   --chart-4: oklch(0.8 0.04 260);
   --chart-5: oklch(0.87 0.03 260);
-  --radius: 0.625rem;
+  --radius: 0.875rem;
   --sidebar: oklch(0.985 0.002 260);
   --sidebar-foreground: oklch(0.21 0.01 260);
   --sidebar-accent: oklch(0.96 0.004 260);
   --sidebar-accent-foreground: oklch(0.25 0.01 260);
   --sidebar-border: oklch(0.922 0.004 260);
+  --shadow-elevated: 0 1px 2px rgba(20,20,30,0.04), 0 8px 20px -8px rgba(20,20,30,0.1), 0 20px 40px -20px rgba(20,20,30,0.12);
 }
 
 /* ---- Sidebar deliberately INVERTS against the page mode: a dark
@@ -313,6 +323,58 @@ html[data-theme="ashwheelz"] {
   --sidebar-primary: oklch(0.74 0.17 60);
   --sidebar-primary-foreground: oklch(0.17 0.03 60);
   --sidebar-ring: oklch(0.74 0.17 60);
+}
+
+/* ---- Premium surface utilities (redesign) ----
+ * .card-elevated: the standard "floating tile" — replaces flat
+ *   shadow-sm/ring cards with layered shadow + bigger radius.
+ * .panel-float: an always-light "paper" surface that floats on top of
+ *   the dark page regardless of mode — the light-panel-on-dark-canvas
+ *   trick used for primary data lists (deal/lead tables) so they read
+ *   as the focal surface against the darker chrome around them.
+ * .avatar-stack-ring: ring treatment for overlapping avatar clusters
+ *   so they cut cleanly against whatever surface they sit on. */
+.shadow-elevated { box-shadow: var(--shadow-elevated); }
+
+.card-elevated {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-elevated);
+}
+
+.panel-float {
+  /* Flips every neutral surface token to the light palette inside this
+   * subtree — same trick as .sidebar-invert above, just aimed the other
+   * direction. Every Tailwind class already in use downstream (bg-card,
+   * text-foreground, border-border, bg-muted, text-muted-foreground…)
+   * resolves through these same var names, so existing components drop
+   * in without a single className edit. Accent (--primary etc.) is left
+   * alone on purpose — the lime accent should read the same here as
+   * everywhere else. */
+  --background: oklch(0.985 0.002 260);
+  --foreground: oklch(0.21 0.01 260);
+  --card: oklch(1 0 0);
+  --card-2: oklch(0.978 0.002 260);
+  --card-foreground: oklch(0.21 0.01 260);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.21 0.01 260);
+  --muted: oklch(0.955 0.003 260);
+  --muted-foreground: oklch(0.5 0.015 260);
+  --accent: oklch(0.96 0.004 260);
+  --accent-foreground: oklch(0.25 0.01 260);
+  --border: oklch(0.912 0.004 260);
+  --input: oklch(0.912 0.004 260);
+
+  background: var(--background);
+  color: var(--foreground);
+  border-radius: var(--radius-3xl);
+  box-shadow: var(--shadow-elevated);
+}
+.panel-float ::selection { background: var(--primary); color: var(--primary-foreground); }
+
+.avatar-stack-ring {
+  box-shadow: 0 0 0 2px var(--card);
 }
 
 @layer base {
