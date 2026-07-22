@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Loader2, Send, Sparkles, Trash2, Zap } from 'lucide-react';
 import { AI_NAME, CLIENT_INDUSTRY, CLIENT_NAME, hasFeature } from '@/lib/features';
+import { AI_EMPLOYEES, getEmployee } from '@/lib/ai-employees';
 
 // ============================================================
 // Scale OS — CEO Copilot. Full-page surface for the same
@@ -21,7 +22,7 @@ interface ChatMessage {
   error?: boolean;
 }
 
-const STORAGE_KEY = `${(CLIENT_NAME || 'scale_agency').toLowerCase().replace(/\s+/g, '_')}_ai_chat`;
+const BASE_STORAGE_KEY = `${(CLIENT_NAME || 'scale_agency').toLowerCase().replace(/\s+/g, '_')}_ai_chat`;
 const MAX_STORED = 40;
 
 const RENTAL_INDUSTRY = (() => {
@@ -29,20 +30,30 @@ const RENTAL_INDUSTRY = (() => {
   return ind.includes('logistic') || ind.includes('transport') || ind.includes('car') || ind.includes('wheel');
 })();
 
-const SUGGESTIONS = [
-  ...(hasFeature('leads') && RENTAL_INDUSTRY
-    ? ['Which equipment type gets requested most?', 'Which project sites are most active this month?']
-    : hasFeature('leads')
-    ? ['Which leads are hottest right now?', 'How many leads came in this week, and from where?']
-    : []),
-  ...(hasFeature('pipelines') ? ["What's my open pipeline worth by stage?", 'Mark my newest lead as called'] : []),
-  ...(hasFeature('appointments') ? ['How many appointments are coming up?'] : []),
-  ...(hasFeature('inbox') ? ['Summarize today’s WhatsApp conversations.'] : []),
-].slice(0, 6);
+// The default CEO Copilot persona keeps the deployment-aware suggestion
+// logic (rental vs generic industry copy); the specialized employees
+// use their own fixed suggestion sets defined in ai-employees.ts.
+function suggestionsFor(employeeId: string): string[] {
+  if (employeeId !== 'ceo-copilot') return getEmployee(employeeId).suggestions;
+  return [
+    ...(hasFeature('leads') && RENTAL_INDUSTRY
+      ? ['Which equipment type gets requested most?', 'Which project sites are most active this month?']
+      : hasFeature('leads')
+      ? ['Which leads are hottest right now?', 'How many leads came in this week, and from where?']
+      : []),
+    ...(hasFeature('pipelines') ? ["What's my open pipeline worth by stage?", 'Mark my newest lead as called'] : []),
+    ...(hasFeature('appointments') ? ['How many appointments are coming up?'] : []),
+    ...(hasFeature('inbox') ? ['Summarize today’s WhatsApp conversations.'] : []),
+  ].slice(0, 6);
+}
 
-function loadStored(): ChatMessage[] {
+function storageKeyFor(employeeId: string): string {
+  return employeeId === 'ceo-copilot' ? BASE_STORAGE_KEY : `${BASE_STORAGE_KEY}_${employeeId}`;
+}
+
+function loadStored(employeeId: string): ChatMessage[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(storageKeyFor(employeeId));
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed.slice(-MAX_STORED) : [];
@@ -67,24 +78,30 @@ function formatTime(at: number): string {
 }
 
 export default function CopilotPage() {
+  const [employeeId, setEmployeeId] = useState('ceo-copilot');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const employee = getEmployee(employeeId);
 
+  // Switching employees swaps to that persona's own thread — each
+  // AI Employee is scoped to different tools/data, so mixing their
+  // conversations in one thread would be confusing (and the model
+  // would see tool-call history for tools it no longer has access to).
   useEffect(() => {
-    setMessages(loadStored());
-  }, []);
+    setMessages(loadStored(employeeId));
+  }, [employeeId]);
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-MAX_STORED)));
+      localStorage.setItem(storageKeyFor(employeeId), JSON.stringify(messages.slice(-MAX_STORED)));
     } catch {
       // Storage full/blocked — chat still works, just won't persist.
     }
-  }, [messages]);
+  }, [messages, employeeId]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
@@ -104,7 +121,7 @@ export default function CopilotPage() {
         const res = await fetch('/api/ai/assistant', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question, history }),
+          body: JSON.stringify({ question, history, employee: employeeId }),
         });
         const data = await res.json();
         const failed = !res.ok || !!data.error;
@@ -122,7 +139,7 @@ export default function CopilotPage() {
         setTimeout(() => inputRef.current?.focus(), 50);
       }
     },
-    [loading, messages],
+    [loading, messages, employeeId],
   );
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -135,7 +152,7 @@ export default function CopilotPage() {
   const clear = () => {
     setMessages([]);
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(storageKeyFor(employeeId));
     } catch {
       // ignore
     }
@@ -146,14 +163,29 @@ export default function CopilotPage() {
       <div>
         <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">
           <Zap className="h-3 w-3" />
-          Scale OS
+          Scale OS · AI Employees
         </p>
         <h1 className="mt-1 font-heading text-2xl font-bold tracking-tight text-foreground">
-          {AI_NAME} — CEO Copilot
+          {AI_NAME} — {employee.name}
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Ask about your live business data, or tell it to act — it does the work, not just the reporting.
-        </p>
+        <p className="mt-1 text-sm text-muted-foreground">{employee.tagline}</p>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-1 rounded-full bg-muted/60 p-1">
+        {AI_EMPLOYEES.map((e) => (
+          <button
+            key={e.id}
+            type="button"
+            onClick={() => setEmployeeId(e.id)}
+            className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
+              employeeId === e.id
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {e.name}
+          </button>
+        ))}
       </div>
 
       <div className="relative flex flex-1 flex-col overflow-hidden rounded-3xl bg-zinc-900 text-white shadow-elevated">
@@ -165,7 +197,7 @@ export default function CopilotPage() {
               <Sparkles className="mx-auto h-8 w-8 text-primary" />
               <p className="mt-2 text-sm text-white/60">Try asking:</p>
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                {SUGGESTIONS.map((s) => (
+                {suggestionsFor(employeeId).map((s) => (
                   <button
                     key={s}
                     type="button"

@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getOpenAIClient } from '@/lib/openai/client';
 import { decryptText } from '@/lib/crypto';
 import { CLIENT_INDUSTRY, CLIENT_NAME } from '@/lib/features';
+import { getEmployee } from '@/lib/ai-employees';
 
 // ============================================================
 // /api/ai/assistant — ad-hoc business Q&A chat.
@@ -537,10 +538,14 @@ export async function POST(request: Request) {
     const body = (await request.json().catch(() => null)) as {
       question?: unknown;
       history?: HistoryMessage[];
+      employee?: unknown;
     } | null;
     const question = typeof body?.question === 'string' ? body.question.trim() : '';
     if (!question) return NextResponse.json({ error: 'question required' }, { status: 400 });
     const history = Array.isArray(body?.history) ? body.history.slice(-12) : [];
+    const employee = getEmployee(typeof body?.employee === 'string' ? body.employee : undefined);
+    const scopedTools = TOOLS.filter((t) => employee.allowedTools.includes(t.name));
+    const scopedOpenAITools = OPENAI_TOOLS.filter((t) => employee.allowedTools.includes(t.function.name));
 
     const { data: profile } = await supabase
       .from('profiles')
@@ -578,7 +583,17 @@ export async function POST(request: Request) {
 
     const dataContext = await buildDataContext(supabase, currency);
 
+    const TOOL_BLURBS: Record<string, string> = {
+      update_lead_status: 'update_lead_status when the user asks to mark/close/update a specific lead',
+      update_appointment_status: "update_appointment_status when they ask to cancel/confirm/complete a specific appointment",
+      update_conversation_status: "update_conversation_status when they ask to close/reopen a specific WhatsApp conversation (this never sends a message to the customer, it's internal-only)",
+      update_invoice_status: 'update_invoice_status when they ask to mark a specific invoice paid/unpaid/cancelled',
+    };
+    const toolInstructions = employee.allowedTools.map((t) => TOOL_BLURBS[t]).filter(Boolean).join(', and ');
+
     const systemPrompt = `You are ${AI_LABEL} — business data terminal for ${BUSINESS_LABEL}, using this WhatsApp CRM.
+
+${employee.persona}
 
 REPLY FORMAT — non-negotiable:
 • Bullet points only. NO paragraphs. Max 8 bullet lines.
@@ -586,8 +601,7 @@ REPLY FORMAT — non-negotiable:
 • No intro, no outro, no "based on the data".
 • Money in ${currency}.
 • If data can't answer the question, say so in one bullet and suggest the closest answerable metric.
-
-You can also take action, not just report — use update_lead_status when the user asks to mark/close/update a specific lead, update_appointment_status when they ask to cancel/confirm/complete a specific appointment, update_conversation_status when they ask to close/reopen a specific WhatsApp conversation (this never sends a message to the customer, it's internal-only), and update_invoice_status when they ask to mark a specific invoice paid/unpaid/cancelled. If a tool says multiple matches were found, ask the user to be more specific instead of picking one yourself.`;
+${toolInstructions ? `\nYou can also take action, not just report — use ${toolInstructions}. If a tool says multiple matches were found, ask the user to be more specific instead of picking one yourself.` : '\nYou are read-only for this role — you can report on any part of the business, but you cannot take actions. If the user asks you to change something, tell them which employee can do that.'}`;
 
     // Data context rides in the first user turn only; follow-ups lean
     // on chat history, mirroring how the widget resends the thread.
@@ -620,7 +634,7 @@ You can also take action, not just report — use update_lead_status when the us
         thinking: { type: 'adaptive' },
         system: systemPrompt,
         messages: conversation,
-        tools: TOOLS,
+        tools: scopedTools,
       });
       tokensUsed = response.usage.input_tokens + response.usage.output_tokens;
 
@@ -649,7 +663,7 @@ You can also take action, not just report — use update_lead_status when the us
           thinking: { type: 'adaptive' },
           system: systemPrompt,
           messages: conversation,
-          tools: TOOLS,
+          tools: scopedTools,
         });
         tokensUsed += response.usage.input_tokens + response.usage.output_tokens;
       }
@@ -666,7 +680,7 @@ You can also take action, not just report — use update_lead_status when the us
         model: 'gpt-4o-mini',
         messages: conversation,
         max_tokens: 600,
-        tools: OPENAI_TOOLS,
+        tools: scopedOpenAITools,
       });
       tokensUsed = completion.usage?.total_tokens ?? 0;
 
@@ -689,7 +703,7 @@ You can also take action, not just report — use update_lead_status when the us
           model: 'gpt-4o-mini',
           messages: conversation,
           max_tokens: 600,
-          tools: OPENAI_TOOLS,
+          tools: scopedOpenAITools,
         });
         tokensUsed += completion.usage?.total_tokens ?? 0;
         message = completion.choices[0]?.message;
