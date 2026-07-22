@@ -20,8 +20,14 @@ create index if not exists idx_daily_digests_account on daily_digests(account_id
 
 alter table daily_digests enable row level security;
 drop policy if exists "members read daily_digests" on daily_digests;
-create policy "members read daily_digests" on daily_digests for select
-  using (is_account_member(account_id, 'viewer'));
+drop policy if exists "members manage daily_digests" on daily_digests;
+-- FOR ALL, not FOR SELECT — /api/digest/generate inserts through the
+-- caller's own RLS-scoped session (not service role), so a read-only
+-- policy here means every "Generate now" click 500s on the INSERT
+-- with RLS silently denying an operation with no matching policy.
+create policy "members manage daily_digests" on daily_digests for all
+  using (is_account_member(account_id, 'viewer'))
+  with check (is_account_member(account_id, 'agent'));
 
 grant select, insert, update, delete on daily_digests to authenticated;
 
