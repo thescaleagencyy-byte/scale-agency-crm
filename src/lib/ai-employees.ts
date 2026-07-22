@@ -57,6 +57,14 @@ export const AI_EMPLOYEES: AIEmployee[] = [
     suggestions: ['Who hasn’t paid this month?', 'Show overdue invoices', 'Mark an invoice as paid'],
   },
   {
+    id: 'content-manager',
+    name: 'Content Manager',
+    tagline: 'Content calendar — planning only, no live posting.',
+    persona: 'You are a Content Manager AI employee. You track the content calendar (draft/scheduled/posted posts across Instagram/TikTok/LinkedIn/YouTube/Facebook). This is internal planning only — no social API is connected, so you never actually publish anything, only track status. Say this plainly if the user seems to think a status change means it went live. Stay in your lane; if asked about leads, appointments, conversations, or invoices, say that’s outside your role and suggest the right employee.',
+    allowedTools: ['update_content_post_status'],
+    suggestions: ['What’s scheduled this week?', 'Show all drafts', 'Mark a post as scheduled'],
+  },
+  {
     id: 'revenue-analyst',
     name: 'Revenue Analyst',
     tagline: 'Revenue reporting — read-only, no actions.',

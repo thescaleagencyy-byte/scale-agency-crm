@@ -51,6 +51,7 @@ const LEAD_STATUS_VALUES = ['new', 'called', 'won', 'lost'] as const;
 const APPOINTMENT_STATUS_VALUES = ['confirmed', 'completed', 'cancelled'] as const;
 const CONVERSATION_STATUS_VALUES = ['open', 'pending', 'closed'] as const;
 const INVOICE_STATUS_VALUES = ['unpaid', 'paid', 'overdue', 'cancelled'] as const;
+const CONTENT_POST_STATUS_VALUES = ['draft', 'scheduled', 'posted', 'cancelled'] as const;
 
 const TOOLS: Anthropic.Tool[] = [
   {
@@ -115,6 +116,22 @@ const TOOLS: Anthropic.Tool[] = [
         status: { type: 'string', enum: [...INVOICE_STATUS_VALUES] },
       },
       required: ['customer_search', 'status'],
+    },
+  },
+  {
+    name: 'update_content_post_status',
+    description:
+      "Update a content post's status (draft/scheduled/posted/cancelled), found by title. This is internal calendar tracking only — it does NOT actually post anything to Instagram/TikTok/LinkedIn/YouTube/Facebook, no social API is connected. Use for 'mark X post as scheduled', 'the Y video is posted now', etc. If the title matches more than one post, ask the user to be more specific instead of guessing.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        title_search: {
+          type: 'string',
+          description: "The post's title (or a fragment of it) to find the right row.",
+        },
+        status: { type: 'string', enum: [...CONTENT_POST_STATUS_VALUES] },
+      },
+      required: ['title_search', 'status'],
     },
   },
 ];
@@ -196,6 +213,25 @@ const OPENAI_TOOLS = [
           status: { type: 'string', enum: [...INVOICE_STATUS_VALUES] },
         },
         required: ['customer_search', 'status'],
+      },
+    },
+  },
+  {
+    type: 'function' as const,
+    function: {
+      name: 'update_content_post_status',
+      description:
+        "Update a content post's status (draft/scheduled/posted/cancelled), found by title. This is internal calendar tracking only — it does NOT actually post anything to Instagram/TikTok/LinkedIn/YouTube/Facebook, no social API is connected. Use for 'mark X post as scheduled', 'the Y video is posted now', etc. If the title matches more than one post, ask the user to be more specific instead of guessing.",
+      parameters: {
+        type: 'object',
+        properties: {
+          title_search: {
+            type: 'string',
+            description: "The post's title (or a fragment of it) to find the right row.",
+          },
+          status: { type: 'string', enum: [...CONTENT_POST_STATUS_VALUES] },
+        },
+        required: ['title_search', 'status'],
       },
     },
   },
@@ -349,6 +385,41 @@ async function runTool(
     return `Updated ${contact?.name ?? contact?.phone ?? 'the'}'s invoice "${invoice.title}" (${invoice.currency} ${invoice.amount}) status from "${invoice.status}" to "${status}".`;
   }
 
+  if (name === 'update_content_post_status') {
+    const search = String(input.title_search ?? '').trim();
+    const status = String(input.status ?? '');
+    if (!search) return 'Error: no title_search provided.';
+    if (!(CONTENT_POST_STATUS_VALUES as readonly string[]).includes(status)) {
+      return `Error: "${status}" is not a valid status. Valid: ${CONTENT_POST_STATUS_VALUES.join(', ')}.`;
+    }
+
+    const { data: matches, error } = await db
+      .from('content_posts')
+      .select('id, title, platform, status')
+      .ilike('title', `%${search}%`)
+      .neq('status', 'cancelled')
+      .order('created_at', { ascending: false })
+      .limit(5);
+    if (error) return `Error looking up content post: ${error.message}`;
+    if (!matches || matches.length === 0) return `No content post found matching "${search}".`;
+    if (matches.length > 1) {
+      const list = matches.map((m) => `"${m.title}" (${m.platform}) — currently ${m.status}`).join('; ');
+      return `Found ${matches.length} posts matching "${search}": ${list}. Ask the user which one they mean before updating.`;
+    }
+
+    const post = matches[0];
+    const { error: updateErr } = await db
+      .from('content_posts')
+      .update({
+        status,
+        updated_at: new Date().toISOString(),
+        posted_at: status === 'posted' ? new Date().toISOString() : null,
+      })
+      .eq('id', post.id);
+    if (updateErr) return `Error updating content post: ${updateErr.message}`;
+    return `Updated "${post.title}" (${post.platform}) status from "${post.status}" to "${status}". No post was actually published — this is calendar tracking only.`;
+  }
+
   return `Error: unknown tool "${name}".`;
 }
 
@@ -369,7 +440,7 @@ async function buildDataContext(db: SupabaseClient, currency: string): Promise<s
   const d7 = since(7);
   const d30 = since(30);
 
-  const [leadsRes, dealsRes, stagesRes, convsRes, contactsRes, apptsRes, broadcastsRes, invoicesRes] =
+  const [leadsRes, dealsRes, stagesRes, convsRes, contactsRes, apptsRes, broadcastsRes, invoicesRes, contentPostsRes] =
     await Promise.all([
       db
         .from('leads')
@@ -403,6 +474,12 @@ async function buildDataContext(db: SupabaseClient, currency: string): Promise<s
         .select('title, amount, currency, status, due_date, contact:contacts(name, phone), created_at')
         .order('due_date', { ascending: true })
         .limit(200),
+      db
+        .from('content_posts')
+        .select('title, platform, status, scheduled_for, posted_at, created_at')
+        .neq('status', 'cancelled')
+        .order('scheduled_for', { ascending: true })
+        .limit(100),
     ]);
 
   const leads = (leadsRes.data ?? []) as {
@@ -446,6 +523,14 @@ async function buildDataContext(db: SupabaseClient, currency: string): Promise<s
     status: string;
     due_date: string | null;
     contact: { name: string | null; phone: string }[] | { name: string | null; phone: string } | null;
+    created_at: string;
+  }[];
+  const contentPosts = (contentPostsRes.data ?? []) as {
+    title: string;
+    platform: string;
+    status: string;
+    scheduled_for: string | null;
+    posted_at: string | null;
     created_at: string;
   }[];
 
@@ -509,6 +594,13 @@ async function buildDataContext(db: SupabaseClient, currency: string): Promise<s
   const revenueTotal =
     wonDeals.reduce((s, d) => s + (d.value ?? 0), 0) + paidInvoices.reduce((s, i) => s + (i.amount ?? 0), 0);
 
+  // --- Content calendar (Marketing OS — planning only, no live posting) ---
+  const nowIso = new Date().toISOString();
+  const drafts = contentPosts.filter((p) => p.status === 'draft');
+  const scheduled = contentPosts.filter((p) => p.status === 'scheduled');
+  const upcomingPosts = scheduled.filter((p) => p.scheduled_for && p.scheduled_for >= nowIso);
+  const posted30 = contentPosts.filter((p) => p.status === 'posted' && (p.posted_at ?? '') >= d30);
+
   return `${(CLIENT_NAME || 'BUSINESS').toUpperCase()} — LIVE CRM DATA (currency: ${currency})
 Now: ${new Date().toISOString()}
 
@@ -547,7 +639,12 @@ REVENUE (Revenue OS — won deals + paid invoices combined)
 • Today: ${currency} ${revenueToday.toLocaleString()}
 • Last 7d: ${currency} ${revenue7d.toLocaleString()}
 • Last 30d: ${currency} ${revenue30d.toLocaleString()}
-• All-time: ${currency} ${revenueTotal.toLocaleString()} (${wonDeals.length} won deals + ${paidInvoices.length} paid invoices)`;
+• All-time: ${currency} ${revenueTotal.toLocaleString()} (${wonDeals.length} won deals + ${paidInvoices.length} paid invoices)
+
+CONTENT CALENDAR (Marketing OS — internal planning only, nothing here is actually posted to any platform, no social API is connected)
+• Drafts: ${drafts.length}${drafts.length ? ' — ' + drafts.slice(0, 8).map((p) => `"${p.title}" (${p.platform})`).join('; ') : ''}
+• Scheduled: ${scheduled.length}${upcomingPosts.length ? ' — next: ' + upcomingPosts.slice(0, 5).map((p) => `"${p.title}" (${p.platform}) on ${p.scheduled_for?.slice(0, 10)}`).join('; ') : ''}
+• Posted in last 30d: ${posted30.length}`;
 }
 
 export async function POST(request: Request) {
@@ -611,6 +708,7 @@ export async function POST(request: Request) {
       update_appointment_status: "update_appointment_status when they ask to cancel/confirm/complete a specific appointment",
       update_conversation_status: "update_conversation_status when they ask to close/reopen a specific WhatsApp conversation (this never sends a message to the customer, it's internal-only)",
       update_invoice_status: 'update_invoice_status when they ask to mark a specific invoice paid/unpaid/cancelled',
+      update_content_post_status: "update_content_post_status when they ask to mark a specific content post draft/scheduled/posted/cancelled (this never actually publishes anything, no social API is connected — it's calendar tracking only)",
     };
     const toolInstructions = employee.allowedTools.map((t) => TOOL_BLURBS[t]).filter(Boolean).join(', and ');
 
