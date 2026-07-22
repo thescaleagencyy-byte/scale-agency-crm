@@ -17,6 +17,7 @@ import {
   StickyNote, Bell, CheckSquare, Square,
 } from 'lucide-react';
 import { AvatarStack } from '@/components/ui/avatar-stack';
+import { LeadDetailPanel } from '@/components/leads/lead-detail-panel';
 import { LeadNotesPanel } from '@/components/leads/lead-notes-panel';
 import { ReminderDialog } from '@/components/reminders/reminder-dialog';
 import { getLeadStatuses } from '@/lib/lead-status-terms';
@@ -54,6 +55,7 @@ export default function LeadsPage() {
 
   const [notesLead, setNotesLead] = useState<Lead | null>(null);
   const [reminderLead, setReminderLead] = useState<Lead | null>(null);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
   // Debounce: search fires a Supabase query per change; typing "ahmed"
   // shouldn't issue five queries. 300ms after the last keystroke.
@@ -109,6 +111,7 @@ export default function LeadsPage() {
     if (error) toast.error('Update failed');
     else {
       setLeads(prev => prev.map(l => l.id === id ? { ...l, status } : l));
+      setSelectedLead(prev => prev && prev.id === id ? { ...prev, status } : prev);
       toast.success(`Marked ${STATUS_LABEL[status]}`);
     }
     setUpdating(null);
@@ -196,7 +199,8 @@ export default function LeadsPage() {
         )}
       </div>
 
-      <div className="panel-float overflow-hidden">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
+      <div className={`panel-float overflow-hidden ${selectedLead ? 'lg:col-span-3' : 'lg:col-span-5'}`}>
         {loading ? (
           <div className="flex items-center justify-center gap-2 py-16 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -231,7 +235,11 @@ export default function LeadsPage() {
             </TableHeader>
             <TableBody>
               {leads.map(lead => (
-                <TableRow key={lead.id} className={`border-border ${selected.has(lead.id) ? 'bg-primary/5' : ''}`}>
+                <TableRow
+                  key={lead.id}
+                  onClick={() => setSelectedLead(lead)}
+                  className={`cursor-pointer border-border ${selected.has(lead.id) || selectedLead?.id === lead.id ? 'bg-primary/5' : ''}`}
+                >
                   <TableCell>
                     <button onClick={() => toggleSelect(lead.id)} className="text-muted-foreground hover:text-foreground">
                       {selected.has(lead.id) ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4" />}
@@ -308,6 +316,23 @@ export default function LeadsPage() {
             </TableBody>
           </Table>
         )}
+      </div>
+
+      {selectedLead && (
+        <div className="lg:col-span-2">
+          <LeadDetailPanel
+            lead={selectedLead}
+            statusLabel={STATUS_LABEL}
+            statusClass={STATUS_CLASS}
+            statuses={STATUSES}
+            updating={updating === selectedLead.id}
+            onClose={() => setSelectedLead(null)}
+            onStatusChange={(s) => updateStatus(selectedLead.id, s)}
+            onOpenNotes={() => setNotesLead(selectedLead)}
+            onOpenReminder={() => setReminderLead(selectedLead)}
+          />
+        </div>
+      )}
       </div>
 
       {totalPages > 1 && (
