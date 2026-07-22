@@ -16,6 +16,7 @@ import {
   Search, ChevronLeft, ChevronRight, MoreHorizontal, TrendingUp, Loader2,
   StickyNote, Bell, CheckSquare, Square,
 } from 'lucide-react';
+import { AvatarStack } from '@/components/ui/avatar-stack';
 import { LeadNotesPanel } from '@/components/leads/lead-notes-panel';
 import { ReminderDialog } from '@/components/reminders/reminder-dialog';
 import { getLeadStatuses } from '@/lib/lead-status-terms';
@@ -161,16 +162,16 @@ export default function LeadsPage() {
             className="pl-8 bg-card border-border text-foreground placeholder:text-muted-foreground w-64"
           />
         </div>
-        <div className="flex gap-1">
+        <div className="flex items-center gap-1 rounded-full bg-muted/60 p-1">
           {(['all', ...STATUSES] as string[]).map(s => (
             <button
               key={s}
               onClick={() => { setFilterStatus(s); setPage(0); }}
               className={[
-                'px-3 py-1.5 rounded-md text-xs font-medium border transition-colors',
+                'px-3 py-1.5 rounded-full text-xs font-medium transition-colors',
                 filterStatus === s
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground',
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground',
               ].join(' ')}
             >
               {s === 'all' ? 'All' : STATUS_LABEL[s]}
@@ -237,8 +238,13 @@ export default function LeadsPage() {
                     </button>
                   </TableCell>
                   <TableCell>
-                    <div className="text-sm font-medium text-foreground">{lead.customer_name ?? '—'}</div>
-                    <div className="text-xs text-muted-foreground">{lead.customer_phone}</div>
+                    <div className="flex items-center gap-2.5">
+                      <AvatarStack avatars={[{ label: lead.customer_name || lead.customer_phone || '?' }]} size="md" />
+                      <div>
+                        <div className="text-sm font-medium text-foreground">{lead.customer_name ?? '—'}</div>
+                        <div className="text-xs text-muted-foreground">{lead.customer_phone}</div>
+                      </div>
+                    </div>
                   </TableCell>
                   <TableCell className="text-sm text-foreground">{lead.service_type ?? '—'}</TableCell>
                   <TableCell className="text-sm text-foreground">{lead.project_site ?? '—'}</TableCell>

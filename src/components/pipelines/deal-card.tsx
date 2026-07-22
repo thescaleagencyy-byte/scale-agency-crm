@@ -4,6 +4,7 @@ import type { Deal, PipelineStage } from "@/types";
 import { Calendar, Check, X } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
 import { getIndustryTerms } from "@/lib/industry-terms";
+import { AvatarStack } from "@/components/ui/avatar-stack";
 
 interface DealCardProps {
   deal: Deal;
@@ -18,12 +19,6 @@ function formatDate(dateStr: string) {
     day: "numeric",
     year: "numeric",
   });
-}
-
-function initials(name?: string, fallback?: string) {
-  const source = (name || fallback || "?").trim();
-  if (!source) return "?";
-  return source.charAt(0).toUpperCase();
 }
 
 export function DealCard({ deal, stage, onEdit, isOverlay }: DealCardProps) {
@@ -72,11 +67,15 @@ export function DealCard({ deal, stage, onEdit, isOverlay }: DealCardProps) {
         )}
       </div>
 
-      {/* Contact row */}
+      {/* Contact row — stacked with the assignee's avatar when one exists,
+          instead of two separate circles in two different corners. */}
       <div className="mt-2 flex items-center gap-2">
-        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[10px] font-semibold text-foreground">
-          {initials(deal.contact?.name, deal.contact?.phone)}
-        </span>
+        <AvatarStack
+          avatars={[
+            { label: deal.contact?.name || deal.contact?.phone || "?", title: contactLabel },
+            ...(assigneeLabel ? [{ label: assigneeLabel, title: `Assigned to ${assigneeLabel}`, className: "bg-muted text-foreground" }] : []),
+          ]}
+        />
         <span className="truncate text-xs text-muted-foreground">{contactLabel}</span>
       </div>
 
@@ -91,17 +90,6 @@ export function DealCard({ deal, stage, onEdit, isOverlay }: DealCardProps) {
           </span>
         )}
       </div>
-
-      {assigneeLabel && (
-        <div className="mt-2 flex items-center justify-end">
-          <span
-            title={assigneeLabel}
-            className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/15 text-[10px] font-semibold text-primary"
-          >
-            {initials(assigneeLabel)}
-          </span>
-        </div>
-      )}
     </button>
   );
 }

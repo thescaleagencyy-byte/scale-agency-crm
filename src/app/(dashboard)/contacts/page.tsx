@@ -49,6 +49,7 @@ import { CustomFieldsManager } from '@/components/contacts/custom-fields-manager
 import { useCan } from '@/hooks/use-can';
 import { GatedButton } from '@/components/ui/gated-button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { AvatarStack } from '@/components/ui/avatar-stack';
 
 const PAGE_SIZE = 25;
 
@@ -472,7 +473,10 @@ export default function ContactsPage() {
                     />
                   </TableCell>
                   <TableCell className="text-foreground font-medium">
-                    {contact.name || <span className="text-muted-foreground italic">Unnamed</span>}
+                    <div className="flex items-center gap-2.5">
+                      <AvatarStack avatars={[{ label: contact.name || contact.phone || '?' }]} size="md" />
+                      {contact.name || <span className="text-muted-foreground italic">Unnamed</span>}
+                    </div>
                   </TableCell>
                   <TableCell className="text-muted-foreground font-mono text-xs">
                     {contact.phone}
