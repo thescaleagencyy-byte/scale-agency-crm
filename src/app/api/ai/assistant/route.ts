@@ -134,6 +134,48 @@ const TOOLS: Anthropic.Tool[] = [
       required: ['title_search', 'status'],
     },
   },
+  {
+    name: 'create_deal',
+    description:
+      'Create a new deal in the sales pipeline for a contact, found by name or phone. Lands in the pipeline\'s first stage. Use for "add a deal for X worth Y", "create a deal", etc. If the contact search matches more than one person, ask which one instead of guessing.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        contact_search: { type: 'string', description: "The contact's name or phone number (or a fragment) to link the deal to." },
+        title: { type: 'string', description: 'Short deal title, e.g. "Ahmed Textiles — Automation Setup".' },
+        value: { type: 'number', description: 'Deal value as a plain number, no currency symbol.' },
+      },
+      required: ['contact_search', 'title', 'value'],
+    },
+  },
+  {
+    name: 'create_reminder',
+    description:
+      'Create a follow-up reminder for a lead or contact, found by name or phone. Use for "remind me to follow up with X tomorrow", "set a reminder", etc. due_date must be an ISO date (YYYY-MM-DD) — compute it yourself from the user\'s wording ("tomorrow", "next Monday") using the current date given in your data context.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        entity_search: { type: 'string', description: "The lead or contact's name or phone number (or a fragment) this reminder is about." },
+        due_date: { type: 'string', description: 'ISO date YYYY-MM-DD.' },
+        note: { type: 'string', description: 'What to do — e.g. "Follow up on pricing question".' },
+      },
+      required: ['entity_search', 'due_date', 'note'],
+    },
+  },
+  {
+    name: 'create_appointment',
+    description:
+      'Book an appointment for a contact with an existing service, found by name or phone. Fails honestly if no matching service or contact is found rather than guessing. start_at must be an ISO datetime — compute it from the user\'s wording using the current date/time in your data context.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        contact_search: { type: 'string', description: "The contact's name or phone number (or a fragment)." },
+        service_search: { type: 'string', description: 'The service name (or a fragment) — must match an existing booking service.' },
+        start_at: { type: 'string', description: 'ISO datetime for the appointment start.' },
+      },
+      required: ['contact_search', 'service_search', 'start_at'],
+    },
+  },
 ];
 
 // Same tools, OpenAI's function-calling shape — kept as separate literals
@@ -235,12 +277,65 @@ const OPENAI_TOOLS = [
       },
     },
   },
+  {
+    type: 'function' as const,
+    function: {
+      name: 'create_deal',
+      description:
+        'Create a new deal in the sales pipeline for a contact, found by name or phone. Lands in the pipeline\'s first stage. If the contact search matches more than one person, ask which one instead of guessing.',
+      parameters: {
+        type: 'object',
+        properties: {
+          contact_search: { type: 'string', description: "The contact's name or phone number (or a fragment) to link the deal to." },
+          title: { type: 'string', description: 'Short deal title.' },
+          value: { type: 'number', description: 'Deal value as a plain number.' },
+        },
+        required: ['contact_search', 'title', 'value'],
+      },
+    },
+  },
+  {
+    type: 'function' as const,
+    function: {
+      name: 'create_reminder',
+      description:
+        'Create a follow-up reminder for a lead or contact, found by name or phone. due_date must be ISO YYYY-MM-DD, computed from the user\'s wording using the current date in your data context.',
+      parameters: {
+        type: 'object',
+        properties: {
+          entity_search: { type: 'string', description: "The lead or contact's name or phone number (or a fragment)." },
+          due_date: { type: 'string', description: 'ISO date YYYY-MM-DD.' },
+          note: { type: 'string', description: 'What to do.' },
+        },
+        required: ['entity_search', 'due_date', 'note'],
+      },
+    },
+  },
+  {
+    type: 'function' as const,
+    function: {
+      name: 'create_appointment',
+      description:
+        'Book an appointment for a contact with an existing service, found by name or phone. Fails honestly if no matching service or contact is found. start_at must be an ISO datetime.',
+      parameters: {
+        type: 'object',
+        properties: {
+          contact_search: { type: 'string', description: "The contact's name or phone number (or a fragment)." },
+          service_search: { type: 'string', description: 'The service name (or a fragment) — must match an existing booking service.' },
+          start_at: { type: 'string', description: 'ISO datetime for the appointment start.' },
+        },
+        required: ['contact_search', 'service_search', 'start_at'],
+      },
+    },
+  },
 ];
 
 async function runTool(
   db: SupabaseClient,
   name: string,
   input: Record<string, unknown>,
+  accountId: string,
+  userId: string,
 ): Promise<string> {
   if (name === 'update_lead_status') {
     const search = String(input.customer_search ?? '').trim();
@@ -418,6 +513,139 @@ async function runTool(
       .eq('id', post.id);
     if (updateErr) return `Error updating content post: ${updateErr.message}`;
     return `Updated "${post.title}" (${post.platform}) status from "${post.status}" to "${status}". No post was actually published — this is calendar tracking only.`;
+  }
+
+  if (name === 'create_deal') {
+    const search = String(input.contact_search ?? '').trim();
+    const title = String(input.title ?? '').trim();
+    const value = Number(input.value ?? 0);
+    if (!search || !title) return 'Error: contact_search and title are required.';
+
+    const { data: contacts, error: contactErr } = await db
+      .from('contacts')
+      .select('id, name, phone')
+      .or(`name.ilike.%${search}%,phone.ilike.%${search}%`)
+      .limit(5);
+    if (contactErr) return `Error looking up contact: ${contactErr.message}`;
+    if (!contacts || contacts.length === 0) return `No contact found matching "${search}".`;
+    if (contacts.length > 1) {
+      return `Found ${contacts.length} contacts matching "${search}": ${contacts.map((c) => `${c.name ?? c.phone}`).join(', ')}. Ask the user which one they mean before creating the deal.`;
+    }
+
+    const { data: pipeline, error: pipeErr } = await db
+      .from('pipelines')
+      .select('id')
+      .eq('account_id', accountId)
+      .limit(1)
+      .maybeSingle();
+    if (pipeErr || !pipeline) return 'Error: no pipeline exists for this account yet.';
+
+    const { data: stage, error: stageErr } = await db
+      .from('pipeline_stages')
+      .select('id, name')
+      .eq('pipeline_id', pipeline.id)
+      .order('position', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (stageErr || !stage) return 'Error: no pipeline stage exists for this account yet.';
+
+    const contact = contacts[0];
+    const { error: insertErr } = await db.from('deals').insert({
+      user_id: userId,
+      account_id: accountId,
+      pipeline_id: pipeline.id,
+      stage_id: stage.id,
+      contact_id: contact.id,
+      title,
+      value: isNaN(value) ? 0 : value,
+      status: 'open',
+    });
+    if (insertErr) return `Error creating deal: ${insertErr.message}`;
+    return `Created deal "${title}" for ${contact.name ?? contact.phone}, value ${value}, in stage "${stage.name}".`;
+  }
+
+  if (name === 'create_reminder') {
+    const search = String(input.entity_search ?? '').trim();
+    const dueDate = String(input.due_date ?? '').trim();
+    const note = String(input.note ?? '').trim();
+    if (!search || !dueDate) return 'Error: entity_search and due_date are required.';
+
+    const [leadMatches, contactMatches] = await Promise.all([
+      db.from('leads').select('id, customer_name, customer_phone').or(`customer_name.ilike.%${search}%,customer_phone.ilike.%${search}%`).limit(5),
+      db.from('contacts').select('id, name, phone').or(`name.ilike.%${search}%,phone.ilike.%${search}%`).limit(5),
+    ]);
+    const leads = leadMatches.data ?? [];
+    const contacts = contactMatches.data ?? [];
+    const totalMatches = leads.length + contacts.length;
+    if (totalMatches === 0) return `No lead or contact found matching "${search}".`;
+    if (totalMatches > 1) {
+      const names = [...leads.map((l) => l.customer_name ?? l.customer_phone), ...contacts.map((c) => c.name ?? c.phone)];
+      return `Found ${totalMatches} matches for "${search}": ${names.join(', ')}. Ask the user which one they mean before creating the reminder.`;
+    }
+
+    const entityType = leads.length === 1 ? 'lead' : 'contact';
+    const entity = leads.length === 1 ? leads[0] : contacts[0];
+    const entityLabel = leads.length === 1
+      ? (leads[0].customer_name ?? leads[0].customer_phone)
+      : (contacts[0].name ?? contacts[0].phone);
+
+    const { error: insertErr } = await db.from('follow_up_reminders').insert({
+      account_id: accountId,
+      user_id: userId,
+      entity_type: entityType,
+      entity_id: entity.id,
+      due_at: new Date(dueDate).toISOString(),
+      note: note || null,
+    });
+    if (insertErr) return `Error creating reminder: ${insertErr.message}`;
+    return `Created a reminder for ${entityLabel} on ${dueDate}${note ? `: "${note}"` : ''}.`;
+  }
+
+  if (name === 'create_appointment') {
+    const contactSearch = String(input.contact_search ?? '').trim();
+    const serviceSearch = String(input.service_search ?? '').trim();
+    const startAt = String(input.start_at ?? '').trim();
+    if (!contactSearch || !serviceSearch || !startAt) return 'Error: contact_search, service_search, and start_at are all required.';
+
+    const [contactsRes, servicesRes] = await Promise.all([
+      db.from('contacts').select('id, name, phone').or(`name.ilike.%${contactSearch}%,phone.ilike.%${contactSearch}%`).limit(5),
+      db.from('booking_services').select('id, name, duration_minutes').eq('account_id', accountId).ilike('name', `%${serviceSearch}%`).limit(5),
+    ]);
+    const contacts = contactsRes.data ?? [];
+    const services = servicesRes.data ?? [];
+    if (contacts.length === 0) return `No contact found matching "${contactSearch}".`;
+    if (contacts.length > 1) return `Found ${contacts.length} contacts matching "${contactSearch}": ${contacts.map((c) => c.name ?? c.phone).join(', ')}. Ask which one before booking.`;
+    if (services.length === 0) return `No service found matching "${serviceSearch}". Ask the user to check the exact service name in Settings.`;
+    if (services.length > 1) return `Found ${services.length} services matching "${serviceSearch}": ${services.map((s) => s.name).join(', ')}. Ask which one before booking.`;
+
+    const contact = contacts[0];
+    const service = services[0];
+    const startDate = new Date(startAt);
+    const endDate = new Date(startDate.getTime() + (service.duration_minutes ?? 30) * 60000);
+
+    const { data: slot, error: slotErr } = await db
+      .from('booking_slots')
+      .insert({
+        account_id: accountId,
+        service_id: service.id,
+        start_at: startDate.toISOString(),
+        end_at: endDate.toISOString(),
+        max_bookings: 1,
+        booked_count: 1,
+      })
+      .select()
+      .single();
+    if (slotErr || !slot) return `Error creating time slot: ${slotErr?.message}`;
+
+    const { error: apptErr } = await db.from('appointments').insert({
+      account_id: accountId,
+      slot_id: slot.id,
+      contact_id: contact.id,
+      service_id: service.id,
+      status: 'confirmed',
+    });
+    if (apptErr) return `Error creating appointment: ${apptErr.message}`;
+    return `Booked ${contact.name ?? contact.phone} for "${service.name}" on ${startDate.toLocaleString()}.`;
   }
 
   return `Error: unknown tool "${name}".`;
@@ -725,6 +953,9 @@ export async function POST(request: Request) {
       update_conversation_status: "update_conversation_status when they ask to close/reopen a specific WhatsApp conversation (this never sends a message to the customer, it's internal-only)",
       update_invoice_status: 'update_invoice_status when they ask to mark a specific invoice paid/unpaid/cancelled',
       update_content_post_status: "update_content_post_status when they ask to mark a specific content post draft/scheduled/posted/cancelled (this never actually publishes anything, no social API is connected — it's calendar tracking only)",
+      create_deal: 'create_deal when they ask to add a new deal for a contact',
+      create_reminder: 'create_reminder when they ask to set a follow-up reminder for a lead or contact',
+      create_appointment: 'create_appointment when they ask to book a new appointment for a contact with an existing service',
     };
     const toolInstructions = employee.allowedTools.map((t) => TOOL_BLURBS[t]).filter(Boolean).join(', and ');
 
@@ -786,7 +1017,7 @@ ${toolInstructions ? `\nYou can also take action, not just report — use ${tool
           toolUses.map(async (tu) => ({
             type: 'tool_result' as const,
             tool_use_id: tu.id,
-            content: await runTool(supabase, tu.name, tu.input as Record<string, unknown>),
+            content: await runTool(supabase, tu.name, tu.input as Record<string, unknown>, profile?.account_id ?? '', user.id),
           })),
         );
         conversation = [
@@ -832,7 +1063,7 @@ ${toolInstructions ? `\nYou can also take action, not just report — use ${tool
           funcCalls.map(async (tc) => ({
             role: 'tool' as const,
             tool_call_id: tc.id,
-            content: await runTool(supabase, tc.function.name, JSON.parse(tc.function.arguments || '{}')),
+            content: await runTool(supabase, tc.function.name, JSON.parse(tc.function.arguments || '{}'), profile?.account_id ?? '', user.id),
           })),
         );
         conversation = [...conversation, message, ...toolResults];
