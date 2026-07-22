@@ -11,6 +11,7 @@ import {
   loadEquipmentDemand,
   loadMetrics,
   loadPipelineDonut,
+  loadRecentContacts,
   loadResponseTime,
 } from '@/lib/dashboard/queries'
 import type {
@@ -19,6 +20,7 @@ import type {
   DemandSlice,
   MetricsBundle,
   PipelineDonutData,
+  RecentContact,
   ResponseTimeSummary,
   SiteSlice,
 } from '@/lib/dashboard/types'
@@ -66,6 +68,8 @@ export default function DashboardPage() {
   const [activity, setActivity] = useState<ActivityItem[] | null>(null)
   const [activityLoading, setActivityLoading] = useState(true)
 
+  const [recentContacts, setRecentContacts] = useState<RecentContact[]>([])
+
   const [equipmentDemand, setEquipmentDemand] = useState<DemandSlice[] | null>(null)
   const [equipmentDemandLoading, setEquipmentDemandLoading] = useState(RENTAL_INDUSTRY)
 
@@ -110,6 +114,10 @@ export default function DashboardPage() {
       .then((a) => setActivity(a))
       .catch((err) => console.error('[dashboard] activity failed:', err))
       .finally(() => setActivityLoading(false))
+
+    void loadRecentContacts(db, 4)
+      .then((c) => setRecentContacts(c))
+      .catch((err) => console.error('[dashboard] recent contacts failed:', err))
 
     if (RENTAL_INDUSTRY && hasFeature('leads')) {
       void loadEquipmentDemand(db)
@@ -306,6 +314,7 @@ export default function DashboardPage() {
         metrics={metrics}
         loading={metricsLoading}
         currency={defaultCurrency}
+        recentContacts={recentContacts}
         hasPipelines={hasFeature('pipelines')}
         labels={{
           activeConversations: labels.activeConversations,

@@ -2,12 +2,14 @@ import Link from 'next/link'
 import { ArrowDown, ArrowUp, Minus, MessageCircle, ArrowUpRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatCurrency } from '@/lib/currency'
-import type { MetricsBundle } from '@/lib/dashboard/types'
+import { AvatarStack } from '@/components/ui/avatar-stack'
+import type { MetricsBundle, RecentContact } from '@/lib/dashboard/types'
 
 interface HeroStatsRowProps {
   metrics: MetricsBundle | null
   loading: boolean
   currency: string
+  recentContacts?: RecentContact[]
   hasPipelines: boolean
   labels: {
     activeConversations: string
@@ -22,7 +24,7 @@ interface HeroStatsRowProps {
 // real metrics side-by-side on an always-light paper surface, next to a
 // dark callout tile for the week's messaging activity. Every number here
 // is a real MetricsBundle field; nothing decorative is fabricated.
-export function HeroStatsRow({ metrics, loading, currency, hasPipelines, labels }: HeroStatsRowProps) {
+export function HeroStatsRow({ metrics, loading, currency, recentContacts, hasPipelines, labels }: HeroStatsRowProps) {
   if (loading || !metrics) {
     return (
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
@@ -62,6 +64,7 @@ export function HeroStatsRow({ metrics, loading, currency, hasPipelines, labels 
           delta={metrics.newContactsToday.current}
           deltaLabel="today"
           deltaIsCount
+          recentContacts={recentContacts}
         />
         {thirdCell && (
           <StatCell
@@ -71,6 +74,7 @@ export function HeroStatsRow({ metrics, loading, currency, hasPipelines, labels 
             delta={'delta' in thirdCell ? thirdCell.delta : undefined}
             deltaLabel="today"
             deltaIsCount
+            size={hasPipelines ? 'md' : 'lg'}
           />
         )}
       </div>
@@ -91,7 +95,7 @@ export function HeroStatsRow({ metrics, loading, currency, hasPipelines, labels 
           </span>
         </div>
 
-        <p className="relative mt-3 font-heading text-[34px] font-bold leading-none tabular-nums">
+        <p className="relative mt-3 font-heading text-[38px] font-extrabold leading-none tabular-nums sm:text-[42px]">
           {metrics.messagesSent7d.toLocaleString()}
         </p>
 
@@ -123,6 +127,8 @@ function StatCell({
   delta,
   deltaLabel,
   deltaIsCount,
+  recentContacts,
+  size = 'lg',
 }: {
   label: string
   value: string
@@ -130,6 +136,8 @@ function StatCell({
   delta?: number
   deltaLabel?: string
   deltaIsCount?: boolean
+  recentContacts?: RecentContact[]
+  size?: 'lg' | 'md'
 }) {
   const Arrow = delta == null ? null : delta > 0 ? ArrowUp : delta < 0 ? ArrowDown : Minus
   const deltaColor =
@@ -152,21 +160,32 @@ function StatCell({
           : `${delta > 0 ? '+' : ''}${delta.toLocaleString()} ${deltaLabel}`
 
   return (
-    <div className="flex-1 px-5 py-4 sm:px-6 sm:py-5">
+    <div className="flex-1 px-5 py-5 sm:px-7 sm:py-6">
       <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">{label}</p>
-      <p className="mt-1.5 font-heading text-[26px] font-bold leading-none tabular-nums text-foreground sm:text-[28px]">
+      <p className={cn(
+        'mt-2 truncate font-heading font-extrabold leading-none tabular-nums text-foreground',
+        size === 'md' ? 'text-[24px] sm:text-[28px]' : 'text-[34px] sm:text-[42px]',
+      )}>
         {value}
       </p>
       {deltaText ? (
-        <div className="mt-2 flex items-center gap-1.5">
+        <div className="mt-2.5 flex items-center gap-1.5">
           <span className={cn('inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold', deltaColor)}>
             {Arrow ? <Arrow className="h-2.5 w-2.5" /> : null}
           </span>
           <span className="truncate text-[11px] text-muted-foreground">{deltaText}</span>
         </div>
       ) : subtitle ? (
-        <p className="mt-2 text-[11px] text-muted-foreground">{subtitle}</p>
+        <p className="mt-2.5 text-[11px] text-muted-foreground">{subtitle}</p>
       ) : null}
+      {recentContacts && recentContacts.length > 0 && (
+        <div className="mt-3 flex items-center gap-2">
+          <AvatarStack
+            avatars={recentContacts.map((c) => ({ label: c.name || c.phone || '?', title: c.name || c.phone }))}
+          />
+          <span className="text-[10px] text-muted-foreground">Most recent</span>
+        </div>
+      )}
     </div>
   )
 }

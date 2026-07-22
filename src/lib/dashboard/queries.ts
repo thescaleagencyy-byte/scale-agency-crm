@@ -14,6 +14,7 @@ import type {
   MetricsBundle,
   PipelineDonutData,
   PipelineStageSlice,
+  RecentContact,
   ResponseTimeBucket,
   ResponseTimeSummary,
   SiteSlice,
@@ -537,4 +538,16 @@ export async function loadActiveSites(db: DB, limit = 6): Promise<SiteSlice[]> {
     .map(([label, v]) => ({ label, count: v.count, lastActivity: v.lastActivity }))
     .sort((a, b) => b.count - a.count)
     .slice(0, limit)
+}
+
+// --- 8. Recent contacts (avatar row under the hero stat row) ------------
+
+export async function loadRecentContacts(db: DB, limit = 4): Promise<RecentContact[]> {
+  const { data, error } = await db
+    .from('contacts')
+    .select('name, phone')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (error) throw error
+  return (data ?? []) as RecentContact[]
 }

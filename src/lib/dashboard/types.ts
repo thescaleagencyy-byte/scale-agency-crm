@@ -68,6 +68,11 @@ export interface SiteSlice {
   lastActivity: string
 }
 
+export interface RecentContact {
+  name: string | null
+  phone: string
+}
+
 export type ActivityKind =
   | 'message'
   | 'deal'
