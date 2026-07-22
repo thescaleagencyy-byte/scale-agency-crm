@@ -47,6 +47,7 @@ interface HistoryMessage {
 // ============================================================
 
 const LEAD_STATUS_VALUES = ['new', 'called', 'won', 'lost'] as const;
+const APPOINTMENT_STATUS_VALUES = ['confirmed', 'completed', 'cancelled'] as const;
 
 const TOOLS: Anthropic.Tool[] = [
   {
@@ -65,9 +66,25 @@ const TOOLS: Anthropic.Tool[] = [
       required: ['customer_search', 'status'],
     },
   },
+  {
+    name: 'update_appointment_status',
+    description:
+      "Update an appointment's status (confirmed/completed/cancelled) for a contact, found by name or phone. Use for 'cancel X's appointment', 'mark Y's appointment complete', etc. If the search matches more than one appointment, ask the user to be more specific instead of guessing.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        customer_search: {
+          type: 'string',
+          description: "The contact's name or phone number (or a fragment of either) to find their appointment.",
+        },
+        status: { type: 'string', enum: [...APPOINTMENT_STATUS_VALUES] },
+      },
+      required: ['customer_search', 'status'],
+    },
+  },
 ];
 
-// Same tool, OpenAI's function-calling shape — kept as a separate literal
+// Same tools, OpenAI's function-calling shape — kept as separate literals
 // (rather than transformed from TOOLS) since the two SDKs' schemas diverge
 // enough that a generic converter would be harder to read than this.
 const OPENAI_TOOLS = [
@@ -85,6 +102,25 @@ const OPENAI_TOOLS = [
             description: "The lead's customer name or phone number (or a fragment of either) to find the right row.",
           },
           status: { type: 'string', enum: [...LEAD_STATUS_VALUES] },
+        },
+        required: ['customer_search', 'status'],
+      },
+    },
+  },
+  {
+    type: 'function' as const,
+    function: {
+      name: 'update_appointment_status',
+      description:
+        "Update an appointment's status (confirmed/completed/cancelled) for a contact, found by name or phone. Use for 'cancel X's appointment', 'mark Y's appointment complete', etc. If the search matches more than one appointment, ask the user to be more specific instead of guessing.",
+      parameters: {
+        type: 'object',
+        properties: {
+          customer_search: {
+            type: 'string',
+            description: "The contact's name or phone number (or a fragment of either) to find their appointment.",
+          },
+          status: { type: 'string', enum: [...APPOINTMENT_STATUS_VALUES] },
         },
         required: ['customer_search', 'status'],
       },
@@ -125,6 +161,44 @@ async function runTool(
     if (updateErr) return `Error updating lead: ${updateErr.message}`;
     return `Updated ${lead.customer_name ?? lead.customer_phone}'s lead status from "${lead.status}" to "${status}".`;
   }
+
+  if (name === 'update_appointment_status') {
+    const search = String(input.customer_search ?? '').trim();
+    const status = String(input.status ?? '');
+    if (!search) return 'Error: no customer_search provided.';
+    if (!(APPOINTMENT_STATUS_VALUES as readonly string[]).includes(status)) {
+      return `Error: "${status}" is not a valid status. Valid: ${APPOINTMENT_STATUS_VALUES.join(', ')}.`;
+    }
+
+    const { data: matches, error } = await db
+      .from('appointments')
+      .select('id, status, contact:contacts!inner(name, phone), service:booking_services(name)')
+      .or(`name.ilike.%${search}%,phone.ilike.%${search}%`, { referencedTable: 'contacts' })
+      .order('created_at', { ascending: false })
+      .limit(5);
+    if (error) return `Error looking up appointment: ${error.message}`;
+    if (!matches || matches.length === 0) return `No appointment found for a contact matching "${search}".`;
+    if (matches.length > 1) {
+      const list = matches
+        .map((m) => {
+          const c = Array.isArray(m.contact) ? m.contact[0] : m.contact;
+          const s = Array.isArray(m.service) ? m.service[0] : m.service;
+          return `${c?.name ?? c?.phone ?? 'Unknown'}${s?.name ? ` (${s.name})` : ''} — currently ${m.status}`;
+        })
+        .join('; ');
+      return `Found ${matches.length} appointments matching "${search}": ${list}. Ask the user which one they mean before updating.`;
+    }
+
+    const appt = matches[0];
+    const contact = Array.isArray(appt.contact) ? appt.contact[0] : appt.contact;
+    const { error: updateErr } = await db
+      .from('appointments')
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq('id', appt.id);
+    if (updateErr) return `Error updating appointment: ${updateErr.message}`;
+    return `Updated ${contact?.name ?? contact?.phone ?? 'the'} appointment status from "${appt.status}" to "${status}".`;
+  }
+
   return `Error: unknown tool "${name}".`;
 }
 
@@ -333,7 +407,7 @@ REPLY FORMAT — non-negotiable:
 • Money in ${currency}.
 • If data can't answer the question, say so in one bullet and suggest the closest answerable metric.
 
-You can also take action, not just report — use the update_lead_status tool when the user asks to mark/close/update a specific lead. If the tool says multiple leads matched, ask the user to be more specific instead of picking one yourself.`;
+You can also take action, not just report — use update_lead_status when the user asks to mark/close/update a specific lead, and update_appointment_status when they ask to cancel/confirm/complete a specific appointment. If a tool says multiple matches were found, ask the user to be more specific instead of picking one yourself.`;
 
     // Data context rides in the first user turn only; follow-ups lean
     // on chat history, mirroring how the widget resends the thread.
