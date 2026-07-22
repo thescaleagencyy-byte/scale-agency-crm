@@ -49,6 +49,7 @@ interface HistoryMessage {
 const LEAD_STATUS_VALUES = ['new', 'called', 'won', 'lost'] as const;
 const APPOINTMENT_STATUS_VALUES = ['confirmed', 'completed', 'cancelled'] as const;
 const CONVERSATION_STATUS_VALUES = ['open', 'pending', 'closed'] as const;
+const INVOICE_STATUS_VALUES = ['unpaid', 'paid', 'overdue', 'cancelled'] as const;
 
 const TOOLS: Anthropic.Tool[] = [
   {
@@ -95,6 +96,22 @@ const TOOLS: Anthropic.Tool[] = [
           description: "The contact's name or phone number (or a fragment of either) to find their conversation.",
         },
         status: { type: 'string', enum: [...CONVERSATION_STATUS_VALUES] },
+      },
+      required: ['customer_search', 'status'],
+    },
+  },
+  {
+    name: 'update_invoice_status',
+    description:
+      "Update an invoice's status (unpaid/paid/overdue/cancelled) for a contact, found by name or phone. Use for 'mark X's invoice paid', 'X hasn't paid yet', etc. Setting status to 'paid' also records the payment time. If the search matches more than one unpaid invoice for that contact, ask the user to be more specific instead of guessing.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        customer_search: {
+          type: 'string',
+          description: "The contact's name or phone number (or a fragment of either) to find their invoice.",
+        },
+        status: { type: 'string', enum: [...INVOICE_STATUS_VALUES] },
       },
       required: ['customer_search', 'status'],
     },
@@ -157,6 +174,25 @@ const OPENAI_TOOLS = [
             description: "The contact's name or phone number (or a fragment of either) to find their conversation.",
           },
           status: { type: 'string', enum: [...CONVERSATION_STATUS_VALUES] },
+        },
+        required: ['customer_search', 'status'],
+      },
+    },
+  },
+  {
+    type: 'function' as const,
+    function: {
+      name: 'update_invoice_status',
+      description:
+        "Update an invoice's status (unpaid/paid/overdue/cancelled) for a contact, found by name or phone. Use for 'mark X's invoice paid', 'X hasn't paid yet', etc. Setting status to 'paid' also records the payment time. If the search matches more than one unpaid invoice for that contact, ask the user to be more specific instead of guessing.",
+      parameters: {
+        type: 'object',
+        properties: {
+          customer_search: {
+            type: 'string',
+            description: "The contact's name or phone number (or a fragment of either) to find their invoice.",
+          },
+          status: { type: 'string', enum: [...INVOICE_STATUS_VALUES] },
         },
         required: ['customer_search', 'status'],
       },
@@ -271,6 +307,47 @@ async function runTool(
     return `Updated ${contact?.name ?? contact?.phone ?? 'the'} conversation status from "${convo.status}" to "${status}". No message was sent to the customer.`;
   }
 
+  if (name === 'update_invoice_status') {
+    const search = String(input.customer_search ?? '').trim();
+    const status = String(input.status ?? '');
+    if (!search) return 'Error: no customer_search provided.';
+    if (!(INVOICE_STATUS_VALUES as readonly string[]).includes(status)) {
+      return `Error: "${status}" is not a valid status. Valid: ${INVOICE_STATUS_VALUES.join(', ')}.`;
+    }
+
+    const { data: matches, error } = await db
+      .from('client_invoices')
+      .select('id, title, amount, currency, status, contact:contacts!inner(name, phone)')
+      .or(`name.ilike.%${search}%,phone.ilike.%${search}%`, { referencedTable: 'contacts' })
+      .neq('status', 'cancelled')
+      .order('created_at', { ascending: false })
+      .limit(5);
+    if (error) return `Error looking up invoice: ${error.message}`;
+    if (!matches || matches.length === 0) return `No invoice found for a contact matching "${search}".`;
+    if (matches.length > 1) {
+      const list = matches
+        .map((m) => {
+          const c = Array.isArray(m.contact) ? m.contact[0] : m.contact;
+          return `${c?.name ?? c?.phone ?? 'Unknown'} — ${m.title} (${m.currency} ${m.amount}) — currently ${m.status}`;
+        })
+        .join('; ');
+      return `Found ${matches.length} invoices matching "${search}": ${list}. Ask the user which one they mean before updating.`;
+    }
+
+    const invoice = matches[0];
+    const contact = Array.isArray(invoice.contact) ? invoice.contact[0] : invoice.contact;
+    const { error: updateErr } = await db
+      .from('client_invoices')
+      .update({
+        status,
+        updated_at: new Date().toISOString(),
+        paid_at: status === 'paid' ? new Date().toISOString() : null,
+      })
+      .eq('id', invoice.id);
+    if (updateErr) return `Error updating invoice: ${updateErr.message}`;
+    return `Updated ${contact?.name ?? contact?.phone ?? 'the'}'s invoice "${invoice.title}" (${invoice.currency} ${invoice.amount}) status from "${invoice.status}" to "${status}".`;
+  }
+
   return `Error: unknown tool "${name}".`;
 }
 
@@ -291,7 +368,7 @@ async function buildDataContext(db: SupabaseClient, currency: string): Promise<s
   const d7 = since(7);
   const d30 = since(30);
 
-  const [leadsRes, dealsRes, stagesRes, convsRes, contactsRes, apptsRes, broadcastsRes] =
+  const [leadsRes, dealsRes, stagesRes, convsRes, contactsRes, apptsRes, broadcastsRes, invoicesRes] =
     await Promise.all([
       db
         .from('leads')
@@ -320,6 +397,11 @@ async function buildDataContext(db: SupabaseClient, currency: string): Promise<s
         .select('name, status, total_recipients, sent_count, created_at')
         .order('created_at', { ascending: false })
         .limit(20),
+      db
+        .from('client_invoices')
+        .select('title, amount, currency, status, due_date, contact:contacts(name, phone), created_at')
+        .order('due_date', { ascending: true })
+        .limit(200),
     ]);
 
   const leads = (leadsRes.data ?? []) as {
@@ -355,6 +437,15 @@ async function buildDataContext(db: SupabaseClient, currency: string): Promise<s
     sent_count: number | null;
     created_at: string;
   }[];
+  const invoices = (invoicesRes.data ?? []) as unknown as {
+    title: string;
+    amount: number;
+    currency: string;
+    status: string;
+    due_date: string | null;
+    contact: { name: string | null; phone: string }[] | { name: string | null; phone: string } | null;
+    created_at: string;
+  }[];
 
   // --- Leads ---
   const leads7 = leads.filter((l) => l.created_at >= d7);
@@ -388,6 +479,18 @@ async function buildDataContext(db: SupabaseClient, currency: string): Promise<s
   });
   const upcoming = apptRows.filter((a) => a.start_at && a.start_at >= new Date().toISOString());
 
+  // --- Invoices (Finance OS) ---
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const invoiceRows = invoices.map((inv) => {
+    const c = Array.isArray(inv.contact) ? inv.contact[0] : inv.contact;
+    const overdue = inv.status === 'unpaid' && !!inv.due_date && inv.due_date < todayStr;
+    return { ...inv, contactLabel: c?.name ?? c?.phone ?? 'Unknown', overdue };
+  });
+  const unpaid = invoiceRows.filter((i) => i.status === 'unpaid' || i.status === 'overdue');
+  const overdueNow = invoiceRows.filter((i) => i.overdue || i.status === 'overdue');
+  const paid30 = invoiceRows.filter((i) => i.status === 'paid' && i.created_at >= d30);
+  const unpaidTotal = unpaid.reduce((s, i) => s + (i.amount ?? 0), 0);
+
   return `${(CLIENT_NAME || 'BUSINESS').toUpperCase()} — LIVE CRM DATA (currency: ${currency})
 Now: ${new Date().toISOString()}
 
@@ -415,7 +518,12 @@ APPOINTMENTS
 • Upcoming: ${upcoming.length}${upcoming.length ? ` — next: ${upcoming.slice(0, 5).map((a) => `${a.service ?? 'appointment'} ${a.start_at}`).join('; ')}` : ''}
 
 RECENT BROADCASTS
-${broadcasts.length ? broadcasts.slice(0, 5).map((b) => `• "${b.name}" ${b.status}, ${b.sent_count ?? 0}/${b.total_recipients} sent (${b.created_at.slice(0, 10)})`).join('\n') : '• none'}`;
+${broadcasts.length ? broadcasts.slice(0, 5).map((b) => `• "${b.name}" ${b.status}, ${b.sent_count ?? 0}/${b.total_recipients} sent (${b.created_at.slice(0, 10)})`).join('\n') : '• none'}
+
+INVOICES (Finance OS)
+• Unpaid (incl. overdue): ${unpaid.length} worth ${currency} ${unpaidTotal.toLocaleString()}
+• Overdue right now: ${overdueNow.length}${overdueNow.length ? ' — ' + overdueNow.slice(0, 10).map((i) => `${i.contactLabel} (${i.currency} ${i.amount}, due ${i.due_date})`).join('; ') : ''}
+• Paid in last 30d: ${paid30.length} (${currency} ${paid30.reduce((s, i) => s + (i.amount ?? 0), 0).toLocaleString()})`;
 }
 
 export async function POST(request: Request) {
@@ -479,7 +587,7 @@ REPLY FORMAT — non-negotiable:
 • Money in ${currency}.
 • If data can't answer the question, say so in one bullet and suggest the closest answerable metric.
 
-You can also take action, not just report — use update_lead_status when the user asks to mark/close/update a specific lead, update_appointment_status when they ask to cancel/confirm/complete a specific appointment, and update_conversation_status when they ask to close/reopen a specific WhatsApp conversation (this never sends a message to the customer, it's internal-only). If a tool says multiple matches were found, ask the user to be more specific instead of picking one yourself.`;
+You can also take action, not just report — use update_lead_status when the user asks to mark/close/update a specific lead, update_appointment_status when they ask to cancel/confirm/complete a specific appointment, update_conversation_status when they ask to close/reopen a specific WhatsApp conversation (this never sends a message to the customer, it's internal-only), and update_invoice_status when they ask to mark a specific invoice paid/unpaid/cancelled. If a tool says multiple matches were found, ask the user to be more specific instead of picking one yourself.`;
 
     // Data context rides in the first user turn only; follow-ups lean
     // on chat history, mirroring how the widget resends the thread.
