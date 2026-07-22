@@ -22,6 +22,10 @@ export interface MetricsBundle {
   newContacts7d: number
   messagesSent7d: number
   newLeads7d: number | null
+  /** Open conversations with at least one message today — reply coverage. */
+  conversationsRepliedToday: number
+  dealsWonCount: number
+  dealsTotalCount: number
 }
 
 export interface ConversationsSeriesPoint {

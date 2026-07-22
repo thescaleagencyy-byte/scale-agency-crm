@@ -5,11 +5,13 @@ import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
 
 import {
+  loadActiveConversationContacts,
   loadActiveSites,
   loadActivity,
   loadConversationsSeries,
   loadEquipmentDemand,
   loadMetrics,
+  loadOpenDealContacts,
   loadPipelineDonut,
   loadRecentContacts,
   loadResponseTime,
@@ -69,6 +71,8 @@ export default function DashboardPage() {
   const [activityLoading, setActivityLoading] = useState(true)
 
   const [recentContacts, setRecentContacts] = useState<RecentContact[]>([])
+  const [activeConvContacts, setActiveConvContacts] = useState<RecentContact[]>([])
+  const [openDealContacts, setOpenDealContacts] = useState<RecentContact[]>([])
 
   const [equipmentDemand, setEquipmentDemand] = useState<DemandSlice[] | null>(null)
   const [equipmentDemandLoading, setEquipmentDemandLoading] = useState(RENTAL_INDUSTRY)
@@ -118,6 +122,14 @@ export default function DashboardPage() {
     void loadRecentContacts(db, 4)
       .then((c) => setRecentContacts(c))
       .catch((err) => console.error('[dashboard] recent contacts failed:', err))
+
+    void loadActiveConversationContacts(db, 4)
+      .then((c) => setActiveConvContacts(c))
+      .catch((err) => console.error('[dashboard] active conversation contacts failed:', err))
+
+    void loadOpenDealContacts(db, 4)
+      .then((c) => setOpenDealContacts(c))
+      .catch((err) => console.error('[dashboard] open deal contacts failed:', err))
 
     if (RENTAL_INDUSTRY && hasFeature('leads')) {
       void loadEquipmentDemand(db)
@@ -315,6 +327,8 @@ export default function DashboardPage() {
         loading={metricsLoading}
         currency={defaultCurrency}
         recentContacts={recentContacts}
+        activeConvContacts={activeConvContacts}
+        openDealContacts={openDealContacts}
         hasPipelines={hasFeature('pipelines')}
         labels={{
           activeConversations: labels.activeConversations,

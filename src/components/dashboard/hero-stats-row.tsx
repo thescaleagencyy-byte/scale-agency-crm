@@ -10,6 +10,8 @@ interface HeroStatsRowProps {
   loading: boolean
   currency: string
   recentContacts?: RecentContact[]
+  activeConvContacts?: RecentContact[]
+  openDealContacts?: RecentContact[]
   hasPipelines: boolean
   labels: {
     activeConversations: string
@@ -24,7 +26,7 @@ interface HeroStatsRowProps {
 // real metrics side-by-side on an always-light paper surface, next to a
 // dark callout tile for the week's messaging activity. Every number here
 // is a real MetricsBundle field; nothing decorative is fabricated.
-export function HeroStatsRow({ metrics, loading, currency, recentContacts, hasPipelines, labels }: HeroStatsRowProps) {
+export function HeroStatsRow({ metrics, loading, currency, recentContacts, activeConvContacts, openDealContacts, hasPipelines, labels }: HeroStatsRowProps) {
   if (loading || !metrics) {
     return (
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
@@ -48,6 +50,19 @@ export function HeroStatsRow({ metrics, loading, currency, recentContacts, hasPi
         }
       : null
 
+  // Real ratios, not decorative fills — each backed by an actual count pair
+  // already in MetricsBundle. Skipped rather than faked wherever a clean
+  // ratio doesn't exist (e.g. the leads-only third cell has no equivalent).
+  const replyPct = metrics.activeConversations.current > 0
+    ? metrics.conversationsRepliedToday / metrics.activeConversations.current
+    : 0
+  const contactsSharePct = metrics.newContacts7d > 0
+    ? metrics.newContactsToday.current / metrics.newContacts7d
+    : 0
+  const winRatePct = metrics.dealsTotalCount > 0
+    ? metrics.dealsWonCount / metrics.dealsTotalCount
+    : 0
+
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
       {/* Left: floating light panel, 3 stat cells */}
@@ -57,6 +72,10 @@ export function HeroStatsRow({ metrics, loading, currency, recentContacts, hasPi
           value={metrics.activeConversations.current.toLocaleString()}
           delta={metrics.activeConversations.previous}
           deltaLabel="vs yesterday"
+          barPct={replyPct}
+          barLabel={`${Math.round(replyPct * 100)}% replied today`}
+          recentContacts={activeConvContacts}
+          avatarCaption="Most active"
         />
         <StatCell
           label={labels.newContacts}
@@ -64,7 +83,10 @@ export function HeroStatsRow({ metrics, loading, currency, recentContacts, hasPi
           delta={metrics.newContactsToday.current}
           deltaLabel="today"
           deltaIsCount
+          barPct={contactsSharePct}
+          barLabel={`${Math.round(contactsSharePct * 100)}% joined today`}
           recentContacts={recentContacts}
+          avatarCaption="Most recent"
         />
         {thirdCell && (
           <StatCell
@@ -75,6 +97,10 @@ export function HeroStatsRow({ metrics, loading, currency, recentContacts, hasPi
             deltaLabel="today"
             deltaIsCount
             size={hasPipelines ? 'md' : 'lg'}
+            barPct={hasPipelines ? winRatePct : undefined}
+            barLabel={hasPipelines ? `${Math.round(winRatePct * 100)}% win rate` : undefined}
+            recentContacts={hasPipelines ? openDealContacts : undefined}
+            avatarCaption="In pipeline"
           />
         )}
       </div>
@@ -128,6 +154,9 @@ function StatCell({
   deltaLabel,
   deltaIsCount,
   recentContacts,
+  avatarCaption,
+  barPct,
+  barLabel,
   size = 'lg',
 }: {
   label: string
@@ -137,6 +166,9 @@ function StatCell({
   deltaLabel?: string
   deltaIsCount?: boolean
   recentContacts?: RecentContact[]
+  avatarCaption?: string
+  barPct?: number
+  barLabel?: string
   size?: 'lg' | 'md'
 }) {
   const Arrow = delta == null ? null : delta > 0 ? ArrowUp : delta < 0 ? ArrowDown : Minus
@@ -178,12 +210,23 @@ function StatCell({
       ) : subtitle ? (
         <p className="mt-2.5 text-[11px] text-muted-foreground">{subtitle}</p>
       ) : null}
+      {barPct != null && (
+        <div className="mt-3">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-primary transition-[width]"
+              style={{ width: `${Math.min(100, Math.max(0, barPct * 100))}%` }}
+            />
+          </div>
+          {barLabel && <p className="mt-1.5 text-[10px] text-muted-foreground">{barLabel}</p>}
+        </div>
+      )}
       {recentContacts && recentContacts.length > 0 && (
-        <div className="mt-3 flex items-center gap-2">
+        <div className="mt-2.5 flex items-center gap-2">
           <AvatarStack
             avatars={recentContacts.map((c) => ({ label: c.name || c.phone || '?', title: c.name || c.phone }))}
           />
-          <span className="text-[10px] text-muted-foreground">Most recent</span>
+          <span className="text-[10px] text-muted-foreground">{avatarCaption ?? 'Most recent'}</span>
         </div>
       )}
     </div>

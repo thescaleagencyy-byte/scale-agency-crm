@@ -53,6 +53,9 @@ export async function loadMetrics(db: DB): Promise<MetricsBundle> {
     contacts7d,
     messages7d,
     leads7d,
+    conversationsRepliedToday,
+    dealsWon,
+    dealsAll,
   ] = await Promise.all([
     db.from('conversations').select('id', { count: 'exact', head: true }).eq('status', 'open'),
     db
@@ -103,6 +106,13 @@ export async function loadMetrics(db: DB): Promise<MetricsBundle> {
     hasFeature('leads')
       ? db.from('leads').select('id', { count: 'exact', head: true }).gte('created_at', sevenDayStart)
       : emptyCount,
+    db
+      .from('conversations')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'open')
+      .gte('last_message_at', todayStart),
+    db.from('deals').select('id', { count: 'exact', head: true }).eq('status', 'won'),
+    db.from('deals').select('id', { count: 'exact', head: true }),
   ])
 
   const openDealsRows = (openDeals.data ?? []) as { value: number | null }[]
@@ -135,6 +145,9 @@ export async function loadMetrics(db: DB): Promise<MetricsBundle> {
     newContacts7d: contacts7d.count ?? 0,
     messagesSent7d: messages7d.count ?? 0,
     newLeads7d: hasFeature('leads') ? leads7d.count ?? 0 : null,
+    conversationsRepliedToday: conversationsRepliedToday.count ?? 0,
+    dealsWonCount: dealsWon.count ?? 0,
+    dealsTotalCount: dealsAll.count ?? 0,
   }
 }
 
@@ -550,4 +563,32 @@ export async function loadRecentContacts(db: DB, limit = 4): Promise<RecentConta
     .limit(limit)
   if (error) throw error
   return (data ?? []) as RecentContact[]
+}
+
+/** Contacts behind the most recently-active open conversations. */
+export async function loadActiveConversationContacts(db: DB, limit = 4): Promise<RecentContact[]> {
+  const { data, error } = await db
+    .from('conversations')
+    .select('contact:contacts(name, phone)')
+    .eq('status', 'open')
+    .order('last_message_at', { ascending: false })
+    .limit(limit)
+  if (error) throw error
+  return ((data ?? []) as unknown as { contact: RecentContact | null }[])
+    .map((r) => r.contact)
+    .filter((c): c is RecentContact => !!c)
+}
+
+/** Contacts behind the most recently-created open deals. */
+export async function loadOpenDealContacts(db: DB, limit = 4): Promise<RecentContact[]> {
+  const { data, error } = await db
+    .from('deals')
+    .select('contact:contacts(name, phone)')
+    .eq('status', 'open')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (error) throw error
+  return ((data ?? []) as unknown as { contact: RecentContact | null }[])
+    .map((r) => r.contact)
+    .filter((c): c is RecentContact => !!c)
 }
