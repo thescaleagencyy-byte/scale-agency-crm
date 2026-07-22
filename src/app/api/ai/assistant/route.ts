@@ -48,6 +48,7 @@ interface HistoryMessage {
 
 const LEAD_STATUS_VALUES = ['new', 'called', 'won', 'lost'] as const;
 const APPOINTMENT_STATUS_VALUES = ['confirmed', 'completed', 'cancelled'] as const;
+const CONVERSATION_STATUS_VALUES = ['open', 'pending', 'closed'] as const;
 
 const TOOLS: Anthropic.Tool[] = [
   {
@@ -78,6 +79,22 @@ const TOOLS: Anthropic.Tool[] = [
           description: "The contact's name or phone number (or a fragment of either) to find their appointment.",
         },
         status: { type: 'string', enum: [...APPOINTMENT_STATUS_VALUES] },
+      },
+      required: ['customer_search', 'status'],
+    },
+  },
+  {
+    name: 'update_conversation_status',
+    description:
+      "Update a WhatsApp conversation's internal status (open/pending/closed) for a contact, found by name or phone. This is internal bookkeeping only — it does NOT send any message to the customer. Use for 'close X's conversation', 'mark Y's chat as pending', etc. If the search matches more than one open conversation, ask the user to be more specific instead of guessing.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        customer_search: {
+          type: 'string',
+          description: "The contact's name or phone number (or a fragment of either) to find their conversation.",
+        },
+        status: { type: 'string', enum: [...CONVERSATION_STATUS_VALUES] },
       },
       required: ['customer_search', 'status'],
     },
@@ -121,6 +138,25 @@ const OPENAI_TOOLS = [
             description: "The contact's name or phone number (or a fragment of either) to find their appointment.",
           },
           status: { type: 'string', enum: [...APPOINTMENT_STATUS_VALUES] },
+        },
+        required: ['customer_search', 'status'],
+      },
+    },
+  },
+  {
+    type: 'function' as const,
+    function: {
+      name: 'update_conversation_status',
+      description:
+        "Update a WhatsApp conversation's internal status (open/pending/closed) for a contact, found by name or phone. This is internal bookkeeping only — it does NOT send any message to the customer. Use for 'close X's conversation', 'mark Y's chat as pending', etc. If the search matches more than one open conversation, ask the user to be more specific instead of guessing.",
+      parameters: {
+        type: 'object',
+        properties: {
+          customer_search: {
+            type: 'string',
+            description: "The contact's name or phone number (or a fragment of either) to find their conversation.",
+          },
+          status: { type: 'string', enum: [...CONVERSATION_STATUS_VALUES] },
         },
         required: ['customer_search', 'status'],
       },
@@ -197,6 +233,42 @@ async function runTool(
       .eq('id', appt.id);
     if (updateErr) return `Error updating appointment: ${updateErr.message}`;
     return `Updated ${contact?.name ?? contact?.phone ?? 'the'} appointment status from "${appt.status}" to "${status}".`;
+  }
+
+  if (name === 'update_conversation_status') {
+    const search = String(input.customer_search ?? '').trim();
+    const status = String(input.status ?? '');
+    if (!search) return 'Error: no customer_search provided.';
+    if (!(CONVERSATION_STATUS_VALUES as readonly string[]).includes(status)) {
+      return `Error: "${status}" is not a valid status. Valid: ${CONVERSATION_STATUS_VALUES.join(', ')}.`;
+    }
+
+    const { data: matches, error } = await db
+      .from('conversations')
+      .select('id, status, contact:contacts!inner(name, phone)')
+      .or(`name.ilike.%${search}%,phone.ilike.%${search}%`, { referencedTable: 'contacts' })
+      .order('last_message_at', { ascending: false })
+      .limit(5);
+    if (error) return `Error looking up conversation: ${error.message}`;
+    if (!matches || matches.length === 0) return `No conversation found for a contact matching "${search}".`;
+    if (matches.length > 1) {
+      const list = matches
+        .map((m) => {
+          const c = Array.isArray(m.contact) ? m.contact[0] : m.contact;
+          return `${c?.name ?? c?.phone ?? 'Unknown'} — currently ${m.status}`;
+        })
+        .join('; ');
+      return `Found ${matches.length} conversations matching "${search}": ${list}. Ask the user which one they mean before updating.`;
+    }
+
+    const convo = matches[0];
+    const contact = Array.isArray(convo.contact) ? convo.contact[0] : convo.contact;
+    const { error: updateErr } = await db
+      .from('conversations')
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq('id', convo.id);
+    if (updateErr) return `Error updating conversation: ${updateErr.message}`;
+    return `Updated ${contact?.name ?? contact?.phone ?? 'the'} conversation status from "${convo.status}" to "${status}". No message was sent to the customer.`;
   }
 
   return `Error: unknown tool "${name}".`;
@@ -407,7 +479,7 @@ REPLY FORMAT — non-negotiable:
 • Money in ${currency}.
 • If data can't answer the question, say so in one bullet and suggest the closest answerable metric.
 
-You can also take action, not just report — use update_lead_status when the user asks to mark/close/update a specific lead, and update_appointment_status when they ask to cancel/confirm/complete a specific appointment. If a tool says multiple matches were found, ask the user to be more specific instead of picking one yourself.`;
+You can also take action, not just report — use update_lead_status when the user asks to mark/close/update a specific lead, update_appointment_status when they ask to cancel/confirm/complete a specific appointment, and update_conversation_status when they ask to close/reopen a specific WhatsApp conversation (this never sends a message to the customer, it's internal-only). If a tool says multiple matches were found, ask the user to be more specific instead of picking one yourself.`;
 
     // Data context rides in the first user turn only; follow-ups lean
     // on chat history, mirroring how the widget resends the thread.
