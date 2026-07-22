@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Sunrise, RefreshCw, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface DigestRow {
   id: string;
@@ -43,6 +44,9 @@ export function DailyDigestCard() {
       const res = await fetch('/api/digest/generate', { method: 'POST' });
       const data = await res.json();
       if (data.digest) setDigest(data.digest);
+      else toast.error(data.error || 'Failed to generate briefing.');
+    } catch {
+      toast.error('Network error generating briefing.');
     } finally {
       setGenerating(false);
     }
