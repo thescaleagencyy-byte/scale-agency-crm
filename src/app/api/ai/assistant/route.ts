@@ -176,6 +176,18 @@ const TOOLS: Anthropic.Tool[] = [
       required: ['contact_search', 'service_search', 'start_at'],
     },
   },
+  {
+    name: 'analyze_competitor',
+    description:
+      'Scrape a tracked competitor\'s website and summarize pricing/offers/positioning, found by name. Fails honestly if the competitor isn\'t tracked yet, if Firecrawl isn\'t configured for this deployment, or if no Claude key is set. Use for "check on X competitor", "what is Y charging now", "analyze the competition", etc.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        name_search: { type: 'string', description: "The tracked competitor's name (or a fragment) to find the right row." },
+      },
+      required: ['name_search'],
+    },
+  },
 ];
 
 // Same tools, OpenAI's function-calling shape — kept as separate literals
@@ -325,6 +337,21 @@ const OPENAI_TOOLS = [
           start_at: { type: 'string', description: 'ISO datetime for the appointment start.' },
         },
         required: ['contact_search', 'service_search', 'start_at'],
+      },
+    },
+  },
+  {
+    type: 'function' as const,
+    function: {
+      name: 'analyze_competitor',
+      description:
+        'Scrape a tracked competitor\'s website and summarize pricing/offers/positioning, found by name. Fails honestly if not tracked yet, Firecrawl not configured, or no Claude key set.',
+      parameters: {
+        type: 'object',
+        properties: {
+          name_search: { type: 'string', description: "The tracked competitor's name (or a fragment)." },
+        },
+        required: ['name_search'],
       },
     },
   },
@@ -648,6 +675,54 @@ async function runTool(
     return `Booked ${contact.name ?? contact.phone} for "${service.name}" on ${startDate.toLocaleString()}.`;
   }
 
+  if (name === 'analyze_competitor') {
+    const search = String(input.name_search ?? '').trim();
+    if (!search) return 'Error: name_search is required.';
+
+    const { data: matches } = await db
+      .from('competitors')
+      .select('id, name, url')
+      .eq('account_id', accountId)
+      .ilike('name', `%${search}%`)
+      .limit(5);
+    const competitors = matches ?? [];
+    if (competitors.length === 0) return `No tracked competitor found matching "${search}". Add it in Competitor Intel first.`;
+    if (competitors.length > 1) return `Found ${competitors.length} competitors matching "${search}": ${competitors.map((c) => c.name).join(', ')}. Ask which one before analyzing.`;
+
+    const competitor = competitors[0];
+    const firecrawlKey = process.env.FIRECRAWL_API_KEY;
+    if (!firecrawlKey) return `Competitor tracked, but Firecrawl isn't configured for this deployment yet — add FIRECRAWL_API_KEY to enable scraping ${competitor.name}'s site.`;
+
+    const scrapeRes = await fetch('https://api.firecrawl.dev/v1/scrape', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${firecrawlKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: competitor.url, formats: ['markdown'] }),
+    });
+    if (!scrapeRes.ok) return `Firecrawl scrape of ${competitor.url} failed: ${scrapeRes.status}.`;
+    const scrapeData = await scrapeRes.json();
+    const markdown: string = scrapeData?.data?.markdown ?? scrapeData?.markdown ?? '';
+    if (!markdown) return `Firecrawl returned no content for ${competitor.url}.`;
+
+    const { data: aiConfig } = await db.from('ai_config').select('claude_api_key').eq('account_id', accountId).maybeSingle();
+    let claudeKey: string | null = null;
+    if (aiConfig?.claude_api_key) {
+      try { claudeKey = decryptText(aiConfig.claude_api_key); } catch { claudeKey = null; }
+    }
+    if (!claudeKey) return `Competitor tracked and scraped, but no Claude API key is configured to summarize it — add one in Settings → AI Insights.`;
+
+    const anthropic = new Anthropic({ apiKey: claudeKey });
+    const summaryRes = await anthropic.messages.create({
+      model: 'claude-opus-4-8',
+      max_tokens: 500,
+      system: 'Summarize this competitor\'s website content in 5-8 bullet points: pricing (if visible), current offers/promotions, positioning, anything change-worthy. Bullets only, no intro/outro.',
+      messages: [{ role: 'user', content: markdown.slice(0, 15000) }],
+    });
+    const summary = summaryRes.content.filter((b): b is Anthropic.TextBlock => b.type === 'text').map((b) => b.text).join('').trim();
+
+    await db.from('competitors').update({ last_summary: summary, last_checked_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', competitor.id);
+    return `Analyzed ${competitor.name}:\n${summary}`;
+  }
+
   return `Error: unknown tool "${name}".`;
 }
 
@@ -961,6 +1036,7 @@ export async function POST(request: Request) {
       create_deal: 'create_deal when they ask to add a new deal for a contact',
       create_reminder: 'create_reminder when they ask to set a follow-up reminder for a lead or contact',
       create_appointment: 'create_appointment when they ask to book a new appointment for a contact with an existing service',
+      analyze_competitor: 'analyze_competitor when they ask to check on a tracked competitor\'s pricing/offers/positioning',
     };
     const toolInstructions = Object.values(TOOL_BLURBS).join(', and ');
 

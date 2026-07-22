@@ -34,6 +34,7 @@ import {
   CalendarClock,
   TrendingUp,
   Plug,
+  Radar,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
 import { hasFeature, CLIENT_NAME, CLIENT_INDUSTRY, APP_NAME } from "@/lib/features";
@@ -131,6 +132,7 @@ const ALL_NAV_GROUPS: NavGroup[] = [
       { href: "/copilot",      label: "CEO Copilot",   icon: Zap,             feature: "copilot", beta: true },
       { href: "/business-knowledge", label: "Business Knowledge", icon: Brain, feature: "business-knowledge", beta: true },
       { href: "/analytics",    label: "Analytics",     icon: BarChart3,       feature: "analytics" },
+      { href: "/competitors",  label: "Competitor Intel", icon: Radar,        feature: "competitors", beta: true },
     ],
   },
   {
