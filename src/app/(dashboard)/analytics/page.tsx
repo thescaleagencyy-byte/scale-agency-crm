@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Loader2, Clock, MessageSquare, CheckCircle2, TrendingUp, Users, Brain, Lightbulb, AlertCircle, Sparkles, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/use-auth';
+import { formatCurrency } from '@/lib/currency';
 
 interface AgentStat {
   agent_id: string | null;
@@ -29,6 +31,7 @@ interface IntelligenceReport {
 interface RoiData {
   totalRevenue: number;
   wonDeals: number;
+  paidInvoices: number;
   avgCsat: number | null;
   csatCount: number;
 }
@@ -66,6 +69,7 @@ function StatCard({ icon: Icon, label, value, sub }: { icon: typeof Clock; label
 }
 
 export default function AnalyticsPage() {
+  const { defaultCurrency } = useAuth();
   const [summary, setSummary] = useState<SLASummary | null>(null);
   const [agents, setAgents] = useState<AgentStat[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,18 +86,26 @@ export default function AnalyticsPage() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Fetch ROI data: won deals + CSAT avg
+    // Fetch ROI data: won deals + paid invoices (Revenue OS combined
+    // definition — see /api/ai/assistant's buildDataContext, same math)
+    // + CSAT avg. The deals query used to filter on a `stage` column
+    // that doesn't exist on this table (the real column is `status`),
+    // so this card silently showed $0 regardless of actual won deals.
     Promise.all([
-      db.from('deals').select('value, currency').eq('stage', 'won'),
+      db.from('deals').select('value, currency').eq('status', 'won'),
+      db.from('client_invoices').select('amount').eq('status', 'paid'),
       db.from('csat_responses').select('rating').not('rating', 'is', null),
-    ]).then(([dealsRes, csatRes]) => {
+    ]).then(([dealsRes, invoicesRes, csatRes]) => {
       const deals = dealsRes.data ?? [];
+      const paidInvoices = invoicesRes.data ?? [];
       const csatRatings = (csatRes.data ?? []).map((r: { rating: number }) => r.rating).filter(Boolean);
-      const totalRevenue = deals.reduce((sum, d) => sum + (d.value ?? 0), 0);
+      const totalRevenue =
+        deals.reduce((sum, d) => sum + (d.value ?? 0), 0) +
+        paidInvoices.reduce((sum, i) => sum + (i.amount ?? 0), 0);
       const avgCsat = csatRatings.length > 0
         ? csatRatings.reduce((a: number, b: number) => a + b, 0) / csatRatings.length
         : null;
-      setRoi({ totalRevenue, wonDeals: deals.length, avgCsat, csatCount: csatRatings.length });
+      setRoi({ totalRevenue, wonDeals: deals.length, paidInvoices: paidInvoices.length, avgCsat, csatCount: csatRatings.length });
     });
 
     Promise.all([
@@ -198,8 +210,8 @@ export default function AnalyticsPage() {
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 rounded-2xl border border-primary/20 bg-primary/5 p-4">
               <div className="space-y-0.5">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-primary/70">Revenue from CRM</p>
-                <p className="text-2xl font-bold text-primary">${roi.totalRevenue.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground">{roi.wonDeals} deals won</p>
+                <p className="text-2xl font-bold text-primary">{formatCurrency(roi.totalRevenue, defaultCurrency)}</p>
+                <p className="text-xs text-muted-foreground">{roi.wonDeals} deals won + {roi.paidInvoices} invoices paid</p>
               </div>
               <div className="space-y-0.5">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">CSAT Score</p>

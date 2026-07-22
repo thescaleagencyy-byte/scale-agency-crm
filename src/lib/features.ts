@@ -50,4 +50,5 @@ export const PATH_FEATURE_MAP: Record<string, string> = {
   '/copilot':       'copilot',
   '/invoices':      'invoices',
   '/content-calendar': 'content-calendar',
+  '/revenue':       'revenue',
 }
