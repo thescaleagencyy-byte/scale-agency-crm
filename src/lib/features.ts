@@ -48,4 +48,6 @@ export const PATH_FEATURE_MAP: Record<string, string> = {
   '/n8n':           'n8n',
   '/dashboard':     'dashboard',
   '/copilot':       'copilot',
+  '/invoices':      'invoices',
+  '/content-calendar': 'content-calendar',
 }

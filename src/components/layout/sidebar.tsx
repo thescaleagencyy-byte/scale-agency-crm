@@ -30,6 +30,8 @@ import {
   Brain,
   FileSignature,
   ChevronLeft,
+  Receipt,
+  CalendarClock,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
 import { hasFeature, CLIENT_NAME, CLIENT_INDUSTRY, APP_NAME } from "@/lib/features";
@@ -140,10 +142,17 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    label: "Finance",
+    items: [
+      { href: "/invoices",     label: "Invoices",      icon: Receipt,         feature: "invoices" },
+    ],
+  },
+  {
     label: "Outreach",
     items: [
       { href: "/broadcasts",   label: "Broadcasts",    icon: Radio,           feature: "broadcasts" },
       { href: "/drip",         label: "Drip Campaigns",icon: Zap,             feature: "drip" },
+      { href: "/content-calendar", label: "Content Calendar", icon: CalendarClock, feature: "content-calendar", beta: true },
       { href: "/qr-codes",     label: "QR Codes",      icon: QrCode,          feature: "qr-codes" },
     ],
   },
