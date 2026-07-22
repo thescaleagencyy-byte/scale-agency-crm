@@ -29,6 +29,7 @@ import type {
 
 import { CLIENT_NAME, CLIENT_INDUSTRY, hasFeature } from '@/lib/features'
 import { HeroStatsRow } from '@/components/dashboard/hero-stats-row'
+import { DailyDigestCard } from '@/components/dashboard/daily-digest-card'
 import { QuickActions } from '@/components/dashboard/quick-actions'
 import { ConversationsChart } from '@/components/dashboard/conversations-chart'
 import { PipelineDonut } from '@/components/dashboard/pipeline-donut'
@@ -338,6 +339,9 @@ export default function DashboardPage() {
           newLeads: labels.newLeads,
         }}
       />
+
+      {/* Daily briefing — proactive digest, see components/dashboard/daily-digest-card */}
+      <DailyDigestCard />
 
       {/* Quick actions */}
       <QuickActions />
