@@ -422,6 +422,7 @@ async function buildDataContext(db: SupabaseClient, currency: string): Promise<s
     status: string;
     stage_id: string;
     created_at: string;
+    updated_at: string;
   }[];
   const stages = (stagesRes.data ?? []) as { id: string; name: string }[];
   const convs = (convsRes.data ?? []) as { status: string; created_at: string }[];
@@ -492,6 +493,22 @@ async function buildDataContext(db: SupabaseClient, currency: string): Promise<s
   const paid30 = invoiceRows.filter((i) => i.status === 'paid' && i.created_at >= d30);
   const unpaidTotal = unpaid.reduce((s, i) => s + (i.amount ?? 0), 0);
 
+  // --- Revenue (Revenue OS) — won deals + paid invoices unified into
+  // one number. Two different tables record "money in" for two
+  // different reasons (a closed deal vs. a settled invoice); a real
+  // owner asking "what's today's revenue" means the sum of both, not
+  // either one alone. ---
+  const wonDeals = deals.filter((d) => d.status === 'won');
+  const paidInvoices = invoiceRows.filter((i) => i.status === 'paid');
+  const revenueSince = (isoDate: string) =>
+    wonDeals.filter((d) => d.updated_at >= isoDate).reduce((s, d) => s + (d.value ?? 0), 0) +
+    paidInvoices.filter((i) => i.created_at >= isoDate).reduce((s, i) => s + (i.amount ?? 0), 0);
+  const revenueToday = revenueSince(todayStr);
+  const revenue7d = revenueSince(d7);
+  const revenue30d = revenueSince(d30);
+  const revenueTotal =
+    wonDeals.reduce((s, d) => s + (d.value ?? 0), 0) + paidInvoices.reduce((s, i) => s + (i.amount ?? 0), 0);
+
   return `${(CLIENT_NAME || 'BUSINESS').toUpperCase()} — LIVE CRM DATA (currency: ${currency})
 Now: ${new Date().toISOString()}
 
@@ -524,7 +541,13 @@ ${broadcasts.length ? broadcasts.slice(0, 5).map((b) => `• "${b.name}" ${b.sta
 INVOICES (Finance OS)
 • Unpaid (incl. overdue): ${unpaid.length} worth ${currency} ${unpaidTotal.toLocaleString()}
 • Overdue right now: ${overdueNow.length}${overdueNow.length ? ' — ' + overdueNow.slice(0, 10).map((i) => `${i.contactLabel} (${i.currency} ${i.amount}, due ${i.due_date})`).join('; ') : ''}
-• Paid in last 30d: ${paid30.length} (${currency} ${paid30.reduce((s, i) => s + (i.amount ?? 0), 0).toLocaleString()})`;
+• Paid in last 30d: ${paid30.length} (${currency} ${paid30.reduce((s, i) => s + (i.amount ?? 0), 0).toLocaleString()})
+
+REVENUE (Revenue OS — won deals + paid invoices combined)
+• Today: ${currency} ${revenueToday.toLocaleString()}
+• Last 7d: ${currency} ${revenue7d.toLocaleString()}
+• Last 30d: ${currency} ${revenue30d.toLocaleString()}
+• All-time: ${currency} ${revenueTotal.toLocaleString()} (${wonDeals.length} won deals + ${paidInvoices.length} paid invoices)`;
 }
 
 export async function POST(request: Request) {

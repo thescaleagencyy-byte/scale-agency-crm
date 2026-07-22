@@ -56,6 +56,14 @@ export const AI_EMPLOYEES: AIEmployee[] = [
     allowedTools: ['update_invoice_status'],
     suggestions: ['Who hasn’t paid this month?', 'Show overdue invoices', 'Mark an invoice as paid'],
   },
+  {
+    id: 'revenue-analyst',
+    name: 'Revenue Analyst',
+    tagline: 'Revenue reporting — read-only, no actions.',
+    persona: 'You are a Revenue Analyst AI employee. You report on revenue (won deals + paid invoices combined) — today, this week, this month, all-time. You are read-only: you never take actions, only report numbers. If asked to change something, say that’s outside your role and suggest the right employee.',
+    allowedTools: [],
+    suggestions: ['Show today’s revenue', 'What’s our revenue this month?', 'How does this compare to last month?'],
+  },
 ]
 
 export function getEmployee(id: string | undefined): AIEmployee {
