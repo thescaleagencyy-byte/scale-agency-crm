@@ -33,6 +33,7 @@ import {
   Receipt,
   CalendarClock,
   TrendingUp,
+  Plug,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
 import { hasFeature, CLIENT_NAME, CLIENT_INDUSTRY, APP_NAME } from "@/lib/features";
@@ -165,6 +166,7 @@ const ALL_NAV_GROUPS: NavGroup[] = [
       { href: "/automations",  label: "Automations",   icon: Zap,             feature: "automations" },
       { href: "/flows",        label: "Flows",         icon: Workflow,        feature: "flows" },
       { href: "/n8n",          label: "n8n",           icon: Workflow,        feature: "n8n" },
+      { href: "/integrations", label: "Integration Hub", icon: Plug,          feature: "integrations", beta: true },
     ],
   },
 ];
@@ -302,7 +304,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
               <>
                 <Image
                   src="/branding.jpeg"
-                  alt="The Scale Agency"
+                  alt="Scale OS"
                   width={32}
                   height={32}
                   priority
@@ -310,7 +312,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                 />
                 {!collapsed && (
                   <span className="text-sm font-semibold text-foreground leading-tight">
-                    the scale<br />agency™
+                    Scale OS
                   </span>
                 )}
               </>

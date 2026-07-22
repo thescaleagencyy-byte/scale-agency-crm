@@ -28,7 +28,7 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 const _clientName = process.env.NEXT_PUBLIC_CLIENT_NAME
-const _appTitle = _clientName ? `${_clientName} Dashboard` : "The Scale Agency"
+const _appTitle = _clientName ? `${_clientName} Dashboard` : "Scale OS"
 const _clientIcon = _clientName
   ? `/clients/${_clientName.toLowerCase().replace(/\s+/g, '')}.png`
   : "/icon.png"
