@@ -892,8 +892,13 @@ export async function POST(request: Request) {
     if (!question) return NextResponse.json({ error: 'question required' }, { status: 400 });
     const history = Array.isArray(body?.history) ? body.history.slice(-12) : [];
     const employee = getEmployee(typeof body?.employee === 'string' ? body.employee : undefined);
-    const scopedTools = TOOLS.filter((t) => employee.allowedTools.includes(t.name));
-    const scopedOpenAITools = OPENAI_TOOLS.filter((t) => employee.allowedTools.includes(t.function.name));
+    // Universal Chat — every persona has every tool. Personas are tone
+    // and framing only, not an access-control boundary: a real owner
+    // switching to "Sales Rep" to talk pipeline shouldn't hit a wall
+    // the moment they also ask about an overdue invoice. Access control
+    // is RLS (account isolation), not which tab is selected.
+    const scopedTools = TOOLS;
+    const scopedOpenAITools = OPENAI_TOOLS;
 
     const { data: profile } = await supabase
       .from('profiles')
@@ -957,7 +962,7 @@ export async function POST(request: Request) {
       create_reminder: 'create_reminder when they ask to set a follow-up reminder for a lead or contact',
       create_appointment: 'create_appointment when they ask to book a new appointment for a contact with an existing service',
     };
-    const toolInstructions = employee.allowedTools.map((t) => TOOL_BLURBS[t]).filter(Boolean).join(', and ');
+    const toolInstructions = Object.values(TOOL_BLURBS).join(', and ');
 
     const systemPrompt = `You are ${AI_LABEL} — business data terminal for ${BUSINESS_LABEL}, using this WhatsApp CRM.
 
@@ -969,7 +974,8 @@ REPLY FORMAT — non-negotiable:
 • No intro, no outro, no "based on the data".
 • Money in ${currency}.
 • If data can't answer the question, say so in one bullet and suggest the closest answerable metric.
-${toolInstructions ? `\nYou can also take action, not just report — use ${toolInstructions}. If a tool says multiple matches were found, ask the user to be more specific instead of picking one yourself.` : '\nYou are read-only for this role — you can report on any part of the business, but you cannot take actions. If the user asks you to change something, tell them which employee can do that.'}`;
+
+You can also take action, not just report — use ${toolInstructions}. If a tool says multiple matches were found, ask the user to be more specific instead of picking one yourself.`;
 
     // Data context rides in the first user turn only; follow-ups lean
     // on chat history, mirroring how the widget resends the thread.
