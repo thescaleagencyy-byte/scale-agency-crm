@@ -703,6 +703,22 @@ export async function POST(request: Request) {
 
     const dataContext = await buildDataContext(supabase, currency);
 
+    // AI Memory — durable business facts (pricing/SOPs/policies/tone),
+    // small enough to paste verbatim into every system prompt rather
+    // than semantically searched. Empty until the owner adds any via
+    // Settings → Business Knowledge.
+    let knowledgeContext = '';
+    if (profile?.account_id) {
+      const { data: knowledge } = await supabase
+        .from('business_knowledge')
+        .select('category, title, content')
+        .eq('account_id', profile.account_id)
+        .order('category');
+      if (knowledge && knowledge.length > 0) {
+        knowledgeContext = `\n\nBUSINESS KNOWLEDGE (permanent facts the owner has told you — treat as ground truth):\n${knowledge.map((k) => `• [${k.category}] ${k.title}: ${k.content}`).join('\n')}`;
+      }
+    }
+
     const TOOL_BLURBS: Record<string, string> = {
       update_lead_status: 'update_lead_status when the user asks to mark/close/update a specific lead',
       update_appointment_status: "update_appointment_status when they ask to cancel/confirm/complete a specific appointment",
@@ -714,7 +730,7 @@ export async function POST(request: Request) {
 
     const systemPrompt = `You are ${AI_LABEL} — business data terminal for ${BUSINESS_LABEL}, using this WhatsApp CRM.
 
-${employee.persona}
+${employee.persona}${knowledgeContext}
 
 REPLY FORMAT — non-negotiable:
 • Bullet points only. NO paragraphs. Max 8 bullet lines.

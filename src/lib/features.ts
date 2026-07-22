@@ -52,4 +52,5 @@ export const PATH_FEATURE_MAP: Record<string, string> = {
   '/content-calendar': 'content-calendar',
   '/revenue':       'revenue',
   '/integrations':  'integrations',
+  '/business-knowledge': 'business-knowledge',
 }
