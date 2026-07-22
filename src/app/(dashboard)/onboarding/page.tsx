@@ -151,7 +151,7 @@ export default function OnboardingPage() {
         </div>
 
         {/* Step content */}
-        <div className="rounded-2xl border border-border bg-card p-8 space-y-6">
+        <div className="card-elevated p-8 space-y-6">
           {step === 'welcome' && (
             <>
               <div className="space-y-2">

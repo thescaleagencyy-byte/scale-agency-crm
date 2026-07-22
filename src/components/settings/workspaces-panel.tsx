@@ -106,7 +106,7 @@ export function WorkspacesPanel() {
         </div>
       )}
 
-      <form onSubmit={createWorkspace} className="rounded-xl border border-border bg-card p-4 space-y-3">
+      <form onSubmit={createWorkspace} className="card-elevated p-4 space-y-3">
         <p className="text-sm font-semibold text-foreground">Create new workspace</p>
         <div className="flex items-end gap-3">
           <div className="flex-1 space-y-1">

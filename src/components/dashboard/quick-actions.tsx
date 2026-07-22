@@ -65,7 +65,7 @@ export function QuickActions() {
           <Link
             key={a.href}
             href={a.href}
-            className="group flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3.5 transition-all duration-150 hover:border-border/80 hover:bg-card-2 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.98]"
+            className="group flex items-center gap-3 card-elevated px-4 py-3.5 transition-all duration-150 hover:border-border/80 hover:bg-card-2 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.98]"
           >
             <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted/60 ${a.tint} transition-colors group-hover:bg-muted`}>
               <Icon className="h-4 w-4" aria-hidden="true" />

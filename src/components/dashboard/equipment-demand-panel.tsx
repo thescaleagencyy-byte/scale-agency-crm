@@ -14,7 +14,7 @@ export function EquipmentDemandPanel({ data, loading }: EquipmentDemandPanelProp
   const max = data && data.length > 0 ? Math.max(...data.map((d) => d.count)) : 1
 
   return (
-    <section className="flex h-full flex-col rounded-xl border border-border bg-card">
+    <section className="flex h-full flex-col card-elevated">
       <header className="border-b border-border px-5 py-4">
         <h2 className="text-sm font-semibold text-foreground">Equipment Demand</h2>
         <p className="mt-0.5 text-xs text-muted-foreground">Most requested this month</p>

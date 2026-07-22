@@ -65,7 +65,7 @@ export function RecoveryPanel() {
         description="Automatically re-engage conversations that have gone quiet, before the lead is lost for good."
       />
 
-      <div className="rounded-xl border border-border bg-card p-5 space-y-5">
+      <div className="card-elevated p-5 space-y-5">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-foreground">Enable automatic recovery</p>

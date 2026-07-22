@@ -150,7 +150,7 @@ export default function QRCodesPage() {
                 <Input value={tag} onChange={e => setTag(e.target.value)} placeholder="e.g. summer-promo, menu-2024..." className="border-border bg-muted text-foreground" />
               </div>
               {previewUrl && phone && (
-                <div className="flex items-center gap-4 rounded-xl border border-border bg-card p-4">
+                <div className="flex items-center gap-4 card-elevated p-4">
                   <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-lg border border-border bg-white p-1">
                     <QRCodePreview url={previewUrl} />
                   </div>
@@ -184,7 +184,7 @@ export default function QRCodesPage() {
           {entries.map(e => {
             const link = buildWaLink(e.phone, e.prefill_message);
             return (
-              <div key={e.id} className="rounded-2xl border border-border bg-card p-5 flex flex-col gap-4">
+              <div key={e.id} className="card-elevated p-5 flex flex-col gap-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-foreground truncate">{e.name}</p>

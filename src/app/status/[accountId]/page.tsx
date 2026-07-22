@@ -51,7 +51,7 @@ export default function PublicStatusPage() {
   const activity = activityLabel(status.last_activity_at);
 
   return (
-    <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 space-y-5">
+    <div className="w-full max-w-sm card-elevated p-6 space-y-5">
       <div className="text-center space-y-1">
         <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Status</p>
         <h1 className="text-xl font-bold text-foreground">{status.account_name}</h1>

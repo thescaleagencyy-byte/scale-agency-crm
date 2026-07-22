@@ -396,7 +396,7 @@ export default function FlowsBuilderPage() {
 
               {/* Screen editor */}
               {screen && (
-                <div className="flex-1 overflow-y-auto rounded-xl border border-border bg-card p-4 space-y-3">
+                <div className="flex-1 overflow-y-auto card-elevated p-4 space-y-3">
                   <div className="space-y-1">
                     <Label className="text-xs text-muted-foreground">Screen title</Label>
                     <Input

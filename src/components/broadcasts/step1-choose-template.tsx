@@ -75,7 +75,7 @@ export function Step1ChooseTemplate({ selectedTemplate, onSelect, onNext, onBack
       </div>
 
       {templates.length === 0 ? (
-        <div className="flex h-48 flex-col items-center justify-center rounded-xl border border-border bg-card/50">
+        <div className="flex h-48 flex-col items-center justify-center card-elevated">
           <FileText className="mb-2 h-8 w-8 text-muted-foreground" />
           <p className="text-sm text-muted-foreground">No templates available.</p>
           <p className="mt-1 text-xs text-muted-foreground">Create a template in Settings first.</p>

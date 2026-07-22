@@ -52,7 +52,7 @@ function fmt(mins: number | null): string {
 
 function StatCard({ icon: Icon, label, value, sub }: { icon: typeof Clock; label: string; value: string; sub?: string }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
+    <div className="card-elevated p-4">
       <div className="flex items-center gap-3 mb-2">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
           <Icon className="h-4 w-4 text-primary" />
@@ -234,7 +234,7 @@ export default function AnalyticsPage() {
           </div>
 
           {/* SLA targets */}
-          <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+          <div className="card-elevated p-5 space-y-4">
             <p className="text-sm font-semibold text-foreground">SLA Targets</p>
             <div className="grid grid-cols-2 gap-6">
               <div>
@@ -295,7 +295,7 @@ export default function AnalyticsPage() {
 
                 {/* Top objections */}
                 {intelligence.top_objections.length > 0 && (
-                  <div className="rounded-xl border border-border bg-card p-4">
+                  <div className="card-elevated p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <AlertCircle className="h-4 w-4 text-amber-400" />
                       <p className="text-xs font-semibold text-foreground">Top Customer Objections</p>
@@ -313,7 +313,7 @@ export default function AnalyticsPage() {
 
                 {/* Common requests */}
                 {intelligence.common_requests.length > 0 && (
-                  <div className="rounded-xl border border-border bg-card p-4">
+                  <div className="card-elevated p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <MessageSquare className="h-4 w-4 text-primary" />
                       <p className="text-xs font-semibold text-foreground">Most Common Requests</p>
@@ -331,7 +331,7 @@ export default function AnalyticsPage() {
 
                 {/* Key insights */}
                 {intelligence.key_insights.length > 0 && (
-                  <div className="lg:col-span-2 rounded-xl border border-border bg-card p-4">
+                  <div className="lg:col-span-2 card-elevated p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <Lightbulb className="h-4 w-4 text-primary" />
                       <p className="text-xs font-semibold text-foreground">Actionable Insights</p>
@@ -348,7 +348,7 @@ export default function AnalyticsPage() {
                 )}
 
                 {/* Sentiment + close time */}
-                <div className="rounded-xl border border-border bg-card p-4">
+                <div className="card-elevated p-4">
                   <p className="text-xs font-semibold text-foreground mb-3">Sentiment Breakdown</p>
                   <div className="space-y-2">
                     {(['positive', 'neutral', 'negative'] as const).map(k => {
@@ -370,7 +370,7 @@ export default function AnalyticsPage() {
                 </div>
 
                 {intelligence.avg_close_days !== null && (
-                  <div className="rounded-xl border border-border bg-card p-4 flex flex-col justify-center">
+                  <div className="card-elevated p-4 flex flex-col justify-center">
                     <p className="text-xs text-muted-foreground mb-1">Avg days to close conversation</p>
                     <p className="text-3xl font-bold text-foreground">{intelligence.avg_close_days.toFixed(1)}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">days</p>

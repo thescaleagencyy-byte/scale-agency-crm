@@ -170,7 +170,7 @@ export function BillingPanel() {
       />
 
       {subscription && (
-        <div className="rounded-xl border border-border bg-card p-5 flex items-center justify-between flex-wrap gap-4">
+        <div className="card-elevated p-5 flex items-center justify-between flex-wrap gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <p className="text-sm font-semibold text-foreground capitalize">{subscription.plan_name} plan</p>
@@ -202,7 +202,7 @@ export function BillingPanel() {
       )}
 
       {usage && (
-        <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+        <div className="card-elevated p-5 space-y-4">
           <p className="text-sm font-semibold text-foreground">Usage this month</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <UsageBar label="Team seats" usage={usage.seats} />

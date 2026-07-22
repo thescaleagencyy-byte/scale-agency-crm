@@ -177,7 +177,7 @@ export default function AppointmentsPage() {
 
       {/* Calendar subscribe feed */}
       {icsToken && (
-        <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card p-4 flex-wrap">
+        <div className="flex items-center justify-between gap-4 card-elevated p-4 flex-wrap">
           <div className="flex items-center gap-3 min-w-0">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
               <CalendarClock className="h-4 w-4 text-primary" />
@@ -211,7 +211,7 @@ export default function AppointmentsPage() {
         </div>
 
         {showServiceForm && (
-          <form onSubmit={createService} className="rounded-xl border border-border bg-card p-4 space-y-3">
+          <form onSubmit={createService} className="card-elevated p-4 space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">Service name</Label>
@@ -238,7 +238,7 @@ export default function AppointmentsPage() {
         {services.length > 0 ? (
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {services.map(s => (
-              <div key={s.id} className="rounded-xl border border-border bg-card p-4">
+              <div key={s.id} className="card-elevated p-4">
                 <p className="text-sm font-semibold text-foreground">{s.name}</p>
                 <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                   <Clock className="h-3 w-3" />
@@ -257,7 +257,7 @@ export default function AppointmentsPage() {
       <div className="space-y-3">
         <p className="text-sm font-semibold text-foreground">Appointments ({appointments.length})</p>
         {appointments.length === 0 ? (
-          <div className="rounded-xl border border-border bg-card p-8 text-center">
+          <div className="card-elevated p-8 text-center">
             <Calendar className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
             <p className="text-sm text-muted-foreground">No appointments yet</p>
           </div>

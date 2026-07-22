@@ -65,7 +65,7 @@ export function SavedRepliesPanel() {
         description="Canned responses your team can insert with / in the message composer."
       />
 
-      <form onSubmit={handleAdd} className="rounded-xl border border-border bg-card p-4 space-y-3">
+      <form onSubmit={handleAdd} className="card-elevated p-4 space-y-3">
         <p className="text-sm font-semibold text-foreground">Add new reply</p>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">

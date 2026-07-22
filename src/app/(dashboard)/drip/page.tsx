@@ -68,7 +68,7 @@ export default function DripPage() {
           <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>
       ) : campaigns.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card py-16 gap-3">
+        <div className="flex flex-col items-center justify-center card-elevated py-16 gap-3">
           <Zap className="h-10 w-10 text-muted-foreground" />
           <p className="text-sm font-medium text-foreground">No drip campaigns yet</p>
           <p className="text-xs text-muted-foreground">Create sequences to nurture contacts over time</p>
@@ -82,7 +82,7 @@ export default function DripPage() {
           {campaigns.map(campaign => (
             <div
               key={campaign.id}
-              className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 hover:bg-muted/30 transition-colors cursor-pointer"
+              className="flex items-center gap-4 card-elevated p-4 hover:bg-muted/30 transition-colors cursor-pointer"
               onClick={() => router.push(`/drip/${campaign.id}`)}
             >
               <div className="flex-1 min-w-0">

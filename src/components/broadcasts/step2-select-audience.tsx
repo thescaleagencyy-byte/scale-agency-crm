@@ -304,7 +304,7 @@ export function Step2SelectAudience({
       </div>
 
       {audience.type === 'tags' && (
-        <div className="rounded-xl border border-border bg-card/50 p-4">
+        <div className="card-elevated p-4">
           <p className="mb-3 text-sm font-medium text-foreground">Select Tags</p>
           {loadingTags ? (
             <Loader2 className="h-5 w-5 animate-spin text-primary" />
@@ -340,7 +340,7 @@ export function Step2SelectAudience({
       )}
 
       {audience.type === 'custom_field' && (
-        <div className="space-y-3 rounded-xl border border-border bg-card/50 p-4">
+        <div className="space-y-3 card-elevated p-4">
           <p className="text-sm font-medium text-foreground">Custom Field Filter</p>
           {loadingFields ? (
             <Loader2 className="h-5 w-5 animate-spin text-primary" />
@@ -390,7 +390,7 @@ export function Step2SelectAudience({
       )}
 
       {/* Exclude list — applies regardless of audience type */}
-      <div className="rounded-xl border border-border bg-card/50 p-4">
+      <div className="card-elevated p-4">
         <div className="mb-3 flex items-center gap-2">
           <X className="h-4 w-4 text-red-400" />
           <p className="text-sm font-medium text-foreground">
@@ -427,7 +427,7 @@ export function Step2SelectAudience({
       </div>
 
       {/* Audience Summary */}
-      <div className="rounded-xl border border-border bg-card/50 p-4">
+      <div className="card-elevated p-4">
         <p className="mb-2 text-sm font-medium text-foreground">Audience Summary</p>
         {loadingCount ? (
           <div className="flex items-center gap-2">

@@ -112,7 +112,7 @@ export default function AutomationLogsPage({
             return (
               <li
                 key={log.id}
-                className="rounded-xl border border-border bg-card"
+                className="card-elevated"
               >
                 <button
                   type="button"

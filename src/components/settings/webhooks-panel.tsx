@@ -194,7 +194,7 @@ export function WebhooksPanel() {
       <div className="space-y-4">
         <p className="text-sm font-semibold text-foreground">Webhooks</p>
 
-        <form onSubmit={addWebhook} className="rounded-xl border border-border bg-card p-4 space-y-3">
+        <form onSubmit={addWebhook} className="card-elevated p-4 space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">Name (optional)</Label>

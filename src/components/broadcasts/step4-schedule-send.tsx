@@ -111,7 +111,7 @@ export function Step4ScheduleSend({
       </div>
 
       {/* Summary Card */}
-      <div className="rounded-xl border border-border bg-card/50 p-4 space-y-3">
+      <div className="card-elevated p-4 space-y-3">
         <p className="text-sm font-medium text-foreground">Summary</p>
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div>

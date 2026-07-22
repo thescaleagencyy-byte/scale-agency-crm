@@ -83,7 +83,7 @@ export default function RootPage() {
       <section className="mx-auto max-w-5xl px-6 pb-24">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f) => (
-            <div key={f.title} className="rounded-xl border border-border bg-card p-5">
+            <div key={f.title} className="card-elevated p-5">
               <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
                 <f.icon className="h-4.5 w-4.5 text-primary" />
               </div>

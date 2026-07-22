@@ -87,7 +87,7 @@ export default function NewDripPage() {
         <h1 className="text-2xl font-bold text-foreground">New Drip Campaign</h1>
       </div>
 
-      <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+      <div className="card-elevated p-5 space-y-4">
         <div className="space-y-1.5">
           <Label className="text-muted-foreground">Name</Label>
           <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. New Lead Nurture" className="border-border bg-muted text-foreground" />
@@ -120,7 +120,7 @@ export default function NewDripPage() {
         </div>
 
         {steps.map((step, i) => (
-          <div key={i} className="rounded-xl border border-border bg-card p-4 space-y-3">
+          <div key={i} className="card-elevated p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-muted-foreground uppercase">Step {i + 1}</span>
               {steps.length > 1 && (

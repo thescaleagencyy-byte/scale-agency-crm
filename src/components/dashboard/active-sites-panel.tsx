@@ -21,7 +21,7 @@ function relativeTime(iso: string): string {
 
 export function ActiveSitesPanel({ data, loading }: ActiveSitesPanelProps) {
   return (
-    <section className="flex h-full flex-col rounded-xl border border-border bg-card">
+    <section className="flex h-full flex-col card-elevated">
       <header className="border-b border-border px-5 py-4">
         <h2 className="text-sm font-semibold text-foreground">Active Project Sites</h2>
         <p className="mt-0.5 text-xs text-muted-foreground">Where inquiries are coming from</p>
