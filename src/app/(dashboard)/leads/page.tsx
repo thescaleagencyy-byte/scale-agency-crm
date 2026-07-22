@@ -267,9 +267,19 @@ export default function LeadsPage() {
                   </TableCell>
                   <TableCell><ScoreBadge score={lead.score ?? 0} /></TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={`text-xs ${STATUS_CLASS[lead.status] ?? ''}`}>
-                      {STATUS_LABEL[lead.status] ?? lead.status}
-                    </Badge>
+                    <div className="flex items-center gap-1.5">
+                      <Badge variant="outline" className={`text-xs ${STATUS_CLASS[lead.status] ?? ''}`}>
+                        {STATUS_LABEL[lead.status] ?? lead.status}
+                      </Badge>
+                      {lead.status === 'new' && Date.now() - new Date(lead.created_at).getTime() > 3 * 86400000 && (
+                        <span
+                          title="No contact in 3+ days"
+                          className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-1.5 py-0.5 text-[10px] font-medium text-cyan-600"
+                        >
+                          🥶 Going cold
+                        </span>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {new Date(lead.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' })}

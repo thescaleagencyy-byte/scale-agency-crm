@@ -13,6 +13,7 @@ export interface DigestStats {
   overdueInvoices: number
   overdueAmount: number
   hotLeads: number
+  staleLeads: number
   appointmentsToday: number
   openConversationsNoReplyToday: number
 }
@@ -34,7 +35,7 @@ export async function composeDigest(
   const tomorrowStart = new Date(todayStart)
   tomorrowStart.setDate(tomorrowStart.getDate() + 1)
 
-  const [invoicesRes, leadsRes, apptsRes, convsRes] = await Promise.all([
+  const [invoicesRes, leadsRes, staleLeadsRes, apptsRes, convsRes] = await Promise.all([
     db
       .from('client_invoices')
       .select('title, amount, due_date, contact:contacts(name, phone)')
@@ -47,6 +48,14 @@ export async function composeDigest(
       .eq('account_id', accountId)
       .eq('status', 'new')
       .gte('score', 60)
+      .limit(20),
+    db
+      .from('leads')
+      .select('customer_name, company, created_at')
+      .eq('account_id', accountId)
+      .eq('status', 'new')
+      .lt('created_at', new Date(Date.now() - 3 * 86400000).toISOString())
+      .order('created_at', { ascending: true })
       .limit(20),
     db
       .from('appointments')
@@ -66,6 +75,7 @@ export async function composeDigest(
 
   const overdueInvoices = (invoicesRes.data ?? []) as { title: string; amount: number; due_date: string; contact: ContactRef }[]
   const hotLeads = (leadsRes.data ?? []) as { customer_name: string | null; company: string | null; score: number; created_at: string }[]
+  const staleLeads = (staleLeadsRes.data ?? []) as { customer_name: string | null; company: string | null; created_at: string }[]
   const appts = (apptsRes.data ?? []) as unknown as { status: string; slot: { start_at: string }[] | { start_at: string } | null; contact: ContactRef }[]
   const staleConvs = (convsRes.data ?? []) as { id: string; contact: ContactRef }[]
 
@@ -81,6 +91,7 @@ export async function composeDigest(
     overdueInvoices: overdueInvoices.length,
     overdueAmount,
     hotLeads: hotLeads.length,
+    staleLeads: staleLeads.length,
     appointmentsToday: appointmentsToday.length,
     openConversationsNoReplyToday: staleConvs.length,
   }
@@ -104,6 +115,14 @@ export async function composeDigest(
     }
   }
 
+  if (staleLeads.length > 0) {
+    lines.push(`🥶 ${staleLeads.length} lead${staleLeads.length === 1 ? '' : 's'} going cold — no contact in 3+ days`)
+    for (const l of staleLeads.slice(0, 5)) {
+      const daysOld = Math.floor((Date.now() - new Date(l.created_at).getTime()) / 86400000)
+      lines.push(`   • ${l.customer_name ?? 'Unknown'}${l.company ? ` (${l.company})` : ''} — ${daysOld}d old, still "new"`)
+    }
+  }
+
   if (appointmentsToday.length > 0) {
     lines.push(`📅 ${appointmentsToday.length} appointment${appointmentsToday.length === 1 ? '' : 's'} today`)
   }
@@ -112,7 +131,7 @@ export async function composeDigest(
     lines.push(`💬 ${staleConvs.length} conversation${staleConvs.length === 1 ? '' : 's'} waiting on a reply from you`)
   }
 
-  if (overdueInvoices.length === 0 && hotLeads.length === 0 && appointmentsToday.length === 0 && staleConvs.length === 0) {
+  if (overdueInvoices.length === 0 && hotLeads.length === 0 && staleLeads.length === 0 && appointmentsToday.length === 0 && staleConvs.length === 0) {
     lines.push(`✅ Nothing urgent — inbox clear, no overdue invoices, no untouched hot leads.`)
   }
 
