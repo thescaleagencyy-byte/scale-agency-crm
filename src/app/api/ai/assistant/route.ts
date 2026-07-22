@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
+import type OpenAI from 'openai';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/server';
 import { getOpenAIClient } from '@/lib/openai/client';
@@ -31,6 +32,100 @@ const AI_LABEL = CLIENT_NAME ? `${CLIENT_NAME} AI` : 'Scale Agency AI';
 interface HistoryMessage {
   role: 'user' | 'assistant';
   content: string;
+}
+
+// ============================================================
+// Tools — the "AI does the work" layer, not just Q&A.
+//
+// Every tool executes through the caller's own RLS-scoped Supabase
+// client (the same `supabase` used for buildDataContext below), so
+// a tool call can never touch another account's rows — RLS is the
+// safety boundary, not prompt instructions. Scoped deliberately
+// narrow for v1: one safe, reversible action (lead status), not a
+// generic "run any SQL" tool. Ambiguous matches are refused rather
+// than guessed — better to ask the user than update the wrong lead.
+// ============================================================
+
+const LEAD_STATUS_VALUES = ['new', 'called', 'won', 'lost'] as const;
+
+const TOOLS: Anthropic.Tool[] = [
+  {
+    name: 'update_lead_status',
+    description:
+      "Update a lead's status (new/called/won/lost). Use when the user asks to mark, close, or update a specific lead by name or phone. Do not guess which lead if the search matches more than one — the tool will tell you and you should ask the user to be more specific.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        customer_search: {
+          type: 'string',
+          description: "The lead's customer name or phone number (or a fragment of either) to find the right row.",
+        },
+        status: { type: 'string', enum: [...LEAD_STATUS_VALUES] },
+      },
+      required: ['customer_search', 'status'],
+    },
+  },
+];
+
+// Same tool, OpenAI's function-calling shape — kept as a separate literal
+// (rather than transformed from TOOLS) since the two SDKs' schemas diverge
+// enough that a generic converter would be harder to read than this.
+const OPENAI_TOOLS = [
+  {
+    type: 'function' as const,
+    function: {
+      name: 'update_lead_status',
+      description:
+        "Update a lead's status (new/called/won/lost). Use when the user asks to mark, close, or update a specific lead by name or phone. Do not guess which lead if the search matches more than one — the tool will tell you and you should ask the user to be more specific.",
+      parameters: {
+        type: 'object',
+        properties: {
+          customer_search: {
+            type: 'string',
+            description: "The lead's customer name or phone number (or a fragment of either) to find the right row.",
+          },
+          status: { type: 'string', enum: [...LEAD_STATUS_VALUES] },
+        },
+        required: ['customer_search', 'status'],
+      },
+    },
+  },
+];
+
+async function runTool(
+  db: SupabaseClient,
+  name: string,
+  input: Record<string, unknown>,
+): Promise<string> {
+  if (name === 'update_lead_status') {
+    const search = String(input.customer_search ?? '').trim();
+    const status = String(input.status ?? '');
+    if (!search) return 'Error: no customer_search provided.';
+    if (!(LEAD_STATUS_VALUES as readonly string[]).includes(status)) {
+      return `Error: "${status}" is not a valid status. Valid: ${LEAD_STATUS_VALUES.join(', ')}.`;
+    }
+
+    const { data: matches, error } = await db
+      .from('leads')
+      .select('id, customer_name, customer_phone, status')
+      .or(`customer_name.ilike.%${search}%,customer_phone.ilike.%${search}%`)
+      .limit(5);
+    if (error) return `Error looking up lead: ${error.message}`;
+    if (!matches || matches.length === 0) return `No lead found matching "${search}".`;
+    if (matches.length > 1) {
+      const list = matches.map((m) => `${m.customer_name ?? 'Unknown'} (${m.customer_phone})`).join(', ');
+      return `Found ${matches.length} leads matching "${search}": ${list}. Ask the user which one they mean before updating.`;
+    }
+
+    const lead = matches[0];
+    const { error: updateErr } = await db
+      .from('leads')
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq('id', lead.id);
+    if (updateErr) return `Error updating lead: ${updateErr.message}`;
+    return `Updated ${lead.customer_name ?? lead.customer_phone}'s lead status from "${lead.status}" to "${status}".`;
+  }
+  return `Error: unknown tool "${name}".`;
 }
 
 function count<T extends Record<string, unknown>>(rows: T[], key: keyof T): Record<string, number> {
@@ -236,7 +331,9 @@ REPLY FORMAT — non-negotiable:
 • Lead each bullet with the number/fact in **bold**.
 • No intro, no outro, no "based on the data".
 • Money in ${currency}.
-• If data can't answer the question, say so in one bullet and suggest the closest answerable metric.`;
+• If data can't answer the question, say so in one bullet and suggest the closest answerable metric.
+
+You can also take action, not just report — use the update_lead_status tool when the user asks to mark/close/update a specific lead. If the tool says multiple leads matched, ask the user to be more specific instead of picking one yourself.`;
 
     // Data context rides in the first user turn only; follow-ups lean
     // on chat history, mirroring how the widget resends the thread.
@@ -262,27 +359,89 @@ REPLY FORMAT — non-negotiable:
 
     if (claudeKey) {
       const anthropic = new Anthropic({ apiKey: claudeKey });
-      const response = await anthropic.messages.create({
+      let conversation: Anthropic.MessageParam[] = turns;
+      let response = await anthropic.messages.create({
         model: 'claude-opus-4-8',
         max_tokens: 600,
         thinking: { type: 'adaptive' },
         system: systemPrompt,
-        messages: turns,
+        messages: conversation,
+        tools: TOOLS,
       });
+      tokensUsed = response.usage.input_tokens + response.usage.output_tokens;
+
+      // Tool-use loop: execute any tool calls, feed results back, repeat
+      // until Claude replies with plain text. Capped at 3 rounds so a
+      // confused model can't loop forever burning tokens.
+      let rounds = 0;
+      while (response.stop_reason === 'tool_use' && rounds < 3) {
+        rounds += 1;
+        const toolUses = response.content.filter((b): b is Anthropic.ToolUseBlock => b.type === 'tool_use');
+        const toolResults = await Promise.all(
+          toolUses.map(async (tu) => ({
+            type: 'tool_result' as const,
+            tool_use_id: tu.id,
+            content: await runTool(supabase, tu.name, tu.input as Record<string, unknown>),
+          })),
+        );
+        conversation = [
+          ...conversation,
+          { role: 'assistant', content: response.content },
+          { role: 'user', content: toolResults },
+        ];
+        response = await anthropic.messages.create({
+          model: 'claude-opus-4-8',
+          max_tokens: 600,
+          thinking: { type: 'adaptive' },
+          system: systemPrompt,
+          messages: conversation,
+          tools: TOOLS,
+        });
+        tokensUsed += response.usage.input_tokens + response.usage.output_tokens;
+      }
+
       answer = response.content
         .filter((b): b is Anthropic.TextBlock => b.type === 'text')
         .map((b) => b.text)
         .join('')
         .trim();
-      tokensUsed = response.usage.input_tokens + response.usage.output_tokens;
     } else if (openai) {
-      const completion = await openai.chat.completions.create({
+      type Msg = OpenAI.Chat.ChatCompletionMessageParam;
+      let conversation: Msg[] = [{ role: 'system', content: systemPrompt }, ...turns];
+      let completion = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
-        messages: [{ role: 'system' as const, content: systemPrompt }, ...turns],
+        messages: conversation,
         max_tokens: 600,
+        tools: OPENAI_TOOLS,
       });
-      answer = completion.choices[0]?.message?.content?.trim();
-      tokensUsed = completion.usage?.total_tokens ?? null;
+      tokensUsed = completion.usage?.total_tokens ?? 0;
+
+      let rounds = 0;
+      let message = completion.choices[0]?.message;
+      while (message?.tool_calls && message.tool_calls.length > 0 && rounds < 3) {
+        rounds += 1;
+        const funcCalls = message.tool_calls.filter(
+          (tc): tc is OpenAI.Chat.ChatCompletionMessageFunctionToolCall => tc.type === 'function',
+        );
+        const toolResults: Msg[] = await Promise.all(
+          funcCalls.map(async (tc) => ({
+            role: 'tool' as const,
+            tool_call_id: tc.id,
+            content: await runTool(supabase, tc.function.name, JSON.parse(tc.function.arguments || '{}')),
+          })),
+        );
+        conversation = [...conversation, message, ...toolResults];
+        completion = await openai.chat.completions.create({
+          model: 'gpt-4o-mini',
+          messages: conversation,
+          max_tokens: 600,
+          tools: OPENAI_TOOLS,
+        });
+        tokensUsed += completion.usage?.total_tokens ?? 0;
+        message = completion.choices[0]?.message;
+      }
+
+      answer = message?.content?.trim() ?? undefined;
     }
 
     if (!answer) return NextResponse.json({ error: 'AI returned an empty answer' }, { status: 500 });

@@ -124,6 +124,7 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     label: "Overview",
     items: [
       { href: "/dashboard",    label: "Dashboard",     icon: LayoutDashboard, feature: "dashboard" },
+      { href: "/copilot",      label: "CEO Copilot",   icon: Zap,             feature: "copilot", beta: true },
       { href: "/analytics",    label: "Analytics",     icon: BarChart3,       feature: "analytics" },
     ],
   },
