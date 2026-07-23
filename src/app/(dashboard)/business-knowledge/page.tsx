@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Brain, Plus, Trash2, X } from 'lucide-react';
+import { Loader2, Brain, Plus, Trash2, X, Sparkles } from 'lucide-react';
 
 interface KnowledgeRow {
   id: string;
@@ -19,7 +19,7 @@ interface KnowledgeRow {
 
 const CATEGORIES = ['pricing', 'sop', 'policy', 'tone', 'products', 'team', 'goals', 'general'] as const;
 const CATEGORY_LABEL: Record<string, string> = {
-  pricing: 'Pricing', sop: 'SOP', policy: 'Policy', tone: 'Tone', products: 'Products', team: 'Team', goals: 'Goals', general: 'General',
+  pricing: 'Pricing', sop: 'SOP', policy: 'Policy', tone: 'Tone', products: 'Products', team: 'Team', goals: 'Goals', general: 'General', insight: 'Insight',
 };
 
 export default function BusinessKnowledgePage() {
@@ -30,6 +30,7 @@ export default function BusinessKnowledgePage() {
   const [category, setCategory] = useState<string>('general');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [generating, setGenerating] = useState(false);
 
   const load = useCallback(async () => {
     const supabase = createClient();
@@ -75,6 +76,24 @@ export default function BusinessKnowledgePage() {
     else { toast.success('Removed'); setRows((prev) => prev.filter((r) => r.id !== id)); }
   }
 
+  async function generateInsights() {
+    setGenerating(true);
+    try {
+      const res = await fetch('/api/insights/generate', { method: 'POST' });
+      const data = await res.json();
+      if (typeof data.created === 'number') {
+        toast.success(data.created > 0 ? `Calculated ${data.created} insight(s) from your lead data.` : (data.message || 'Nothing to calculate yet.'));
+        if (data.created > 0) load();
+      } else {
+        toast.error(data.error || 'Failed to generate insights.');
+      }
+    } catch {
+      toast.error('Network error generating insights.');
+    } finally {
+      setGenerating(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -84,12 +103,18 @@ export default function BusinessKnowledgePage() {
             Permanent facts the Copilot reads before every answer — pricing, SOPs, refund policy, tone, whatever it should always know.
           </p>
         </div>
-        {!adding && (
-          <Button onClick={() => setAdding(true)}>
-            <Plus className="h-4 w-4 mr-1" />
-            Add fact
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={generateInsights} disabled={generating}>
+            {generating ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Sparkles className="h-4 w-4 mr-1" />}
+            Calculate insights
           </Button>
-        )}
+          {!adding && (
+            <Button onClick={() => setAdding(true)}>
+              <Plus className="h-4 w-4 mr-1" />
+              Add fact
+            </Button>
+          )}
+        </div>
       </div>
 
       {adding && (

@@ -54,4 +54,5 @@ export const PATH_FEATURE_MAP: Record<string, string> = {
   '/integrations':  'integrations',
   '/business-knowledge': 'business-knowledge',
   '/competitors':   'competitors',
+  '/predictions':   'predictions',
 }

@@ -69,7 +69,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Protected pages - redirect to login if not authenticated
-  const protectedPaths = ['/dashboard', '/inbox', '/contacts', '/leads', '/pipelines', '/broadcasts', '/automations', '/settings', '/drip', '/appointments', '/analytics', '/qr-codes', '/flows-builder', '/onboarding', '/contracts', '/copilot', '/invoices', '/content-calendar', '/revenue', '/integrations', '/business-knowledge', '/competitors']
+  const protectedPaths = ['/dashboard', '/inbox', '/contacts', '/leads', '/pipelines', '/broadcasts', '/automations', '/settings', '/drip', '/appointments', '/analytics', '/qr-codes', '/flows-builder', '/onboarding', '/contracts', '/copilot', '/invoices', '/content-calendar', '/revenue', '/integrations', '/business-knowledge', '/competitors', '/predictions']
   if (!user && protectedPaths.some(path => request.nextUrl.pathname.startsWith(path))) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
