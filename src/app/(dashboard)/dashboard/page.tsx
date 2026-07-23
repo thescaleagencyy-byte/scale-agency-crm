@@ -30,6 +30,7 @@ import type {
 import { CLIENT_NAME, CLIENT_INDUSTRY, hasFeature } from '@/lib/features'
 import { HeroStatsRow } from '@/components/dashboard/hero-stats-row'
 import { DailyDigestCard } from '@/components/dashboard/daily-digest-card'
+import { AgentQueueCard } from '@/components/dashboard/agent-queue-card'
 import { QuickActions } from '@/components/dashboard/quick-actions'
 import { ConversationsChart } from '@/components/dashboard/conversations-chart'
 import { PipelineDonut } from '@/components/dashboard/pipeline-donut'
@@ -342,6 +343,9 @@ export default function DashboardPage() {
 
       {/* Daily briefing — proactive digest, see components/dashboard/daily-digest-card */}
       <DailyDigestCard />
+
+      {/* Autonomous Daily Agent v1 — draft-and-approve queue, see components/dashboard/agent-queue-card */}
+      <AgentQueueCard />
 
       {/* Quick actions */}
       <QuickActions />

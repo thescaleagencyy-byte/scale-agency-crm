@@ -127,6 +127,19 @@ export function AIAssistant() {
     }
   }, [open]);
 
+  // Cmd/Ctrl+K opens the assistant from anywhere — the "command
+  // palette" entry point onto the same chat, not a second AI surface.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   const ask = useCallback(
     async (raw: string) => {
       const question = raw.trim();
@@ -191,6 +204,7 @@ export function AIAssistant() {
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-label={`Open ${AI_NAME}`}
+        title={`${AI_NAME} (${'⌘K'})`}
         aria-expanded={open}
         className={`relative flex h-10 w-10 items-center justify-center rounded-md transition-colors hover:bg-muted ${
           open ? 'bg-muted text-primary' : 'text-muted-foreground hover:text-foreground'

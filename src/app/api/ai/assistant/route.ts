@@ -188,6 +188,19 @@ const TOOLS: Anthropic.Tool[] = [
       required: ['name_search'],
     },
   },
+  {
+    name: 'send_slack_message',
+    description:
+      "Send a message to a Slack channel via this account's connected Slack integration. Only works if Slack shows as connected — check the CONNECTED INTEGRATIONS list before calling this; if Slack isn't listed there, tell the user it's not connected instead of calling this.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        channel: { type: 'string', description: 'Slack channel name (e.g. "general") or channel ID.' },
+        text: { type: 'string', description: 'Message text to send.' },
+      },
+      required: ['channel', 'text'],
+    },
+  },
 ];
 
 // Same tools, OpenAI's function-calling shape — kept as separate literals
@@ -352,6 +365,22 @@ const OPENAI_TOOLS = [
           name_search: { type: 'string', description: "The tracked competitor's name (or a fragment)." },
         },
         required: ['name_search'],
+      },
+    },
+  },
+  {
+    type: 'function' as const,
+    function: {
+      name: 'send_slack_message',
+      description:
+        "Send a message to a Slack channel via this account's connected Slack integration. Only call if Slack shows as connected in the data context.",
+      parameters: {
+        type: 'object',
+        properties: {
+          channel: { type: 'string', description: 'Slack channel name or ID.' },
+          text: { type: 'string', description: 'Message text to send.' },
+        },
+        required: ['channel', 'text'],
       },
     },
   },
@@ -673,6 +702,40 @@ async function runTool(
     });
     if (apptErr) return `Error creating appointment: ${apptErr.message}`;
     return `Booked ${contact.name ?? contact.phone} for "${service.name}" on ${startDate.toLocaleString()}.`;
+  }
+
+  if (name === 'send_slack_message') {
+    const channel = String(input.channel ?? '').trim();
+    const text = String(input.text ?? '').trim();
+    if (!channel || !text) return 'Error: channel and text are both required.';
+
+    const { data: integration } = await db
+      .from('integrations')
+      .select('status, credentials_encrypted')
+      .eq('account_id', accountId)
+      .eq('service', 'slack')
+      .maybeSingle();
+    if (!integration || integration.status !== 'connected' || !integration.credentials_encrypted) {
+      return 'Slack is not connected for this account. Tell the user to connect it in Integration Hub first.';
+    }
+
+    let botToken: string | null = null;
+    try {
+      const fields = JSON.parse(decryptText(integration.credentials_encrypted));
+      botToken = fields.bot_token ?? null;
+    } catch {
+      botToken = null;
+    }
+    if (!botToken) return 'Error: Slack credential could not be read — try reconnecting it in Integration Hub.';
+
+    const res = await fetch('https://slack.com/api/chat.postMessage', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${botToken}`, 'Content-Type': 'application/json; charset=utf-8' },
+      body: JSON.stringify({ channel, text }),
+    });
+    const data = await res.json();
+    if (!data.ok) return `Slack rejected the message: ${data.error ?? 'unknown error'}.`;
+    return `Sent to Slack #${channel}: "${text}"`;
   }
 
   if (name === 'analyze_competitor') {
@@ -1027,6 +1090,24 @@ export async function POST(request: Request) {
       }
     }
 
+    // Connected integrations — told to the model directly so it can
+    // infer what it can actually do ("email everyone who abandoned
+    // checkout" → check Gmail/Shopify connected) instead of asking the
+    // user which systems to use, or worse, assuming something is wired
+    // up that isn't. Only ever lists services with status='connected',
+    // i.e. actually verified live against the real provider API.
+    let integrationsContext = '';
+    if (profile?.account_id) {
+      const { data: connected } = await supabase
+        .from('integrations')
+        .select('service')
+        .eq('account_id', profile.account_id)
+        .eq('status', 'connected');
+      if (connected && connected.length > 0) {
+        integrationsContext = `\n\nCONNECTED INTEGRATIONS (verified live, you can act on these directly without asking which system to use): ${connected.map((c) => c.service).join(', ')}. Anything not in this list is NOT connected — say so plainly instead of pretending to act on it.`;
+      }
+    }
+
     const TOOL_BLURBS: Record<string, string> = {
       update_lead_status: 'update_lead_status when the user asks to mark/close/update a specific lead',
       update_appointment_status: "update_appointment_status when they ask to cancel/confirm/complete a specific appointment",
@@ -1037,12 +1118,13 @@ export async function POST(request: Request) {
       create_reminder: 'create_reminder when they ask to set a follow-up reminder for a lead or contact',
       create_appointment: 'create_appointment when they ask to book a new appointment for a contact with an existing service',
       analyze_competitor: 'analyze_competitor when they ask to check on a tracked competitor\'s pricing/offers/positioning',
+      send_slack_message: 'send_slack_message when they ask to notify/post something to Slack, only if Slack is connected',
     };
     const toolInstructions = Object.values(TOOL_BLURBS).join(', and ');
 
     const systemPrompt = `You are ${AI_LABEL} — business data terminal for ${BUSINESS_LABEL}, using this WhatsApp CRM.
 
-${employee.persona}${knowledgeContext}
+${employee.persona}${knowledgeContext}${integrationsContext}
 
 REPLY FORMAT — non-negotiable:
 • Bullet points only. NO paragraphs. Max 8 bullet lines.
