@@ -9,13 +9,15 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, ChevronLeft, ChevronRight, Loader2, CalendarClock } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Loader2, CalendarClock, Sparkles } from 'lucide-react';
 
 interface PostRow {
   id: string;
   title: string;
   platform: string;
   caption: string | null;
+  hashtags: string | null;
+  image_url: string | null;
   status: 'draft' | 'scheduled' | 'posted' | 'cancelled';
   scheduled_for: string | null;
   posted_at: string | null;
@@ -43,6 +45,9 @@ export default function ContentCalendarPage() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const [showGenerate, setShowGenerate] = useState(false);
+  const [topic, setTopic] = useState('');
 
   const [debouncedSearch, setDebouncedSearch] = useState('');
   useEffect(() => {
@@ -56,7 +61,7 @@ export default function ContentCalendarPage() {
     try {
       let query = supabase
         .from('content_posts')
-        .select('id, title, platform, caption, status, scheduled_for, posted_at, created_at', { count: 'exact' })
+        .select('id, title, platform, caption, hashtags, image_url, status, scheduled_for, posted_at, created_at', { count: 'exact' })
         .order('created_at', { ascending: false })
         .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
 
@@ -92,16 +97,73 @@ export default function ContentCalendarPage() {
     setUpdating(null);
   }
 
+  async function generate() {
+    setGenerating(true);
+    try {
+      const res = await fetch('/api/marketing/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic: topic.trim() || undefined }),
+      });
+      const data = await res.json();
+      if (typeof data.created === 'number') {
+        toast.success(`Generated ${data.created} draft post(s)${data.usedTrendData ? ' with live trend data' : ''}.`);
+        setShowGenerate(false);
+        setTopic('');
+        setPage(0);
+        load();
+      } else {
+        toast.error(data.error || 'Generation failed.');
+      }
+    } catch {
+      toast.error('Network error.');
+    } finally {
+      setGenerating(false);
+    }
+  }
+
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Content Calendar</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          {total} posts tracked · planning only, nothing here is posted to any platform automatically
-        </p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Content Calendar</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {total} posts tracked · planning only, nothing here is posted to any platform automatically
+          </p>
+        </div>
+        {!showGenerate && (
+          <Button onClick={() => setShowGenerate(true)}>
+            <Sparkles className="h-4 w-4 mr-1" />
+            Generate content
+          </Button>
+        )}
       </div>
+
+      {showGenerate && (
+        <div className="card-elevated p-4 space-y-3">
+          <p className="text-sm font-semibold text-foreground">Generate draft posts</p>
+          <p className="text-xs text-muted-foreground">
+            Claude writes the caption + hashtags, Pollinations.ai (free image generator) creates the accompanying image. Lands as drafts below — review before scheduling.
+          </p>
+          <Input
+            placeholder="Topic or angle (optional — defaults to your industry)"
+            value={topic}
+            onChange={(e) => setTopic(e.target.value)}
+            className="bg-background border-border text-foreground placeholder:text-muted-foreground"
+          />
+          <div className="flex gap-2">
+            <Button onClick={generate} disabled={generating}>
+              {generating ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+              {generating ? 'Generating...' : 'Generate 3 posts'}
+            </Button>
+            <Button variant="outline" onClick={() => setShowGenerate(false)} disabled={generating}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative">
@@ -156,8 +218,17 @@ export default function ContentCalendarPage() {
               {posts.map((p) => (
                 <TableRow key={p.id} className="border-border">
                   <TableCell>
-                    <div className="text-sm font-medium text-foreground">{p.title}</div>
-                    {p.caption && <div className="text-xs text-muted-foreground truncate max-w-md">{p.caption}</div>}
+                    <div className="flex items-start gap-2.5">
+                      {p.image_url && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={p.image_url} alt="" className="h-10 w-10 shrink-0 rounded-md object-cover" />
+                      )}
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium text-foreground">{p.title}</div>
+                        {p.caption && <div className="text-xs text-muted-foreground truncate max-w-md">{p.caption}</div>}
+                        {p.hashtags && <div className="text-[11px] text-primary/80 truncate max-w-md">{p.hashtags}</div>}
+                      </div>
+                    </div>
                   </TableCell>
                   <TableCell>
                     <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
