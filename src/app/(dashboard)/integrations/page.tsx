@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { Loader2, Plug, ExternalLink, Check, Clock, X } from 'lucide-react';
-import { CATEGORY_LABEL, type IntegrationCategory } from '@/lib/integrations-catalog';
+import { CATEGORY_LABEL, type IntegrationCategory, type CredentialField } from '@/lib/integrations-catalog';
 
 interface IntegrationRow {
   service: string;
@@ -13,6 +13,7 @@ interface IntegrationRow {
   description: string;
   docsHint: string;
   managedElsewhere?: { table: string; settingsHref: string };
+  credentialFields?: CredentialField[];
   status: 'not_connected' | 'pending' | 'connected' | 'error';
   connected_at: string | null;
   last_error: string | null;
@@ -30,6 +31,7 @@ export default function IntegrationsPage() {
   const [loading, setLoading] = useState(true);
   const [openService, setOpenService] = useState<string | null>(null);
   const [credential, setCredential] = useState('');
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
   const load = async () => {
@@ -48,8 +50,15 @@ export default function IntegrationsPage() {
     load();
   }, []);
 
-  const connect = async (service: string) => {
-    if (!credential.trim()) {
+  const connect = async (row: IntegrationRow) => {
+    const hasFields = !!row.credentialFields?.length;
+    if (hasFields) {
+      const missing = row.credentialFields!.filter((f) => !fieldValues[f.key]?.trim());
+      if (missing.length > 0) {
+        toast.error(`${missing.map((f) => f.label).join(', ')} required.`);
+        return;
+      }
+    } else if (!credential.trim()) {
       toast.error('Paste a credential first.');
       return;
     }
@@ -58,13 +67,16 @@ export default function IntegrationsPage() {
       const res = await fetch('/api/integrations/connect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ service, credential }),
+        body: JSON.stringify(hasFields ? { service: row.service, fields: fieldValues } : { service: row.service, credential }),
       });
       const data = await res.json();
       if (data.ok) {
-        toast.success('Credential saved (encrypted) — marked pending until it can be verified against the real API.');
+        if (data.status === 'connected') toast.success('Verified and connected — checked live against the real API.');
+        else if (data.status === 'error') toast.error(`Saved, but verification failed: ${data.error}`);
+        else toast.success('Credential saved (encrypted) — marked pending, no live verification available for this service yet.');
         setOpenService(null);
         setCredential('');
+        setFieldValues({});
         load();
       } else {
         toast.error(data.error || 'Failed to save.');
@@ -118,6 +130,9 @@ export default function IntegrationsPage() {
                     </div>
                     <p className="mt-2 text-xs text-muted-foreground">{i.description}</p>
                     <p className="mt-1 text-[11px] text-muted-foreground/70">{i.docsHint}</p>
+                    {i.status === 'error' && i.last_error && (
+                      <p className="mt-1.5 rounded-md bg-red-500/10 px-2 py-1 text-[11px] text-red-500">{i.last_error}</p>
+                    )}
 
                     <div className="mt-3">
                       {i.managedElsewhere ? (
@@ -130,25 +145,39 @@ export default function IntegrationsPage() {
                         </Link>
                       ) : openService === i.service ? (
                         <div className="space-y-2">
-                          <input
-                            type="password"
-                            value={credential}
-                            onChange={(e) => setCredential(e.target.value)}
-                            placeholder="Paste API key / token..."
-                            className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground outline-none focus:border-primary/50"
-                          />
+                          {i.credentialFields?.length ? (
+                            i.credentialFields.map((f) => (
+                              <input
+                                key={f.key}
+                                type="password"
+                                value={fieldValues[f.key] ?? ''}
+                                onChange={(e) => setFieldValues((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                                placeholder={f.placeholder}
+                                aria-label={f.label}
+                                className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground outline-none focus:border-primary/50"
+                              />
+                            ))
+                          ) : (
+                            <input
+                              type="password"
+                              value={credential}
+                              onChange={(e) => setCredential(e.target.value)}
+                              placeholder="Paste API key / token..."
+                              className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground outline-none focus:border-primary/50"
+                            />
+                          )}
                           <div className="flex gap-2">
                             <button
                               type="button"
                               disabled={saving}
-                              onClick={() => connect(i.service)}
+                              onClick={() => connect(i)}
                               className="rounded-md bg-primary px-2.5 py-1 text-[11px] font-semibold text-primary-foreground disabled:opacity-50"
                             >
                               {saving ? 'Saving...' : 'Save'}
                             </button>
                             <button
                               type="button"
-                              onClick={() => { setOpenService(null); setCredential(''); }}
+                              onClick={() => { setOpenService(null); setCredential(''); setFieldValues({}); }}
                               className="rounded-md border border-border px-2.5 py-1 text-[11px] text-muted-foreground"
                             >
                               Cancel

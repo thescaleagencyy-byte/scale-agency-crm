@@ -7,6 +7,12 @@
 
 export type IntegrationCategory = 'messaging' | 'email' | 'calendar' | 'payments' | 'commerce' | 'productivity' | 'automation'
 
+export interface CredentialField {
+  key: string
+  label: string
+  placeholder: string
+}
+
 export interface IntegrationDef {
   service: string
   name: string
@@ -15,6 +21,17 @@ export interface IntegrationDef {
   /** If true, status comes from an existing real table, not the new `integrations` table. */
   managedElsewhere?: { table: string; settingsHref: string }
   docsHint: string
+  /**
+   * Present only for services with a real live-verify check (see
+   * integration-verify.ts) — the client (or setup team) pastes their
+   * own static token/key, no OAuth app owned by us required, and the
+   * connection is verified against the real API before it's ever
+   * shown as "Connected". Services without this fall back to a single
+   * generic credential field and stay 'pending' (unverifiable) —
+   * true plug-and-play for those needs Umer to register a one-time
+   * OAuth app first (see docsHint).
+   */
+  credentialFields?: CredentialField[]
 }
 
 export const INTEGRATIONS_CATALOG: IntegrationDef[] = [
@@ -39,70 +56,82 @@ export const INTEGRATIONS_CATALOG: IntegrationDef[] = [
     name: 'Instagram',
     category: 'messaging',
     description: 'DMs, comment replies, content publishing.',
-    docsHint: 'Needs a Meta Developer App (same type as WhatsApp Business) with Instagram Graph API access.',
+    docsHint: 'Paste a Page/Instagram access token generated from Meta Business Suite → Graph API Explorer. Verified live on save.',
+    credentialFields: [{ key: 'page_access_token', label: 'Access token', placeholder: 'EAAG...' }],
   },
   {
     service: 'facebook',
     name: 'Facebook',
     category: 'messaging',
     description: 'Page messaging, comment replies, ad insights.',
-    docsHint: 'Needs a Meta Developer App with Facebook Graph API access.',
+    docsHint: 'Paste a Page access token generated from Meta Business Suite → Graph API Explorer. Verified live on save.',
+    credentialFields: [{ key: 'page_access_token', label: 'Access token', placeholder: 'EAAG...' }],
   },
   {
     service: 'gmail',
     name: 'Gmail',
     category: 'email',
     description: 'Send/receive customer emails.',
-    docsHint: 'Needs a Google Cloud project + OAuth consent screen + Gmail API scope.',
+    docsHint: 'Blocked on a one-time setup: Umer needs to register one Google Cloud OAuth app (shared across all clients) before this can be a "Connect with Google" button. Not client-specific work.',
   },
   {
     service: 'outlook',
     name: 'Outlook',
     category: 'email',
     description: 'Send/receive customer emails via Microsoft 365.',
-    docsHint: 'Needs an Azure AD app registration with Mail.Send/Mail.Read permissions.',
+    docsHint: 'Blocked on a one-time setup: Umer needs to register one Azure AD app (shared across all clients) with Mail.Send/Mail.Read permissions.',
   },
   {
     service: 'google_calendar',
     name: 'Google Calendar',
     category: 'calendar',
     description: 'Two-way sync for appointments.',
-    docsHint: 'Needs a Google Cloud project + OAuth + Calendar API scope.',
+    docsHint: 'Same Google Cloud OAuth app as Gmail — one-time setup, then reusable across every client.',
   },
   {
     service: 'stripe',
     name: 'Stripe',
     category: 'payments',
     description: 'International card payments, subscription billing.',
-    docsHint: 'Needs a Stripe account + secret key (test or live).',
+    docsHint: 'Paste your Stripe secret key from Dashboard → Developers → API keys. Verified live on save.',
+    credentialFields: [{ key: 'secret_key', label: 'Secret key', placeholder: 'sk_live_... or sk_test_...' }],
   },
   {
     service: 'shopify',
     name: 'Shopify',
     category: 'commerce',
     description: 'Sync orders, products, and customers.',
-    docsHint: 'Needs a Shopify custom app + Admin API access token.',
+    docsHint: 'Create a custom app in Shopify Admin → Settings → Apps → Develop apps, install it, and paste the Admin API access token. Verified live on save.',
+    credentialFields: [
+      { key: 'shop_domain', label: 'Shop domain', placeholder: 'your-store.myshopify.com' },
+      { key: 'access_token', label: 'Admin API access token', placeholder: 'shpat_...' },
+    ],
   },
   {
     service: 'woocommerce',
     name: 'WooCommerce',
     category: 'commerce',
     description: 'Sync orders, products, and customers.',
-    docsHint: 'Needs REST API keys generated from the WooCommerce store admin.',
+    docsHint: 'Generate REST API keys from WooCommerce → Settings → Advanced → REST API. Verified live on save.',
+    credentialFields: [
+      { key: 'site_url', label: 'Site URL', placeholder: 'https://yourstore.com' },
+      { key: 'consumer_key', label: 'Consumer key', placeholder: 'ck_...' },
+      { key: 'consumer_secret', label: 'Consumer secret', placeholder: 'cs_...' },
+    ],
   },
   {
     service: 'pos',
     name: 'POS System',
     category: 'commerce',
     description: 'Sync in-store sales and inventory.',
-    docsHint: 'Depends on the specific POS vendor — needs their API docs + credentials.',
+    docsHint: 'Vendor-specific — tell us which POS (Foodics, Odoo, etc) and we add a real verified connector for it, same pattern as Stripe/Shopify above.',
   },
   {
     service: 'accounting',
     name: 'Accounting Software',
     category: 'productivity',
     description: 'Sync invoices and revenue (QuickBooks, Xero, etc).',
-    docsHint: 'Depends on the specific provider — needs their OAuth app credentials.',
+    docsHint: 'QuickBooks/Xero both need an OAuth app registered once (shared across clients) — tell us which one and Umer registers it.',
   },
   {
     service: 'google_drive',
@@ -116,7 +145,8 @@ export const INTEGRATIONS_CATALOG: IntegrationDef[] = [
     name: 'Slack',
     category: 'productivity',
     description: 'Internal team notifications.',
-    docsHint: 'Needs a Slack App with an Incoming Webhook or bot token.',
+    docsHint: 'Create a Slack App at api.slack.com/apps, add a Bot Token Scope, install to workspace, paste the Bot User OAuth Token. Verified live on save.',
+    credentialFields: [{ key: 'bot_token', label: 'Bot token', placeholder: 'xoxb-...' }],
   },
 ]
 
