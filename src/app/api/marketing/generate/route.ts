@@ -1,19 +1,19 @@
 import { NextResponse } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
+import { getOpenAIClient } from '@/lib/openai/client'
 import { createClient } from '@/lib/supabase/server'
-import { decryptText } from '@/lib/crypto'
 import { CLIENT_NAME, CLIENT_INDUSTRY } from '@/lib/features'
 
 // POST /api/marketing/generate — Marketing OS v2, "freemium" scope:
-// Claude (the account's own key, already paid for) writes the
-// caption/hook/hashtags; Pollinations.ai (pollinations.ai — free,
-// no API key, no account needed) generates the accompanying image
-// via a plain URL, so there's no new paid API to gate this behind.
-// Firecrawl (already configured for Competitor Intel) is used
-// best-effort for a trend angle — if it fails or isn't configured,
-// generation still proceeds without it rather than blocking.
-// Output lands as content_posts drafts — still no social platform
-// API connected, still nothing auto-published.
+// OpenAI (Scale Agency's own OPENAI_API_KEY, not a per-client key —
+// Umer's explicit instruction) writes the caption/hook/hashtags;
+// Pollinations.ai (pollinations.ai — free, no API key, no account
+// needed) generates the accompanying image via a plain URL, so
+// there's no new paid API to gate this behind. Firecrawl (already
+// configured for Competitor Intel) is used best-effort for a trend
+// angle — if it fails or isn't configured, generation still proceeds
+// without it rather than blocking. Output lands as content_posts
+// drafts — still no social platform API connected, still nothing
+// auto-published.
 
 interface ContentIdea {
   title: string
@@ -62,34 +62,35 @@ export async function POST(request: Request) {
     const platform = typeof body?.platform === 'string' && body.platform.trim() ? body.platform.trim() : 'instagram'
     const count = typeof body?.count === 'number' && body.count > 0 && body.count <= 5 ? Math.floor(body.count) : 3
 
-    const { data: aiConfig } = await supabase.from('ai_config').select('claude_api_key').eq('account_id', accountId).maybeSingle()
-    let claudeKey: string | null = null
-    if (aiConfig?.claude_api_key) {
-      try { claudeKey = decryptText(aiConfig.claude_api_key) } catch { claudeKey = null }
-    }
-    if (!claudeKey) return NextResponse.json({ error: 'No Claude API key configured — add one in Settings → AI Insights.' }, { status: 400 })
+    const openai = getOpenAIClient()
+    if (!openai) return NextResponse.json({ error: 'OPENAI_API_KEY is not configured on this deployment.' }, { status: 400 })
 
     const { data: knowledge } = await supabase.from('business_knowledge').select('category, title, content').eq('account_id', accountId).in('category', ['products', 'tone', 'pricing'])
     const knowledgeContext = (knowledge ?? []).map((k) => `[${k.category}] ${k.title}: ${k.content}`).join('\n')
 
     const trendContext = await fetchTrendContext(topic)
 
-    const anthropic = new Anthropic({ apiKey: claudeKey })
-    const res = await anthropic.messages.create({
-      model: 'claude-opus-4-8',
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
       max_tokens: 1500,
-      system: `You write short-form social content for ${CLIENT_NAME || 'a small business'}${CLIENT_INDUSTRY ? ` (${CLIENT_INDUSTRY})` : ''}. Output ONLY a JSON array, no markdown fences, no commentary — exactly ${count} objects with keys: title (short internal label), platform ("${platform}"), caption (the actual post text, 2-4 sentences, no hashtags inline), hashtags (5-8 relevant hashtags as one space-separated string starting with #), image_prompt (a vivid, concrete visual description for an image generator — no text/words in the image, describe scene/subject/style only).`,
-      messages: [{
-        role: 'user',
-        content: `Topic/angle: ${topic}${knowledgeContext ? `\n\nBusiness facts to stay accurate to:\n${knowledgeContext}` : ''}${trendContext ? `\n\nCurrent trend signals:\n${trendContext}` : ''}`,
-      }],
+      response_format: { type: 'json_object' },
+      messages: [
+        {
+          role: 'system',
+          content: `You write short-form social content for ${CLIENT_NAME || 'a small business'}${CLIENT_INDUSTRY ? ` (${CLIENT_INDUSTRY})` : ''}. Output ONLY a JSON object of the form {"ideas": [...]} with exactly ${count} objects in "ideas", no commentary — each with keys: title (short internal label), platform ("${platform}"), caption (the actual post text, 2-4 sentences, no hashtags inline), hashtags (5-8 relevant hashtags as one space-separated string starting with #), image_prompt (a vivid, concrete visual description for an image generator — no text/words in the image, describe scene/subject/style only).`,
+        },
+        {
+          role: 'user',
+          content: `Topic/angle: ${topic}${knowledgeContext ? `\n\nBusiness facts to stay accurate to:\n${knowledgeContext}` : ''}${trendContext ? `\n\nCurrent trend signals:\n${trendContext}` : ''}`,
+        },
+      ],
     })
-    const raw = res.content.filter((b): b is Anthropic.TextBlock => b.type === 'text').map((b) => b.text).join('').trim()
+    const raw = completion.choices[0]?.message?.content?.trim() ?? ''
 
     let ideas: ContentIdea[]
     try {
-      const jsonMatch = raw.match(/\[[\s\S]*\]/)
-      ideas = JSON.parse(jsonMatch ? jsonMatch[0] : raw)
+      const parsed = JSON.parse(raw)
+      ideas = Array.isArray(parsed) ? parsed : parsed.ideas
     } catch {
       return NextResponse.json({ error: 'AI returned unparseable output — try again.' }, { status: 500 })
     }
