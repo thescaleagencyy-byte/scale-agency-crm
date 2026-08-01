@@ -36,6 +36,9 @@ import {
   Plug,
   Radar,
   Sparkles,
+  FileText,
+  Wrench,
+  Phone,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
 import { hasFeature, CLIENT_NAME, CLIENT_INDUSTRY, APP_NAME } from "@/lib/features";
@@ -143,6 +146,9 @@ const ALL_NAV_GROUPS: NavGroup[] = [
       { href: "/inbox",        label: "Inbox",         icon: MessageCircle,   feature: "inbox" },
       { href: "/contacts",     label: "Contacts",      icon: Users,           feature: "contacts" },
       { href: "/leads",        label: "Leads",         icon: Target,          feature: "leads" },
+      { href: "/quotes",       label: "Quotes",        icon: FileText,        feature: "quotes" },
+      { href: "/services",     label: "Services",      icon: Wrench,          feature: "services" },
+      { href: "/voice",        label: "Voice Agent",   icon: Phone,           feature: "voice" },
       { href: "/pipelines",    label: "Pipelines",     icon: GitBranch,       feature: "pipelines" },
       { href: "/appointments", label: "Appointments",  icon: CalendarDays,    feature: "appointments" },
       { href: "/contracts",    label: "Contracts",     icon: FileSignature,   feature: "contracts" },

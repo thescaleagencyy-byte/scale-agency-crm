@@ -615,6 +615,61 @@ export interface Lead {
   updated_at: string;
 }
 
+// ============================================================
+// Voice calls (n8n/voice/call-log endpoint + voice page)
+// ============================================================
+
+export interface VoiceCall {
+  id: string;
+  account_id: string;
+  vapi_call_id: string;
+  contact_id: string | null;
+  customer_phone: string | null;
+  customer_name: string | null;
+  call_type: string | null;
+  language_used: string | null;
+  resolved: boolean | null;
+  escalated_to_ops: boolean | null;
+  summary: string | null;
+  transcript: string | null;
+  recording_url: string | null;
+  ended_reason: string | null;
+  duration_seconds: number | null;
+  cost_usd: number | null;
+  started_at: string | null;
+  ended_at: string | null;
+  created_at: string;
+}
+
+// ============================================================
+// Quotes (n8n/quote endpoint + quotes page)
+// ============================================================
+
+export interface Quote {
+  id: string;
+  account_id: string;
+  customer_name: string | null;
+  customer_phone: string | null;
+  company: string | null;
+  email_subject: string | null;
+  sender_email: string | null;
+  pdf_filename: string | null;
+  pdf_path: string | null;
+  status: 'received' | 'sent' | 'failed' | 'no_number';
+  wa_message_id: string | null;
+  media_id: string | null;
+  error_detail: string | null;
+  contact_id: string | null;
+  conversation_id: string | null;
+  // Real outcome from Meta's async status webhook — null until it
+  // arrives. `status: 'sent'` alone only means the API call was
+  // accepted, not that the message reached anyone.
+  delivery_status: 'sent' | 'delivered' | 'read' | 'failed' | null;
+  delivery_status_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface LeadNote {
   id: string;
   lead_id: string;
