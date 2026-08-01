@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import type { Conversation, ConversationStatus } from "@/types";
-import { Search, AlertCircle, Inbox as InboxIcon } from "lucide-react";
+import { Search, Inbox as InboxIcon } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -270,13 +270,6 @@ function ConversationItem({
       })
     : "";
 
-  const slaBreached = conversation.sla_deadline_at
-    && conversation.status !== 'closed'
-    && new Date(conversation.sla_deadline_at) < new Date();
-  const slaUrgent = !slaBreached && conversation.sla_deadline_at
-    && conversation.status !== 'closed'
-    && (new Date(conversation.sla_deadline_at).getTime() - Date.now()) < 30 * 60 * 1000; // < 30 min
-
   return (
     <button
       onClick={handleClick}
@@ -311,12 +304,6 @@ function ConversationItem({
             {conversation.last_message_text || "No messages yet"}
           </p>
           <div className="flex shrink-0 items-center gap-1.5">
-            {slaBreached && (
-              <span title="SLA breached"><AlertCircle className="h-3.5 w-3.5 text-red-500" /></span>
-            )}
-            {slaUrgent && !slaBreached && (
-              <span title="SLA due soon"><AlertCircle className="h-3.5 w-3.5 text-amber-400" /></span>
-            )}
             {conversation.unread_count > 0 && (
               <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
                 {conversation.unread_count}
