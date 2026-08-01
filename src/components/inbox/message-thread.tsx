@@ -857,6 +857,33 @@ export function MessageThread({
     return () => { supabase.removeChannel(channel); };
   }, [conversation?.id, user?.id]);
 
+  // Auto-assign: the first agent to open an unclaimed conversation becomes
+  // its owner, so ownership doesn't depend on someone remembering to click
+  // Assign. The `.is("assigned_agent_id", null)` guard makes the claim
+  // atomic at the DB row level — if two agents open the same unassigned
+  // conversation at once, only the first UPDATE matches and wins; the
+  // loser's write is a no-op instead of clobbering the winner.
+  useEffect(() => {
+    if (!conversation?.id || !user?.id) return;
+    if (conversation.assigned_agent_id) return;
+
+    const supabase = createClient();
+    const conversationId = conversation.id;
+    const agentId = user.id;
+    supabase
+      .from("conversations")
+      .update({ assigned_agent_id: agentId })
+      .eq("id", conversationId)
+      .is("assigned_agent_id", null)
+      .then(({ error }) => {
+        if (error) {
+          console.error("Failed to auto-assign conversation:", error);
+          return;
+        }
+        onAssignChange(conversationId, agentId);
+      });
+  }, [conversation?.id, conversation?.assigned_agent_id, user?.id, onAssignChange]);
+
   // Empty state — same WhatsApp-style doodle background as the active
   // thread below, so swapping between empty/selected doesn't change the
   // pattern under the user's eye.

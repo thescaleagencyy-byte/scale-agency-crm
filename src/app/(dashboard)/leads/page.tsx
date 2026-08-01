@@ -57,6 +57,23 @@ export default function LeadsPage() {
   const [reminderLead, setReminderLead] = useState<Lead | null>(null);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
+  // "Assigned to" comes from the linked conversation, not the lead row
+  // itself — leads have no assignee column of their own, they inherit
+  // whoever owns the conversation (see auto-assign in message-thread.tsx).
+  const [agentNameByUserId, setAgentNameByUserId] = useState<Record<string, string>>({});
+  const [assigneeByConversationId, setAssigneeByConversationId] = useState<Record<string, string | null>>({});
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase
+      .from('profiles')
+      .select('user_id, full_name')
+      .then(({ data, error }) => {
+        if (error) { console.error('Failed to load profiles:', error); return; }
+        setAgentNameByUserId(Object.fromEntries((data ?? []).map(p => [p.user_id, p.full_name])));
+      });
+  }, []);
+
   // Debounce: search fires a Supabase query per change; typing "ahmed"
   // shouldn't issue five queries. 300ms after the last keystroke.
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -100,6 +117,24 @@ export default function LeadsPage() {
   }, [page, debouncedSearch, filterStatus]);
 
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    const conversationIds = Array.from(
+      new Set(leads.map(l => l.conversation_id).filter((id): id is string => !!id))
+    );
+    if (conversationIds.length === 0) { setAssigneeByConversationId({}); return; }
+    const supabase = createClient();
+    supabase
+      .from('conversations')
+      .select('id, assigned_agent_id')
+      .in('id', conversationIds)
+      .then(({ data, error }) => {
+        if (error) { console.error('Failed to load conversation assignees:', error); return; }
+        setAssigneeByConversationId(
+          Object.fromEntries((data ?? []).map(c => [c.id, c.assigned_agent_id ?? null]))
+        );
+      });
+  }, [leads]);
 
   async function updateStatus(id: string, status: LeadStatus) {
     setUpdating(id);
@@ -228,6 +263,7 @@ export default function LeadsPage() {
                 <TableHead className="text-muted-foreground">Company</TableHead>
                 <TableHead className="text-muted-foreground">Source</TableHead>
                 <TableHead className="text-muted-foreground">Score</TableHead>
+                <TableHead className="text-muted-foreground">Assigned to</TableHead>
                 <TableHead className="text-muted-foreground">Status</TableHead>
                 <TableHead className="text-muted-foreground">Date</TableHead>
                 <TableHead />
@@ -266,6 +302,22 @@ export default function LeadsPage() {
                     ) : <span className="text-muted-foreground">—</span>}
                   </TableCell>
                   <TableCell><ScoreBadge score={lead.score ?? 0} /></TableCell>
+                  <TableCell>
+                    {(() => {
+                      const agentUserId = lead.conversation_id
+                        ? assigneeByConversationId[lead.conversation_id]
+                        : null;
+                      const agentName = agentUserId ? agentNameByUserId[agentUserId] : null;
+                      return agentName ? (
+                        <div className="flex items-center gap-2">
+                          <AvatarStack avatars={[{ label: agentName }]} size="sm" />
+                          <span className="text-sm text-foreground">{agentName}</span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Unassigned</span>
+                      );
+                    })()}
+                  </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1.5">
                       <Badge variant="outline" className={`text-xs ${STATUS_CLASS[lead.status] ?? ''}`}>
