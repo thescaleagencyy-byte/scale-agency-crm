@@ -1,5 +1,6 @@
 "use client"
 
+import Image from 'next/image'
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
@@ -258,23 +259,29 @@ export default function DashboardPage() {
                   'repeating-linear-gradient(135deg, var(--primary) 0 10px, transparent 10px 20px)',
               }}
             />
-            {/* Crane silhouette watermark */}
-            <svg
+            {/* Real fleet photos, not stock/decorative — the actual
+                equipment this account rents. Right-aligned, behind the
+                text layer (z-10 on the text wrapper below wins), full
+                opacity per the 07-14 pass (a watermark-level SVG read
+                as "template", not "our fleet"). Transporter sits
+                slightly forward/larger, forklift tucked behind-left so
+                they don't overlap. */}
+            <Image
+              src="/clients/ashwheelz-fleet/transporter.png"
+              alt=""
               aria-hidden
-              viewBox="0 0 120 100"
-              className="pointer-events-none absolute -bottom-2 right-6 hidden h-28 w-auto text-primary opacity-[0.07] sm:block"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M20 96V20h72" />
-              <path d="M36 20L20 40M52 20L32 44M68 20L48 44M84 20v18" />
-              <path d="M84 38a7 7 0 1 0 0 .1" />
-              <path d="M8 96h48" />
-              <path d="M14 20h12" />
-            </svg>
+              width={240}
+              height={160}
+              className="pointer-events-none absolute -bottom-2 right-2 hidden h-24 w-auto object-contain sm:block"
+            />
+            <Image
+              src="/clients/ashwheelz-fleet/forklift.png"
+              alt=""
+              aria-hidden
+              width={200}
+              height={160}
+              className="pointer-events-none absolute -bottom-2 right-32 hidden h-20 w-auto object-contain opacity-90 sm:block"
+            />
           </>
         ) : (
           <div
