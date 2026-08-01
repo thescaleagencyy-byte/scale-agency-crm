@@ -274,7 +274,7 @@ export default function DashboardPage() {
               aria-hidden
               width={240}
               height={160}
-              className="pointer-events-none absolute -bottom-2 right-2 hidden h-14 w-auto object-contain sm:block"
+              className="pointer-events-none absolute bottom-1 right-2 hidden h-14 w-auto object-contain sm:block"
             />
             <Image
               src="/clients/ashwheelz-fleet/forklift.png"
@@ -282,7 +282,7 @@ export default function DashboardPage() {
               aria-hidden
               width={200}
               height={160}
-              className="pointer-events-none absolute -bottom-2 right-28 hidden h-14 w-auto object-contain sm:block"
+              className="pointer-events-none absolute bottom-1 right-28 hidden h-14 w-auto object-contain sm:block"
             />
           </>
         ) : (
