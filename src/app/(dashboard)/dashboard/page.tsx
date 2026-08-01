@@ -231,7 +231,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-5">
       {/* Branded hero */}
-      <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-card via-card to-primary/[0.06] px-6 py-7 sm:px-8">
+      <div className={`relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-card via-card to-primary/[0.06] px-6 pt-7 sm:px-8 ${RENTAL_INDUSTRY ? 'pb-7 sm:pb-20' : 'pb-7'}`}>
         {/* Glow orbs */}
         <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-primary opacity-[0.10] blur-[90px]" />
         <div className="pointer-events-none absolute -bottom-12 left-1/4 h-40 w-64 rounded-full bg-primary opacity-[0.06] blur-[70px]" />
@@ -274,7 +274,7 @@ export default function DashboardPage() {
               aria-hidden
               width={240}
               height={160}
-              className="pointer-events-none absolute bottom-1 right-2 hidden h-14 w-auto object-contain sm:block"
+              className="pointer-events-none absolute bottom-2 right-2 hidden h-16 w-auto object-contain sm:block"
             />
             <Image
               src="/clients/ashwheelz-fleet/forklift.png"
@@ -282,7 +282,7 @@ export default function DashboardPage() {
               aria-hidden
               width={200}
               height={160}
-              className="pointer-events-none absolute bottom-1 right-28 hidden h-14 w-auto object-contain sm:block"
+              className="pointer-events-none absolute bottom-2 right-32 hidden h-16 w-auto object-contain sm:block"
             />
           </>
         ) : (
