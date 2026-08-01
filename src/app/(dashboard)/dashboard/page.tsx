@@ -263,16 +263,18 @@ export default function DashboardPage() {
                 equipment this account rents. Right-aligned, behind the
                 text layer (z-10 on the text wrapper below wins), full
                 opacity per the 07-14 pass (a watermark-level SVG read
-                as "template", not "our fleet"). Transporter sits
-                slightly forward/larger, forklift tucked behind-left so
-                they don't overlap. */}
+                as "template", not "our fleet"). Same height for both
+                so the pair reads as one consistent row, not two random
+                sizes — source images have different aspect ratios
+                (forklift 717x385, transporter 407x283) so widths differ
+                naturally even at a matched height. */}
             <Image
               src="/clients/ashwheelz-fleet/transporter.png"
               alt=""
               aria-hidden
               width={240}
               height={160}
-              className="pointer-events-none absolute -bottom-2 right-2 hidden h-24 w-auto object-contain sm:block"
+              className="pointer-events-none absolute -bottom-2 right-2 hidden h-20 w-auto object-contain sm:block"
             />
             <Image
               src="/clients/ashwheelz-fleet/forklift.png"
@@ -280,7 +282,7 @@ export default function DashboardPage() {
               aria-hidden
               width={200}
               height={160}
-              className="pointer-events-none absolute -bottom-2 right-32 hidden h-20 w-auto object-contain opacity-90 sm:block"
+              className="pointer-events-none absolute -bottom-2 right-28 hidden h-20 w-auto object-contain sm:block"
             />
           </>
         ) : (
