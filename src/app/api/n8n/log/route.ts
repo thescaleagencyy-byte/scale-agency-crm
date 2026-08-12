@@ -23,6 +23,13 @@ import { encryptContent } from '@/lib/crypto'
  *                             recently updated connected config" when
  *                             omitted, for callers not yet updated.
  *   sender_type     string? — 'agent' (default) or 'customer'
+ *   timestamp       string? — original WhatsApp message epoch seconds
+ *                             (Meta's messages[].timestamp). When given,
+ *                             used as the row's created_at instead of
+ *                             insert time — inbound and outbound logs
+ *                             race independently to hit this endpoint,
+ *                             so insert order alone doesn't reflect real
+ *                             chronological order.
  */
 export async function POST(request: Request) {
   const apiKey = request.headers.get('x-n8n-api-key')
@@ -40,6 +47,7 @@ export async function POST(request: Request) {
     message?: string
     phone_number_id?: string
     sender_type?: 'agent' | 'customer'
+    timestamp?: string | number
   }
   try {
     body = await request.json()
@@ -132,6 +140,12 @@ export async function POST(request: Request) {
 
   const messageText = body.message.trim()
 
+  const timestampSeconds = Number(body.timestamp)
+  const createdAt =
+    Number.isFinite(timestampSeconds) && timestampSeconds > 0
+      ? new Date(timestampSeconds * 1000).toISOString()
+      : undefined
+
   const { data: msg, error: msgErr } = await admin
     .from('messages')
     .insert({
@@ -141,6 +155,7 @@ export async function POST(request: Request) {
       content_text: encryptContent(messageText),
       status: 'sent',
       is_automated: senderType === 'agent',
+      ...(createdAt ? { created_at: createdAt } : {}),
     })
     .select('id')
     .single()
