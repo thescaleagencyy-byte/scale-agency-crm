@@ -12,7 +12,7 @@ import {
   handleTemplateWebhookChange,
   isTemplateWebhookField,
 } from '@/lib/whatsapp/template-webhook'
-import { getAllN8nWebhookUrls } from '@/app/api/n8n/config/route'
+import { getN8nWebhookUrlsForPhoneNumberIds } from '@/app/api/n8n/config/route'
 
 // Lazy-initialized to avoid build-time crash when env vars are missing
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -215,7 +215,7 @@ export async function POST(request: Request) {
   // 200 response and the async work is silently dropped.
   after(async () => {
     await Promise.allSettled([
-      forwardToN8n(rawBody).catch((err) => {
+      forwardToN8n(rawBody, body).catch((err) => {
         console.error('[n8n forward] failed:', err)
       }),
       processWebhook(body).catch((error) => {
@@ -227,8 +227,17 @@ export async function POST(request: Request) {
   return NextResponse.json({ status: 'received' }, { status: 200 })
 }
 
-async function forwardToN8n(rawBody: string) {
-  const urls = await getAllN8nWebhookUrls()
+async function forwardToN8n(rawBody: string, body: { entry?: WhatsAppWebhookEntry[] }) {
+  const phoneNumberIds = new Set<string>()
+  for (const entry of body.entry ?? []) {
+    for (const change of entry.changes ?? []) {
+      const phoneNumberId = change.value?.metadata?.phone_number_id
+      if (phoneNumberId) phoneNumberIds.add(phoneNumberId)
+    }
+  }
+  if (phoneNumberIds.size === 0) return
+
+  const urls = await getN8nWebhookUrlsForPhoneNumberIds([...phoneNumberIds])
   await Promise.allSettled(
     urls.map((url) =>
       fetch(url, {

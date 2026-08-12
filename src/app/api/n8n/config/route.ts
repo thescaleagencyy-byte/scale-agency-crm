@@ -154,17 +154,39 @@ export async function DELETE() {
 }
 
 /**
- * Exported for use by the webhook forwarder — fetches all n8n webhook
- * URLs across all accounts without an auth check (server-only).
+ * Exported for use by the webhook forwarder — resolves only the n8n
+ * webhook URL(s) for the account(s) that own the given WABA
+ * phone_number_id(s), without an auth check (server-only).
+ *
+ * Previously this returned every account's webhook_url unconditionally,
+ * so every inbound Meta payload was broadcast to every connected
+ * client's n8n instance regardless of which number it was for — a
+ * cross-tenant leak of raw customer message content. Scoping by
+ * phone_number_id matches the tenancy key /api/whatsapp/webhook and
+ * /api/n8n/lead already use.
  */
-export async function getAllN8nWebhookUrls(): Promise<string[]> {
+export async function getN8nWebhookUrlsForPhoneNumberIds(
+  phoneNumberIds: string[],
+): Promise<string[]> {
+  if (!phoneNumberIds.length) return []
   const admin = supabaseAdmin()
+
+  const { data: configs, error: configError } = await admin
+    .from('whatsapp_config')
+    .select('account_id')
+    .in('phone_number_id', phoneNumberIds)
+    .eq('status', 'connected')
+  if (configError || !configs?.length) return []
+
+  const accountIds = [...new Set(configs.map((c: { account_id: string }) => c.account_id))]
+
   const { data, error } = await admin
     .from('n8n_config')
     .select('webhook_url')
+    .in('account_id', accountIds)
     .not('webhook_url', 'is', null)
   if (error || !data) return []
-  return data.map((r: { webhook_url: string }) => r.webhook_url).filter(Boolean)
+  return [...new Set(data.map((r: { webhook_url: string }) => r.webhook_url).filter(Boolean))]
 }
 
 /**
