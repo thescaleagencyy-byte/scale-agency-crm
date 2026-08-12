@@ -9,6 +9,7 @@ import { formatDistanceToNow } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { useBrandLogo } from "@/hooks/use-brand-logo";
 
 interface ConversationListProps {
   activeConversationId: string | null;
@@ -259,6 +260,8 @@ function ConversationItem({
   const contact = conversation.contact;
   const displayName = contact?.name || contact?.phone || "Unknown";
   const initials = displayName.charAt(0).toUpperCase();
+  const brandLogo = useBrandLogo();
+  const avatarSrc = contact?.avatar_url || brandLogo;
 
   const handleClick = useCallback(() => {
     onSelect(conversation);
@@ -280,9 +283,9 @@ function ConversationItem({
     >
       {/* Avatar */}
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-medium text-foreground">
-        {contact?.avatar_url ? (
+        {avatarSrc ? (
           <img
-            src={contact.avatar_url}
+            src={avatarSrc}
             alt={displayName}
             className="h-10 w-10 rounded-full object-cover"
           />

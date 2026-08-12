@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
 import { ConversationNotes } from "./conversation-notes";
+import { useBrandLogo } from "@/hooks/use-brand-logo";
 import type { ComponentType } from "react";
 
 interface ContactSidebarProps {
@@ -30,6 +31,7 @@ interface ContactSidebarProps {
 
 export function ContactSidebar({ contact, conversationId }: ContactSidebarProps) {
   const { accountId } = useAuth();
+  const brandLogo = useBrandLogo();
   const [activeTab, setActiveTab] = useState<'info' | 'notes'>('info');
   const [copied, setCopied] = useState(false);
   const [deals, setDeals] = useState<Deal[]>([]);
@@ -167,9 +169,9 @@ export function ContactSidebar({ contact, conversationId }: ContactSidebarProps)
           {/* Contact Info */}
           <div className="flex flex-col items-center text-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-lg font-semibold text-primary ring-1 ring-primary/15">
-              {contact.avatar_url ? (
+              {(contact.avatar_url || brandLogo) ? (
                 <img
-                  src={contact.avatar_url}
+                  src={contact.avatar_url || brandLogo!}
                   alt={displayName}
                   className="h-16 w-16 rounded-full object-cover"
                 />
