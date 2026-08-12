@@ -11,6 +11,7 @@ import { scoreLead } from '@/lib/leads/score'
  * Auth: x-n8n-api-key header must match N8N_SEND_API_KEY env var.
  *
  * Body:
+ *   phone_number_id string  — WABA phone_number_id the n8n workflow is bound to; resolves tenant
  *   customer_phone  string  — recipient phone
  *   customer_name   string? — name from WhatsApp profile
  *   service_type    string? — equipment/service needed
@@ -32,6 +33,7 @@ export async function POST(request: Request) {
   }
 
   let body: {
+    phone_number_id?: string
     customer_phone?: string
     customer_name?: string
     service_type?: string
@@ -50,19 +52,34 @@ export async function POST(request: Request) {
   if (!body.customer_phone?.trim()) {
     return NextResponse.json({ error: 'customer_phone is required' }, { status: 400 })
   }
+  if (!body.phone_number_id?.trim()) {
+    return NextResponse.json({ error: 'phone_number_id is required' }, { status: 400 })
+  }
 
   const admin = supabaseAdmin()
 
-  // Resolve account
-  const { data: configs } = await admin
+  // Resolve account by the WABA phone_number_id the sending bot is bound to —
+  // same tenancy key /api/whatsapp/webhook uses. Picking "most recently
+  // updated connected config" instead would let any client's config touch
+  // (reconnect, token refresh) silently steal another tenant's leads.
+  const { data: configRows, error: configError } = await admin
     .from('whatsapp_config')
-    .select('account_id, updated_at, created_at')
+    .select('account_id')
+    .eq('phone_number_id', body.phone_number_id.trim())
     .eq('status', 'connected')
-  if (!configs?.length) {
-    return NextResponse.json({ error: 'No active WhatsApp config.' }, { status: 404 })
+
+  if (configError) {
+    console.error('[n8n/lead] config fetch failed:', configError)
+    return NextResponse.json({ error: 'Failed to resolve account.' }, { status: 500 })
   }
-  configs.sort((a, b) => ((b.updated_at ?? b.created_at) > (a.updated_at ?? a.created_at) ? 1 : -1))
-  const accountId = configs[0].account_id
+  if (!configRows?.length) {
+    return NextResponse.json({ error: 'No connected WhatsApp config for phone_number_id.' }, { status: 404 })
+  }
+  if (configRows.length > 1) {
+    console.error('[n8n/lead] multiple configs for phone_number_id:', body.phone_number_id, configRows)
+    return NextResponse.json({ error: 'Ambiguous account for phone_number_id.' }, { status: 409 })
+  }
+  const accountId = configRows[0].account_id
 
   // Resolve contact + conversation IDs (best-effort, don't block on failure)
   const normalizedPhone = normalizePhone(body.customer_phone.trim())
