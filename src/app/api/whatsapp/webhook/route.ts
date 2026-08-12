@@ -213,15 +213,20 @@ export async function POST(request: Request) {
   // Use after() so Vercel keeps the function alive until both tasks
   // complete — without it the runtime terminates immediately after the
   // 200 response and the async work is silently dropped.
+  //
+  // processWebhook must finish (and log the customer's inbound message)
+  // BEFORE forwardToN8n fires. They used to run in parallel via
+  // Promise.allSettled, which let n8n's AI-reply round-trip win the race
+  // and insert the bot's reply row before the customer's own message row
+  // existed — since the inbox sorts by created_at, the bot reply rendered
+  // above the message it was replying to.
   after(async () => {
-    await Promise.allSettled([
-      forwardToN8n(rawBody, body).catch((err) => {
-        console.error('[n8n forward] failed:', err)
-      }),
-      processWebhook(body).catch((error) => {
-        console.error('Error processing webhook:', error)
-      }),
-    ])
+    await processWebhook(body).catch((error) => {
+      console.error('Error processing webhook:', error)
+    })
+    await forwardToN8n(rawBody, body).catch((err) => {
+      console.error('[n8n forward] failed:', err)
+    })
   })
 
   return NextResponse.json({ status: 'received' }, { status: 200 })
