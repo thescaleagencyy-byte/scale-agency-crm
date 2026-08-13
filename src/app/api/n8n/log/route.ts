@@ -46,6 +46,16 @@ import { encryptContent } from '@/lib/crypto'
  *                             resolving it in the UI.
  *   is_lead         boolean? — true marks the conversation a qualified
  *                             lead. One-way, same as is_escalated.
+ *   referral        object?  — Meta's Click-to-WhatsApp ad referral
+ *                             object (source_url, source_id, headline,
+ *                             ctwa_clid, ...), forwarded verbatim from
+ *                             the n8n WhatsApp trigger's raw webhook
+ *                             payload (messages[0].referral). Mirrors
+ *                             /api/whatsapp/webhook's native-path
+ *                             capture: applied only when this call
+ *                             creates a brand-new conversation, since
+ *                             that's the only message that can
+ *                             plausibly carry ad referral data.
  */
 export async function POST(request: Request) {
   const apiKey = request.headers.get('x-n8n-api-key')
@@ -67,6 +77,13 @@ export async function POST(request: Request) {
     status?: string
     is_escalated?: boolean
     is_lead?: boolean
+    referral?: {
+      source_url?: string
+      source_id?: string
+      headline?: string
+      ctwa_clid?: string
+      [key: string]: unknown
+    }
   }
   try {
     body = await request.json()
@@ -139,7 +156,17 @@ export async function POST(request: Request) {
       .maybeSingle()
     conversationId = conv?.id ?? null
   } else {
-    // Auto-create contact + conversation
+    // Auto-create contact + conversation. Build the same adFields
+    // shape /api/whatsapp/webhook's native path uses, from the
+    // referral object n8n forwards off the raw Meta webhook payload.
+    const adFields: Record<string, string | object | null> = {}
+    if (body.referral) {
+      adFields.ad_source_url = body.referral.source_url ?? null
+      adFields.ad_source_id = body.referral.source_id ?? null
+      adFields.ad_headline = body.referral.headline ?? null
+      adFields.ad_ctwa_clid = body.referral.ctwa_clid ?? null
+      adFields.referral_data = body.referral
+    }
     const { data: newContact } = await admin
       .from('contacts')
       .insert({ account_id: accountId, user_id: userId, phone: normalizedPhone, name: normalizedPhone })
@@ -148,7 +175,7 @@ export async function POST(request: Request) {
     if (newContact) {
       const { data: newConv } = await admin
         .from('conversations')
-        .insert({ account_id: accountId, user_id: userId, contact_id: newContact.id })
+        .insert({ account_id: accountId, user_id: userId, contact_id: newContact.id, ...adFields })
         .select('id')
         .single()
       conversationId = newConv?.id ?? null
