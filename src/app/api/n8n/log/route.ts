@@ -30,6 +30,12 @@ import { encryptContent } from '@/lib/crypto'
  *                             race independently to hit this endpoint,
  *                             so insert order alone doesn't reflect real
  *                             chronological order.
+ *   status          string? — 'open' | 'pending' | 'closed'. When given,
+ *                             sets the conversation's status (e.g. a bot
+ *                             marking a conversation 'pending' on human
+ *                             handoff). Omit to leave status untouched —
+ *                             most calls (routine bot replies) shouldn't
+ *                             touch it.
  */
 export async function POST(request: Request) {
   const apiKey = request.headers.get('x-n8n-api-key')
@@ -48,6 +54,7 @@ export async function POST(request: Request) {
     phone_number_id?: string
     sender_type?: 'agent' | 'customer'
     timestamp?: string | number
+    status?: string
   }
   try {
     body = await request.json()
@@ -62,6 +69,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'message is required' }, { status: 400 })
   }
   const senderType = body.sender_type === 'customer' ? 'customer' : 'agent'
+  const VALID_STATUSES = ['open', 'pending', 'closed'] as const
+  const requestedStatus = VALID_STATUSES.find((s) => s === body.status)
 
   const admin = supabaseAdmin()
 
@@ -146,6 +155,20 @@ export async function POST(request: Request) {
       ? new Date(timestampSeconds * 1000).toISOString()
       : undefined
 
+  // Mirrors the isFirstInboundMessage check in /api/whatsapp/webhook:
+  // computed before insert so the count is accurate. A customer message
+  // beyond their first is a genuine reply, not just the opening
+  // ad-triggered greeting — surfaced in the inbox list as has_customer_replied.
+  let isReplyFromCustomer = false
+  if (senderType === 'customer') {
+    const { count: priorCustomerMsgCount } = await admin
+      .from('messages')
+      .select('id', { count: 'exact', head: true })
+      .eq('conversation_id', conversationId)
+      .eq('sender_type', 'customer')
+    isReplyFromCustomer = (priorCustomerMsgCount ?? 0) > 0
+  }
+
   const { data: msg, error: msgErr } = await admin
     .from('messages')
     .insert({
@@ -171,6 +194,8 @@ export async function POST(request: Request) {
       last_message_text: messageText,
       last_message_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      ...(isReplyFromCustomer ? { has_customer_replied: true } : {}),
+      ...(requestedStatus ? { status: requestedStatus } : {}),
     })
     .eq('id', conversationId)
 

@@ -157,6 +157,8 @@ export interface Conversation {
   updated_at: string;
   first_agent_reply_at?: string | null;
   sla_deadline_at?: string | null;
+  /** True once the contact has sent a message beyond their first inbound — a genuine reply, not just the opening ad-triggered greeting. */
+  has_customer_replied: boolean;
   contact?: Contact;
 }
 
