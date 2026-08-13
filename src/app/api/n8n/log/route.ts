@@ -56,6 +56,25 @@ import { encryptContent } from '@/lib/crypto'
  *                             creates a brand-new conversation, since
  *                             that's the only message that can
  *                             plausibly carry ad referral data.
+ *   message_type    string? — WhatsApp message type ('image', 'video',
+ *                             'audio', 'document', 'sticker', etc).
+ *                             Determines the row's content_type; omit
+ *                             (or 'text') to log a plain text message.
+ *                             The n8n bot already sends this on every
+ *                             call — was previously ignored here,
+ *                             which meant every inbound voice note /
+ *                             photo / video from n8n-routed tenants
+ *                             got stored as content_type='text' with
+ *                             just an emoji label, so the inbox never
+ *                             rendered a real player for it.
+ *   media_id        string? — Meta media id for image/video/audio/
+ *                             document messages. Combined with
+ *                             message_type to set media_url to
+ *                             /api/whatsapp/media/{id} — the same
+ *                             authenticated proxy route the native
+ *                             webhook path already uses, so playback
+ *                             works identically regardless of which
+ *                             path received the message.
  */
 export async function POST(request: Request) {
   const apiKey = request.headers.get('x-n8n-api-key')
@@ -77,6 +96,8 @@ export async function POST(request: Request) {
     status?: string
     is_escalated?: boolean
     is_lead?: boolean
+    message_type?: string
+    media_id?: string
     referral?: {
       source_url?: string
       source_id?: string
@@ -188,6 +209,26 @@ export async function POST(request: Request) {
 
   const messageText = body.message.trim()
 
+  // WhatsApp's 'sticker' and legacy 'button' types have no dedicated
+  // slot in this schema's ContentType — sticker renders fine as an
+  // image (both are just a static image to the bubble), button as
+  // interactive (same "tap reply" affordance as a real interactive
+  // message).
+  const CONTENT_TYPE_MAP: Record<string, string> = {
+    image: 'image',
+    sticker: 'image',
+    video: 'video',
+    audio: 'audio',
+    document: 'document',
+    interactive: 'interactive',
+    button: 'interactive',
+  }
+  const contentType = CONTENT_TYPE_MAP[body.message_type ?? ''] ?? 'text'
+  const mediaUrl =
+    body.media_id?.trim() && contentType !== 'text' && contentType !== 'interactive'
+      ? `/api/whatsapp/media/${body.media_id.trim()}`
+      : null
+
   const timestampSeconds = Number(body.timestamp)
   const createdAt =
     Number.isFinite(timestampSeconds) && timestampSeconds > 0
@@ -213,8 +254,9 @@ export async function POST(request: Request) {
     .insert({
       conversation_id: conversationId,
       sender_type: senderType,
-      content_type: 'text',
+      content_type: contentType,
       content_text: encryptContent(messageText),
+      ...(mediaUrl ? { media_url: mediaUrl } : {}),
       status: 'sent',
       is_automated: senderType === 'agent',
       ...(createdAt ? { created_at: createdAt } : {}),
