@@ -95,3 +95,31 @@ export interface ActivityItem {
   /** Optional deep-link for the whole row (not all items have a target). */
   href?: string
 }
+
+export interface MetaAdsCampaignRow {
+  campaignId: string
+  campaignName: string
+  spend: number
+  impressions: number
+  clicks: number
+  /** Click-through rate as a fraction (0.031 = 3.1%), null when impressions is 0. */
+  ctr: number | null
+  /** Conversations that started from this campaign's ads (ad_source_id match). */
+  adConversations: number
+  qualifiedLeads: number
+  /** null when qualifiedLeads is 0 — never render a misleading $0.00. */
+  costPerQualifiedLead: number | null
+  wonValue: number
+  /** null when spend or wonValue is 0 — ROAS is structurally sparse until enough linked won-deals accumulate. */
+  roas: number | null
+  currency: string
+}
+
+export interface MetaAdsPerformance {
+  campaigns: MetaAdsCampaignRow[]
+  totalSpend: number
+  totalQualifiedLeads: number
+  /** null when totalQualifiedLeads is 0. */
+  costPerQualifiedLead: number | null
+  currency: string
+}

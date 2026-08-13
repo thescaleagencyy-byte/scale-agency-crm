@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { INTEGRATIONS_CATALOG } from '@/lib/integrations-catalog'
+import { hasFeature } from '@/lib/features'
 
 // GET /api/integrations — real status per service for the caller's
 // account. WhatsApp/n8n status comes from their existing real config
@@ -32,7 +33,9 @@ export async function GET() {
 
     const rowByService = new Map((integrationsRes.data ?? []).map((r) => [r.service, r]))
 
-    const result = INTEGRATIONS_CATALOG.map((def) => {
+    const result = INTEGRATIONS_CATALOG
+      .filter((def) => !def.featureKey || hasFeature(def.featureKey))
+      .map((def) => {
       if (def.service === 'whatsapp') {
         return { ...def, status: whatsappRes.data?.status === 'connected' ? 'connected' : 'not_connected', connected_at: null, last_error: null }
       }

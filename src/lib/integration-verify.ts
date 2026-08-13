@@ -70,6 +70,27 @@ async function verifyMetaGraphToken(fields: Record<string, string>): Promise<Ver
   return { ok: true, meta: { page: data.name } }
 }
 
+async function verifyMetaAdsToken(fields: Record<string, string>): Promise<VerifyResult> {
+  const adAccountId = fields.ad_account_id?.trim()
+  const token = fields.access_token?.trim()
+  if (!adAccountId || !token) return { ok: false, error: 'Ad account ID and access token are both required.' }
+  const res = await fetch(
+    `https://graph.facebook.com/v21.0/act_${adAccountId}?fields=name,account_status,currency&access_token=${encodeURIComponent(token)}`,
+  )
+  const data = await res.json()
+  if (data.error) {
+    // Error #200 specifically means the token's system user isn't
+    // assigned to this ad account, or lacks ads_read — the most
+    // common failure mode here, worth a specific message rather than
+    // the generic passthrough every other verifier uses.
+    if (data.error.code === 200) {
+      return { ok: false, error: "Meta rejected the token: this token's system user isn't assigned to this ad account, or lacks ads_read." }
+    }
+    return { ok: false, error: `Meta rejected the token: ${data.error.message}.` }
+  }
+  return { ok: true, meta: { adAccountName: data.name, accountStatus: data.account_status, currency: data.currency } }
+}
+
 // Service key → verifier. Services not listed here have no
 // no-OAuth-app way to verify a live connection, so they stay
 // 'pending' after saving — an honest state, not a broken one.
@@ -80,4 +101,5 @@ export const VERIFIERS: Record<string, (fields: Record<string, string>) => Promi
   slack: verifySlack,
   facebook: verifyMetaGraphToken,
   instagram: verifyMetaGraphToken,
+  meta_ads: verifyMetaAdsToken,
 }
