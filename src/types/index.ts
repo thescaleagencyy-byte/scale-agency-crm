@@ -159,6 +159,8 @@ export interface Conversation {
   sla_deadline_at?: string | null;
   /** True once the contact has sent a message beyond their first inbound — a genuine reply, not just the opening ad-triggered greeting. */
   has_customer_replied: boolean;
+  /** True once a bot has escalated this conversation to a human. Decoupled from `status` so it doesn't collide with manual Open/Pending/Closed triage. */
+  is_escalated: boolean;
   contact?: Contact;
 }
 

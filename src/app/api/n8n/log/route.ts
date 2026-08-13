@@ -36,6 +36,14 @@ import { encryptContent } from '@/lib/crypto'
  *                             handoff). Omit to leave status untouched —
  *                             most calls (routine bot replies) shouldn't
  *                             touch it.
+ *   is_escalated    boolean? — true marks the conversation escalated,
+ *                             surfaced in the inbox's dedicated
+ *                             Escalations filter. Deliberately separate
+ *                             from `status` so a bot escalation never
+ *                             collides with an admin's own manual
+ *                             Open/Pending/Closed triage. One-way: only
+ *                             ever set to true here, cleared by an admin
+ *                             resolving it in the UI.
  */
 export async function POST(request: Request) {
   const apiKey = request.headers.get('x-n8n-api-key')
@@ -55,6 +63,7 @@ export async function POST(request: Request) {
     sender_type?: 'agent' | 'customer'
     timestamp?: string | number
     status?: string
+    is_escalated?: boolean
   }
   try {
     body = await request.json()
@@ -196,6 +205,7 @@ export async function POST(request: Request) {
       updated_at: new Date().toISOString(),
       ...(isReplyFromCustomer ? { has_customer_replied: true } : {}),
       ...(requestedStatus ? { status: requestedStatus } : {}),
+      ...(body.is_escalated === true ? { is_escalated: true } : {}),
     })
     .eq('id', conversationId)
 

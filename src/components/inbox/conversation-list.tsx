@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import type { Conversation, ConversationStatus } from "@/types";
-import { Search, Inbox as InboxIcon, Reply } from "lucide-react";
+import { Search, Inbox as InboxIcon, Reply, AlertCircle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -31,11 +31,12 @@ const STATUS_COLORS: Record<ConversationStatus, string> = {
   closed: "bg-muted-foreground",
 };
 
-type InboxFilter = ConversationStatus | "all" | "unread";
+type InboxFilter = ConversationStatus | "all" | "unread" | "escalated";
 
 const FILTER_OPTIONS: { label: string; value: InboxFilter }[] = [
   { label: "All", value: "all" },
   { label: "Unread", value: "unread" },
+  { label: "Escalations", value: "escalated" },
   { label: "Open", value: "open" },
   { label: "Pending", value: "pending" },
   { label: "Closed", value: "closed" },
@@ -110,6 +111,8 @@ export function ConversationList({
 
     if (filter === "unread") {
       result = result.filter((c) => c.unread_count > 0);
+    } else if (filter === "escalated") {
+      result = result.filter((c) => c.is_escalated);
     } else if (filter !== "all") {
       result = result.filter((c) => c.status === filter);
     }
@@ -307,6 +310,14 @@ function ConversationItem({
             {conversation.last_message_text || "No messages yet"}
           </p>
           <div className="flex shrink-0 items-center gap-1.5">
+            {conversation.is_escalated && (
+              <span
+                className="flex h-4 w-4 items-center justify-center rounded-full bg-red-500/15 text-red-500"
+                title="Escalated to human"
+              >
+                <AlertCircle className="h-2.5 w-2.5" />
+              </span>
+            )}
             {conversation.has_customer_replied && (
               <span
                 className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-500"
