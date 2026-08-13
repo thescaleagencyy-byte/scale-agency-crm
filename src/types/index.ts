@@ -161,6 +161,8 @@ export interface Conversation {
   has_customer_replied: boolean;
   /** True once a bot has escalated this conversation to a human. Decoupled from `status` so it doesn't collide with manual Open/Pending/Closed triage. */
   is_escalated: boolean;
+  /** True once the contact has given a real, on-topic answer to a qualifying question — doesn't require a second message, but does require content beyond the opening greeting. */
+  is_lead: boolean;
   contact?: Contact;
 }
 

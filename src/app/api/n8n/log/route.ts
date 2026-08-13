@@ -44,6 +44,8 @@ import { encryptContent } from '@/lib/crypto'
  *                             Open/Pending/Closed triage. One-way: only
  *                             ever set to true here, cleared by an admin
  *                             resolving it in the UI.
+ *   is_lead         boolean? — true marks the conversation a qualified
+ *                             lead. One-way, same as is_escalated.
  */
 export async function POST(request: Request) {
   const apiKey = request.headers.get('x-n8n-api-key')
@@ -64,6 +66,7 @@ export async function POST(request: Request) {
     timestamp?: string | number
     status?: string
     is_escalated?: boolean
+    is_lead?: boolean
   }
   try {
     body = await request.json()
@@ -206,6 +209,7 @@ export async function POST(request: Request) {
       ...(isReplyFromCustomer ? { has_customer_replied: true } : {}),
       ...(requestedStatus ? { status: requestedStatus } : {}),
       ...(body.is_escalated === true ? { is_escalated: true } : {}),
+      ...(body.is_lead === true ? { is_lead: true } : {}),
     })
     .eq('id', conversationId)
 
