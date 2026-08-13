@@ -1,6 +1,7 @@
 "use client"
 
-import { Megaphone, MousePointerClick, Target } from 'lucide-react'
+import Link from 'next/link'
+import { ArrowRight, Megaphone, MousePointerClick, Target } from 'lucide-react'
 import type { MetaAdsPerformance } from '@/lib/dashboard/types'
 import { formatCurrency } from '@/lib/currency'
 import { MetricCard } from './metric-card'
@@ -23,9 +24,18 @@ interface MetaAdsPerformancePanelProps {
 export function MetaAdsPerformancePanel({ data, loading }: MetaAdsPerformancePanelProps) {
   return (
     <section className="space-y-4">
-      <div>
-        <h2 className="font-heading text-base font-semibold text-foreground">Ad Performance</h2>
-        <p className="text-xs text-muted-foreground">Meta ad spend, joined against leads and won deals</p>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h2 className="font-heading text-base font-semibold text-foreground">Ad Performance</h2>
+          <p className="text-xs text-muted-foreground">Meta ad spend, joined against leads and won deals</p>
+        </div>
+        <Link
+          href="/meta-ads"
+          className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-primary hover:underline"
+        >
+          Full report
+          <ArrowRight className="h-3 w-3" />
+        </Link>
       </div>
 
       {loading || !data ? (

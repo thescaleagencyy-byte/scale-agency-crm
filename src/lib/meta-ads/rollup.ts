@@ -1,14 +1,23 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { daysAgoStart, localDayKey } from '@/lib/dashboard/date-utils'
-import type { MetaAdsCampaignRow, MetaAdsPerformance } from '@/lib/dashboard/types'
+import { daysAgoStart, lastNDayKeys, localDayKey } from '@/lib/dashboard/date-utils'
+import type { MetaAdsCampaignRow, MetaAdsDailyPoint, MetaAdsPerformance } from '@/lib/dashboard/types'
 
 type DB = SupabaseClient
 
 const EMPTY_RESULT: MetaAdsPerformance = {
   campaigns: [],
   totalSpend: 0,
+  totalImpressions: 0,
+  totalClicks: 0,
+  ctr: null,
+  cpc: null,
+  cpm: null,
+  totalConversations: 0,
   totalQualifiedLeads: 0,
   costPerQualifiedLead: null,
+  totalWonValue: 0,
+  totalWonDeals: 0,
+  roas: null,
   currency: 'USD',
 }
 
@@ -134,6 +143,7 @@ export async function loadMetaAdsCampaignPerformance(
   }[]
 
   const wonByCampaign = new Map<string, number>()
+  let totalWonDeals = 0
   for (const deal of deals) {
     // Forward-only conversation_id link (deal-form.tsx now sets this
     // on every save) takes priority. Falls back to a looser
@@ -146,6 +156,7 @@ export async function loadMetaAdsCampaignPerformance(
       null
     if (!campaignId) continue
     wonByCampaign.set(campaignId, (wonByCampaign.get(campaignId) ?? 0) + Number(deal.value ?? 0))
+    totalWonDeals++
   }
 
   const campaigns: MetaAdsCampaignRow[] = Array.from(campaignMap.values())
@@ -171,13 +182,62 @@ export async function loadMetaAdsCampaignPerformance(
     .sort((a, b) => b.spend - a.spend)
 
   const totalSpend = campaigns.reduce((sum, c) => sum + c.spend, 0)
+  const totalImpressions = campaigns.reduce((sum, c) => sum + c.impressions, 0)
+  const totalClicks = campaigns.reduce((sum, c) => sum + c.clicks, 0)
+  const totalConversations = campaigns.reduce((sum, c) => sum + c.adConversations, 0)
   const totalQualifiedLeads = campaigns.reduce((sum, c) => sum + c.qualifiedLeads, 0)
+  const totalWonValue = campaigns.reduce((sum, c) => sum + c.wonValue, 0)
 
   return {
     campaigns,
     totalSpend,
+    totalImpressions,
+    totalClicks,
+    ctr: totalImpressions > 0 ? totalClicks / totalImpressions : null,
+    cpc: totalClicks > 0 ? totalSpend / totalClicks : null,
+    cpm: totalImpressions > 0 ? (totalSpend / totalImpressions) * 1000 : null,
+    totalConversations,
     totalQualifiedLeads,
     costPerQualifiedLead: totalQualifiedLeads > 0 ? totalSpend / totalQualifiedLeads : null,
+    totalWonValue,
+    totalWonDeals,
+    roas: totalSpend > 0 && totalWonValue > 0 ? totalWonValue / totalSpend : null,
     currency: campaigns[0]?.currency ?? 'USD',
   }
+}
+
+/**
+ * Daily spend/impressions/clicks summed across all campaigns, for the
+ * spend-over-time trend chart. Zero-fills days with no synced rows
+ * (matches the lastNDayKeys convention the rest of the dashboard uses)
+ * so a gap in the sync doesn't read as a dip in spend.
+ */
+export async function loadMetaAdsDailySeries(
+  db: DB,
+  rangeDays: number,
+): Promise<MetaAdsDailyPoint[]> {
+  const sinceDate = localDayKey(daysAgoStart(rangeDays - 1))
+  const untilDate = localDayKey(new Date())
+
+  const { data } = await db
+    .from('meta_ad_insights')
+    .select('date, spend, impressions, clicks')
+    .gte('date', sinceDate)
+    .lte('date', untilDate)
+
+  const rows = (data ?? []) as { date: string; spend: number | null; impressions: number | null; clicks: number | null }[]
+
+  const byDate = new Map<string, MetaAdsDailyPoint>()
+  for (const key of lastNDayKeys(rangeDays)) {
+    byDate.set(key, { date: key, spend: 0, impressions: 0, clicks: 0 })
+  }
+  for (const r of rows) {
+    const point = byDate.get(r.date)
+    if (!point) continue
+    point.spend += Number(r.spend ?? 0)
+    point.impressions += Number(r.impressions ?? 0)
+    point.clicks += Number(r.clicks ?? 0)
+  }
+
+  return Array.from(byDate.values())
 }

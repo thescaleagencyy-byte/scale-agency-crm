@@ -118,8 +118,30 @@ export interface MetaAdsCampaignRow {
 export interface MetaAdsPerformance {
   campaigns: MetaAdsCampaignRow[]
   totalSpend: number
+  totalImpressions: number
+  totalClicks: number
+  /** null when totalImpressions is 0. */
+  ctr: number | null
+  /** Cost per click — null when totalClicks is 0. */
+  cpc: number | null
+  /** Cost per 1,000 impressions — null when totalImpressions is 0. */
+  cpm: number | null
+  /** Conversations that started from a tracked ad (ad_source_id match). */
+  totalConversations: number
   totalQualifiedLeads: number
   /** null when totalQualifiedLeads is 0. */
   costPerQualifiedLead: number | null
+  totalWonValue: number
+  totalWonDeals: number
+  /** null when totalSpend or totalWonValue is 0. */
+  roas: number | null
   currency: string
+}
+
+export interface MetaAdsDailyPoint {
+  /** YYYY-MM-DD local */
+  date: string
+  spend: number
+  impressions: number
+  clicks: number
 }

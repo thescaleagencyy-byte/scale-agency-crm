@@ -47,6 +47,7 @@ export const PATH_FEATURE_MAP: Record<string, string> = {
   '/automations':   'automations',
   '/n8n':           'n8n',
   '/dashboard':     'dashboard',
+  '/meta-ads':      'meta_ads',
   '/copilot':       'copilot',
   '/invoices':      'invoices',
   '/content-calendar': 'content-calendar',
