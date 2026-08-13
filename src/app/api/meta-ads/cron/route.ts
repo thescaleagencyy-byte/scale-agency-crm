@@ -46,7 +46,7 @@ export async function GET(request: Request) {
 
   const { data: integrations, error } = await admin
     .from('integrations')
-    .select('id, account_id, credentials_encrypted')
+    .select('id, account_id, credentials_encrypted, config')
     .eq('service', 'meta_ads')
     .eq('status', 'connected')
 
@@ -70,6 +70,15 @@ export async function GET(request: Request) {
       const accessToken = fields.access_token?.trim()
       if (!adAccountId || !accessToken) throw new Error('Missing ad_account_id or access_token.')
 
+      // Meta's Insights API never returns a `currency` field on ad-level
+      // rows (it's an ad-account-level property, not a per-insight one).
+      // The real currency was captured once at connect time by
+      // verifyMetaAdsToken and stored in integrations.config — read it
+      // from there rather than defaulting to USD, which would silently
+      // mislabel e.g. PKR spend as if it were ~280x more expensive.
+      const currency =
+        (integration.config as { currency?: string } | null)?.currency?.trim() || null
+
       const rows = await fetchAdInsights({ adAccountId, accessToken, since, until })
 
       for (const row of rows) {
@@ -88,6 +97,7 @@ export async function GET(request: Request) {
             impressions: Number(row.impressions ?? 0),
             clicks: Number(row.clicks ?? 0),
             reach: Number(row.reach ?? 0),
+            currency,
             raw: row,
             updated_at: new Date().toISOString(),
           },
