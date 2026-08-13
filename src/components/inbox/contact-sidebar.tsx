@@ -40,7 +40,7 @@ export function ContactSidebar({ contact, conversationId }: ContactSidebarProps)
   const [newNote, setNewNote] = useState("");
   const [addingNote, setAddingNote] = useState(false);
 
-  const fetchContactData = useCallback(async () => {
+  const fetchContactData = useCallback(async (cancelledRef: { current: boolean }) => {
     if (!contact) return;
 
     const supabase = createClient();
@@ -63,6 +63,11 @@ export function ContactSidebar({ contact, conversationId }: ContactSidebarProps)
         .eq("contact_id", contact.id),
     ]);
 
+    // Bail if the agent has already switched to a different contact —
+    // without this, a slow response for an abandoned contact could land
+    // after a newer, faster one and overwrite it with stale deals/notes/tags.
+    if (cancelledRef.current) return;
+
     if (dealsRes.data) setDeals(dealsRes.data);
     if (notesRes.data) setNotes(notesRes.data);
     if (tagsRes.data) {
@@ -79,8 +84,12 @@ export function ContactSidebar({ contact, conversationId }: ContactSidebarProps)
   // Load on contact change. setContactData/setTags run inside async
   // Supabase callbacks, not synchronously in the effect body.
   useEffect(() => {
+    const cancelledRef = { current: false };
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchContactData();
+    fetchContactData(cancelledRef);
+    return () => {
+      cancelledRef.current = true;
+    };
   }, [fetchContactData]);
 
   const handleCopyPhone = useCallback(async () => {

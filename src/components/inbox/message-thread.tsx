@@ -430,6 +430,7 @@ export function MessageThread({
     if (!conversationId || !messages.length) return;
     const lastMsg = messages[messages.length - 1];
     if (lastMsg?.sender_type !== 'customer') return;
+    let cancelled = false;
     setLoadingSuggestions(true);
     fetch('/api/intelligence/suggest', {
       method: 'POST',
@@ -437,9 +438,13 @@ export function MessageThread({
       body: JSON.stringify({ conversation_id: conversationId }),
     })
       .then(r => r.json())
-      .then(({ suggestions }) => setAiSuggestions(suggestions ?? []))
-      .catch(() => setAiSuggestions([]))
-      .finally(() => setLoadingSuggestions(false));
+      .then(({ suggestions }) => { if (!cancelled) setAiSuggestions(suggestions ?? []); })
+      .catch(() => { if (!cancelled) setAiSuggestions([]); })
+      .finally(() => { if (!cancelled) setLoadingSuggestions(false); });
+    // Guards against a slow response for a since-abandoned conversation
+    // landing after the agent has already switched threads — without
+    // this, suggestions for conversation A could pop up while viewing B.
+    return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId, messages.length]);
 
@@ -449,14 +454,18 @@ export function MessageThread({
     const hasBotMessages = messages.some(m => m.sender_type === 'bot');
     const lastSenderIsAgent = messages[messages.length - 1]?.sender_type === 'agent';
     if (!hasBotMessages || lastSenderIsAgent) return;
+    let cancelled = false;
     fetch('/api/ai/conversation-summary', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ conversation_id: conversationId }),
     })
       .then(r => r.json())
-      .then(({ summary }) => setHandoffSummary(summary ?? null))
+      .then(({ summary }) => { if (!cancelled) setHandoffSummary(summary ?? null); })
       .catch(() => {});
+    // Same staleness guard as above — a summary for an abandoned
+    // conversation shouldn't render after the agent has moved on.
+    return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId]);
 

@@ -214,6 +214,33 @@ export function MessageComposer({
     };
   }, [clearTimer, removeStaged]);
 
+  // Reset composer state when the active conversation changes. This
+  // component isn't remounted on conversation switches (MessageThread
+  // keeps the same instance, keyed only by the conversationId prop), so
+  // without this, typed text, a staged photo/video/document, or an
+  // in-progress voice recording started in one conversation would still
+  // be live when the agent clicked into a different one — and hitting
+  // Send would fire it at the wrong customer. Skips the initial mount
+  // (nothing to reset) via the ref comparison.
+  const prevConversationIdRef = useRef(conversationId);
+  useEffect(() => {
+    if (prevConversationIdRef.current === conversationId) return;
+    prevConversationIdRef.current = conversationId;
+
+    setText("");
+    setReplyPopup([]);
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
+
+    // Same teardown as the unmount cleanup above — safe to call even
+    // when nothing is actually recording/staged.
+    clearTimer();
+    cancelledRef.current = true;
+    setRecording(false);
+    void recorderRef.current?.stop().catch(() => {});
+    removeStaged(draftRef.current?.path);
+    setDraft(null);
+  }, [conversationId, clearTimer, removeStaged]);
+
   const adjustHeight = useCallback(() => {
     const el = textareaRef.current;
     if (!el) return;
