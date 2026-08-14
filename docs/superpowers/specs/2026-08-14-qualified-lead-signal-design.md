@@ -1,4 +1,4 @@
-# Qualified-lead signal for the inbox
+# Qualified-lead signal + real-time alert for the inbox
 
 ## Problem
 
@@ -19,19 +19,43 @@ unrelated inbox-display fix.
 
 ## Goal
 
-When Umer opens the inbox, he should be able to tell at a glance which
-conversations involved a customer actually answering the bot's
-qualifying questions, versus conversations that never went past noise.
+Two related problems, one spec:
+
+1. When Umer opens the inbox, he should be able to tell at a glance
+   which conversations involved a customer actually answering the
+   bot's qualifying questions, versus conversations that never went
+   past noise.
+2. He shouldn't have to remember to open the inbox to find out. A live
+   audit this session found 84% of leads (37 of 44, last 30 days) never
+   got a human reply, and 15 escalated conversations sat unanswered for
+   up to 29 hours — not a code bug, a visibility gap. Nothing tells
+   Umer the moment a real lead needs him. He's three days into running
+   paid ads with a near-zero close rate, and unattended leads going
+   cold is a direct, current cause.
 
 ## Non-goals
 
 - Not replacing or modifying `is_lead` or anything `rollup.ts` reads.
-- Not an LLM judgment call — Umer explicitly wants deterministic,
-  rule-based detection (consistent with the earlier correction on
-  Predictive Intelligence: "calculations based on available data, not
-  live AI").
-- Not reaching into the n8n workflow itself — detection works from
-  message content already stored in this app's database.
+- Not an LLM judgment call for qualification — Umer explicitly wants
+  deterministic, rule-based detection (consistent with the earlier
+  correction on Predictive Intelligence: "calculations based on
+  available data, not live AI").
+- Qualification detection itself doesn't reach into the n8n workflow —
+  it works from message content already stored in this app's database.
+  The alert (below) does call out to n8n, since that's where the
+  WhatsApp-send credentials for notifying Umer already live.
+- Not building a second n8n workflow for the alert — reusing the
+  existing "Scale Agency CRM — Upgrade Request Alert" workflow
+  (`C6BxxV7gQvHQhnrH`), which already has the exact webhook-in →
+  WhatsApp-out shape needed, just for a second event type.
+- Not fixing the underlying blocker that alert depends on: that
+  workflow's `Format Alert` node still has a placeholder admin number
+  (`923000000000`) and its `Send via WhatsApp API` node has no real
+  `phone_number_id`/credential attached — both flagged earlier this
+  session, still unresolved. The alert code ships either way; it
+  simply won't deliver until Umer fills those in himself (same
+  standing workflow as every other n8n config change — this app
+  doesn't have write access to attach Umer's own WhatsApp credential).
 
 ## Data model
 
@@ -59,9 +83,9 @@ Returns `true` only if:
   stripped length of 2 or more characters.
 
 A conversation becomes qualified when: the message immediately
-preceding a new inbound customer message was sent by the bot/agent AND
-its text ends in `?`, AND the new customer message passes
-`isSubstantiveReply`. This is intentionally script-agnostic — it does
+preceding a new inbound customer message (by `created_at`) was sent by
+the bot/agent AND its text, right-trimmed of whitespace, ends in `?`,
+AND the new customer message passes `isSubstantiveReply`. This is intentionally script-agnostic — it does
 not hardcode Scale Agency's current qualifying questions ("what's your
 business called", "which best describes your business"), so it keeps
 working if the bot script changes later, at the cost of being slightly
@@ -107,6 +131,45 @@ single UPDATE per newly-qualified conversation.
   filter tabs, filtering on `is_qualified = true`.
 - Existing "Leads" filter tab is untouched — stays wired to `is_lead`.
 
+## Real-time alert
+
+Reuses the exact fire-and-forget webhook pattern already shipped in
+`src/app/api/billing/request-upgrade/route.ts`: `fetch()` to
+`N8N_UPGRADE_WEBHOOK_URL` with an `x-webhook-secret` header, wrapped so
+a webhook failure never blocks or fails the request that triggered it.
+No new env vars — same URL/secret already configured, since this
+extends the same n8n workflow rather than standing up a second one.
+
+New shared helper, `src/lib/alerts/lead-alert.ts`:
+
+```ts
+export function triggerLeadAlert(event: {
+  type: 'qualified' | 'escalated'
+  accountName: string
+  contactName: string
+  contactPhone: string
+  conversationId: string
+}): void
+```
+
+Fire-and-forget, same as the upgrade-request alert — logs and swallows
+on failure, never throws into the caller.
+
+Called from both message-insert call sites, immediately after an
+`is_qualified` or `is_escalated` flip from `false` to `true` (only on
+the actual transition, not every message after — otherwise a long
+escalated conversation would re-alert on every new inbound message).
+
+Payload gets a new `eventType` field (`'qualified_lead' |
+'escalation'`, alongside the upgrade-request alert's existing implicit
+type) so the n8n workflow's `Format Alert` code node can branch to a
+different WhatsApp message per event type. **That branching logic is
+an n8n-side change**, not something this app's code touches — out of
+scope for the implementation plan unless Umer explicitly asks for it
+to be made via the n8n-mcp tools (editing a live, active production
+workflow needs his confirmation first, same as any other production
+automation change).
+
 ## Testing
 
 - Unit-level: `isSubstantiveReply` against representative inputs —
@@ -118,3 +181,7 @@ single UPDATE per newly-qualified conversation.
   ones) to confirm they stay unqualified, and a couple of the ones
   that answered "what's your business called?" with a real name come
   back qualified.
+- Manual: confirm `triggerLeadAlert` fires exactly once per
+  conversation per event type (not on every subsequent message), and
+  that a webhook failure (e.g. env vars unset) doesn't throw or block
+  the underlying message insert.
