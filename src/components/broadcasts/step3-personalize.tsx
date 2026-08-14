@@ -44,6 +44,8 @@ const SAMPLE_CONTACT: Contact = {
   phone: '+1234567890',
   email: 'john@example.com',
   company: 'Acme Corp',
+  instagram_id: null,
+  channel: 'whatsapp',
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };
