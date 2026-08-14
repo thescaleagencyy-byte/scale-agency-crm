@@ -46,7 +46,7 @@ import { TemplatePicker } from "./template-picker";
 import { buildReplyPreview } from "./reply-quote";
 import { toast } from "sonner";
 import { CLIENT_NAME } from "@/lib/features";
-import { useBrandLogo } from "@/hooks/use-brand-logo";
+import { ContactAvatar } from "./contact-avatar";
 
 interface ReplyDraft {
   id: string;
@@ -174,7 +174,6 @@ export function MessageThread({
   onToggleContactPanel,
 }: MessageThreadProps) {
   const { user } = useAuth();
-  const brandLogo = useBrandLogo();
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
@@ -951,17 +950,11 @@ export function MessageThread({
               <ArrowLeft className="h-5 w-5" />
             </button>
           )}
-          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-sm font-semibold text-primary ring-1 ring-primary/15">
-            {(contact.avatar_url || brandLogo) ? (
-              <img
-                src={contact.avatar_url || brandLogo!}
-                alt={displayName}
-                className="h-9 w-9 rounded-full object-cover"
-              />
-            ) : (
-              displayName.charAt(0).toUpperCase()
-            )}
-          </div>
+          <ContactAvatar
+            name={displayName}
+            avatarUrl={contact.avatar_url}
+            className="h-9 w-9 flex-shrink-0 text-sm ring-1 ring-primary/15"
+          />
           <div className="min-w-0">
             <h2 className="truncate text-sm font-semibold text-foreground">{displayName}</h2>
             <p className="truncate text-xs text-muted-foreground">{contact.phone}</p>

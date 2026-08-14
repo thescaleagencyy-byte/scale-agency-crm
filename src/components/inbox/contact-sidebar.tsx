@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
 import { ConversationNotes } from "./conversation-notes";
-import { useBrandLogo } from "@/hooks/use-brand-logo";
+import { ContactAvatar } from "./contact-avatar";
 import type { ComponentType } from "react";
 
 interface ContactSidebarProps {
@@ -31,7 +31,6 @@ interface ContactSidebarProps {
 
 export function ContactSidebar({ contact, conversationId }: ContactSidebarProps) {
   const { accountId } = useAuth();
-  const brandLogo = useBrandLogo();
   const [activeTab, setActiveTab] = useState<'info' | 'notes'>('info');
   const [copied, setCopied] = useState(false);
   const [deals, setDeals] = useState<Deal[]>([]);
@@ -140,7 +139,6 @@ export function ContactSidebar({ contact, conversationId }: ContactSidebarProps)
   }
 
   const displayName = contact.name || contact.phone;
-  const initials = displayName.charAt(0).toUpperCase();
 
   return (
     <div className="flex h-full w-70 flex-col border-l border-border bg-card">
@@ -177,17 +175,11 @@ export function ContactSidebar({ contact, conversationId }: ContactSidebarProps)
         <div className="p-4">
           {/* Contact Info */}
           <div className="flex flex-col items-center text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-lg font-semibold text-primary ring-1 ring-primary/15">
-              {(contact.avatar_url || brandLogo) ? (
-                <img
-                  src={contact.avatar_url || brandLogo!}
-                  alt={displayName}
-                  className="h-16 w-16 rounded-full object-cover"
-                />
-              ) : (
-                initials
-              )}
-            </div>
+            <ContactAvatar
+              name={displayName}
+              avatarUrl={contact.avatar_url}
+              className="h-16 w-16 text-lg ring-1 ring-primary/15"
+            />
             <h3 className="mt-3 text-sm font-semibold text-foreground">
               {displayName}
             </h3>
