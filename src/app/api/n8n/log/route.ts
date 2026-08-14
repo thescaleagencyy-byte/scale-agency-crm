@@ -98,6 +98,10 @@ export async function POST(request: Request) {
     is_lead?: boolean
     message_type?: string
     media_id?: string
+    /** WhatsApp display name from contacts[0].profile.name on the raw
+     * Meta payload — same field /api/whatsapp/webhook's native path
+     * already captures. Optional since older callers may not send it. */
+    contact_name?: string
     referral?: {
       source_url?: string
       source_id?: string
@@ -164,11 +168,20 @@ export async function POST(request: Request) {
   }
 
   const normalizedPhone = normalizePhone(body.phone_number.trim())
+  const contactName = body.contact_name?.trim()
   const contact = await findExistingContact(admin, accountId, normalizedPhone).catch(() => null)
 
   let conversationId: string | null = null
 
   if (contact) {
+    // Mirrors /api/whatsapp/webhook's native path: keep the contact's
+    // name in sync with whatever WhatsApp reports, since a contact
+    // created before this field existed (or before the customer set a
+    // display name) would otherwise be stuck showing their phone
+    // number forever.
+    if (contactName && contactName !== contact.name) {
+      await admin.from('contacts').update({ name: contactName }).eq('id', contact.id)
+    }
     const { data: conv } = await admin
       .from('conversations')
       .select('id')
@@ -190,7 +203,7 @@ export async function POST(request: Request) {
     }
     const { data: newContact } = await admin
       .from('contacts')
-      .insert({ account_id: accountId, user_id: userId, phone: normalizedPhone, name: normalizedPhone })
+      .insert({ account_id: accountId, user_id: userId, phone: normalizedPhone, name: contactName || normalizedPhone })
       .select('id')
       .single()
     if (newContact) {
