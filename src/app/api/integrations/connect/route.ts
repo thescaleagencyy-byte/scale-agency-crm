@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { encryptText } from '@/lib/crypto'
 import { INTEGRATIONS_CATALOG } from '@/lib/integrations-catalog'
 import { VERIFIERS } from '@/lib/integration-verify'
+import { hasFeature } from '@/lib/features'
 
 // POST /api/integrations/connect — store a pasted credential,
 // encrypted. For services with a real live-verify check (Stripe,
@@ -27,7 +28,9 @@ export async function POST(request: Request) {
     const notes = typeof body?.notes === 'string' ? body.notes.trim() : ''
 
     const def = INTEGRATIONS_CATALOG.find((d) => d.service === service && !d.managedElsewhere)
-    if (!def) return NextResponse.json({ error: 'Unknown or unsupported service' }, { status: 400 })
+    if (!def || (def.featureKey && !hasFeature(def.featureKey))) {
+      return NextResponse.json({ error: 'Unknown or unsupported service' }, { status: 400 })
+    }
 
     // Multi-field services (credentialFields set) submit { fields }; the
     // legacy single-blob services still submit { credential }.

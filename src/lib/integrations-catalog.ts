@@ -5,7 +5,7 @@
 // new `integrations` table. No service here is ever shown as
 // "connected" unless a real row proves it.
 
-export type IntegrationCategory = 'messaging' | 'email' | 'calendar' | 'payments' | 'commerce' | 'productivity' | 'automation'
+export type IntegrationCategory = 'messaging' | 'email' | 'calendar' | 'payments' | 'commerce' | 'productivity' | 'automation' | 'marketing'
 
 export interface CredentialField {
   key: string
@@ -32,6 +32,13 @@ export interface IntegrationDef {
    * OAuth app first (see docsHint).
    */
   credentialFields?: CredentialField[]
+  /**
+   * When set, this catalog entry is only shown/connectable when
+   * hasFeature(featureKey) is true — lets a new integration ship
+   * without becoming visible to every tenant on this shared codebase
+   * (e.g. meta_ads defaults off for AshWheelz).
+   */
+  featureKey?: string
 }
 
 export const INTEGRATIONS_CATALOG: IntegrationDef[] = [
@@ -148,6 +155,18 @@ export const INTEGRATIONS_CATALOG: IntegrationDef[] = [
     docsHint: 'Create a Slack App at api.slack.com/apps, add a Bot Token Scope, install to workspace, paste the Bot User OAuth Token. Verified live on save.',
     credentialFields: [{ key: 'bot_token', label: 'Bot token', placeholder: 'xoxb-...' }],
   },
+  {
+    service: 'meta_ads',
+    name: 'Meta Ads',
+    category: 'marketing',
+    description: 'Daily ad spend + campaign performance, joined against leads and won deals.',
+    docsHint: 'Generate a system-user access token (Business Settings → System Users), assigned to your ad account with ads_read, "Never" expiry. Verified live on save.',
+    credentialFields: [
+      { key: 'ad_account_id', label: 'Ad account ID', placeholder: '935707646117135 (no "act_" prefix)' },
+      { key: 'access_token', label: 'System-user access token', placeholder: 'EAA...' },
+    ],
+    featureKey: 'meta_ads',
+  },
 ]
 
 export const CATEGORY_LABEL: Record<IntegrationCategory, string> = {
@@ -158,4 +177,5 @@ export const CATEGORY_LABEL: Record<IntegrationCategory, string> = {
   commerce: 'Commerce',
   productivity: 'Productivity',
   automation: 'Automation',
+  marketing: 'Marketing',
 }

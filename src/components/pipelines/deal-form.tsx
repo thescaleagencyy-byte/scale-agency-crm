@@ -175,6 +175,10 @@ export function DealForm({
       assigned_to: assignedTo || null,
       notes: notes.trim() || null,
       expected_close_date: expectedCloseDate || null,
+      // Links this deal back to the conversation it came from — the
+      // only thing that makes ROAS (won value / ad spend) computable
+      // at all, via conversations.ad_source_id -> campaign.
+      conversation_id: linkedConversation?.id ?? null,
     };
 
     if (deal) {

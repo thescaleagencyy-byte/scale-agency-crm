@@ -30,6 +30,51 @@ import { encryptContent } from '@/lib/crypto'
  *                             race independently to hit this endpoint,
  *                             so insert order alone doesn't reflect real
  *                             chronological order.
+ *   status          string? — 'open' | 'pending' | 'closed'. When given,
+ *                             sets the conversation's status (e.g. a bot
+ *                             marking a conversation 'pending' on human
+ *                             handoff). Omit to leave status untouched —
+ *                             most calls (routine bot replies) shouldn't
+ *                             touch it.
+ *   is_escalated    boolean? — true marks the conversation escalated,
+ *                             surfaced in the inbox's dedicated
+ *                             Escalations filter. Deliberately separate
+ *                             from `status` so a bot escalation never
+ *                             collides with an admin's own manual
+ *                             Open/Pending/Closed triage. One-way: only
+ *                             ever set to true here, cleared by an admin
+ *                             resolving it in the UI.
+ *   is_lead         boolean? — true marks the conversation a qualified
+ *                             lead. One-way, same as is_escalated.
+ *   referral        object?  — Meta's Click-to-WhatsApp ad referral
+ *                             object (source_url, source_id, headline,
+ *                             ctwa_clid, ...), forwarded verbatim from
+ *                             the n8n WhatsApp trigger's raw webhook
+ *                             payload (messages[0].referral). Mirrors
+ *                             /api/whatsapp/webhook's native-path
+ *                             capture: applied only when this call
+ *                             creates a brand-new conversation, since
+ *                             that's the only message that can
+ *                             plausibly carry ad referral data.
+ *   message_type    string? — WhatsApp message type ('image', 'video',
+ *                             'audio', 'document', 'sticker', etc).
+ *                             Determines the row's content_type; omit
+ *                             (or 'text') to log a plain text message.
+ *                             The n8n bot already sends this on every
+ *                             call — was previously ignored here,
+ *                             which meant every inbound voice note /
+ *                             photo / video from n8n-routed tenants
+ *                             got stored as content_type='text' with
+ *                             just an emoji label, so the inbox never
+ *                             rendered a real player for it.
+ *   media_id        string? — Meta media id for image/video/audio/
+ *                             document messages. Combined with
+ *                             message_type to set media_url to
+ *                             /api/whatsapp/media/{id} — the same
+ *                             authenticated proxy route the native
+ *                             webhook path already uses, so playback
+ *                             works identically regardless of which
+ *                             path received the message.
  */
 export async function POST(request: Request) {
   const apiKey = request.headers.get('x-n8n-api-key')
@@ -48,6 +93,18 @@ export async function POST(request: Request) {
     phone_number_id?: string
     sender_type?: 'agent' | 'customer'
     timestamp?: string | number
+    status?: string
+    is_escalated?: boolean
+    is_lead?: boolean
+    message_type?: string
+    media_id?: string
+    referral?: {
+      source_url?: string
+      source_id?: string
+      headline?: string
+      ctwa_clid?: string
+      [key: string]: unknown
+    }
   }
   try {
     body = await request.json()
@@ -62,6 +119,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'message is required' }, { status: 400 })
   }
   const senderType = body.sender_type === 'customer' ? 'customer' : 'agent'
+  const VALID_STATUSES = ['open', 'pending', 'closed'] as const
+  const requestedStatus = VALID_STATUSES.find((s) => s === body.status)
 
   const admin = supabaseAdmin()
 
@@ -118,7 +177,17 @@ export async function POST(request: Request) {
       .maybeSingle()
     conversationId = conv?.id ?? null
   } else {
-    // Auto-create contact + conversation
+    // Auto-create contact + conversation. Build the same adFields
+    // shape /api/whatsapp/webhook's native path uses, from the
+    // referral object n8n forwards off the raw Meta webhook payload.
+    const adFields: Record<string, string | object | null> = {}
+    if (body.referral) {
+      adFields.ad_source_url = body.referral.source_url ?? null
+      adFields.ad_source_id = body.referral.source_id ?? null
+      adFields.ad_headline = body.referral.headline ?? null
+      adFields.ad_ctwa_clid = body.referral.ctwa_clid ?? null
+      adFields.referral_data = body.referral
+    }
     const { data: newContact } = await admin
       .from('contacts')
       .insert({ account_id: accountId, user_id: userId, phone: normalizedPhone, name: normalizedPhone })
@@ -127,7 +196,7 @@ export async function POST(request: Request) {
     if (newContact) {
       const { data: newConv } = await admin
         .from('conversations')
-        .insert({ account_id: accountId, user_id: userId, contact_id: newContact.id })
+        .insert({ account_id: accountId, user_id: userId, contact_id: newContact.id, ...adFields })
         .select('id')
         .single()
       conversationId = newConv?.id ?? null
@@ -140,19 +209,54 @@ export async function POST(request: Request) {
 
   const messageText = body.message.trim()
 
+  // WhatsApp's 'sticker' and legacy 'button' types have no dedicated
+  // slot in this schema's ContentType — sticker renders fine as an
+  // image (both are just a static image to the bubble), button as
+  // interactive (same "tap reply" affordance as a real interactive
+  // message).
+  const CONTENT_TYPE_MAP: Record<string, string> = {
+    image: 'image',
+    sticker: 'image',
+    video: 'video',
+    audio: 'audio',
+    document: 'document',
+    interactive: 'interactive',
+    button: 'interactive',
+  }
+  const contentType = CONTENT_TYPE_MAP[body.message_type ?? ''] ?? 'text'
+  const mediaUrl =
+    body.media_id?.trim() && contentType !== 'text' && contentType !== 'interactive'
+      ? `/api/whatsapp/media/${body.media_id.trim()}`
+      : null
+
   const timestampSeconds = Number(body.timestamp)
   const createdAt =
     Number.isFinite(timestampSeconds) && timestampSeconds > 0
       ? new Date(timestampSeconds * 1000).toISOString()
       : undefined
 
+  // Mirrors the isFirstInboundMessage check in /api/whatsapp/webhook:
+  // computed before insert so the count is accurate. A customer message
+  // beyond their first is a genuine reply, not just the opening
+  // ad-triggered greeting — surfaced in the inbox list as has_customer_replied.
+  let isReplyFromCustomer = false
+  if (senderType === 'customer') {
+    const { count: priorCustomerMsgCount } = await admin
+      .from('messages')
+      .select('id', { count: 'exact', head: true })
+      .eq('conversation_id', conversationId)
+      .eq('sender_type', 'customer')
+    isReplyFromCustomer = (priorCustomerMsgCount ?? 0) > 0
+  }
+
   const { data: msg, error: msgErr } = await admin
     .from('messages')
     .insert({
       conversation_id: conversationId,
       sender_type: senderType,
-      content_type: 'text',
+      content_type: contentType,
       content_text: encryptContent(messageText),
+      ...(mediaUrl ? { media_url: mediaUrl } : {}),
       status: 'sent',
       is_automated: senderType === 'agent',
       ...(createdAt ? { created_at: createdAt } : {}),
@@ -171,6 +275,10 @@ export async function POST(request: Request) {
       last_message_text: messageText,
       last_message_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      ...(isReplyFromCustomer ? { has_customer_replied: true } : {}),
+      ...(requestedStatus ? { status: requestedStatus } : {}),
+      ...(body.is_escalated === true ? { is_escalated: true } : {}),
+      ...(body.is_lead === true ? { is_lead: true } : {}),
     })
     .eq('id', conversationId)
 

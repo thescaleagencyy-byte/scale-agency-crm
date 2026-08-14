@@ -4,12 +4,12 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import type { Conversation, ConversationStatus } from "@/types";
-import { Search, Inbox as InboxIcon } from "lucide-react";
+import { Search, Inbox as InboxIcon, Reply, AlertCircle, Star } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { EmptyState } from "@/components/dashboard/empty-state";
-import { useBrandLogo } from "@/hooks/use-brand-logo";
+import { ContactAvatar } from "./contact-avatar";
 
 interface ConversationListProps {
   activeConversationId: string | null;
@@ -31,11 +31,13 @@ const STATUS_COLORS: Record<ConversationStatus, string> = {
   closed: "bg-muted-foreground",
 };
 
-type InboxFilter = ConversationStatus | "all" | "unread";
+type InboxFilter = ConversationStatus | "all" | "unread" | "escalated" | "leads";
 
 const FILTER_OPTIONS: { label: string; value: InboxFilter }[] = [
   { label: "All", value: "all" },
   { label: "Unread", value: "unread" },
+  { label: "Leads", value: "leads" },
+  { label: "Escalations", value: "escalated" },
   { label: "Open", value: "open" },
   { label: "Pending", value: "pending" },
   { label: "Closed", value: "closed" },
@@ -110,6 +112,10 @@ export function ConversationList({
 
     if (filter === "unread") {
       result = result.filter((c) => c.unread_count > 0);
+    } else if (filter === "escalated") {
+      result = result.filter((c) => c.is_escalated);
+    } else if (filter === "leads") {
+      result = result.filter((c) => c.is_lead);
     } else if (filter !== "all") {
       result = result.filter((c) => c.status === filter);
     }
@@ -259,9 +265,6 @@ function ConversationItem({
 }: ConversationItemProps) {
   const contact = conversation.contact;
   const displayName = contact?.name || contact?.phone || "Unknown";
-  const initials = displayName.charAt(0).toUpperCase();
-  const brandLogo = useBrandLogo();
-  const avatarSrc = contact?.avatar_url || brandLogo;
 
   const handleClick = useCallback(() => {
     onSelect(conversation);
@@ -282,17 +285,11 @@ function ConversationItem({
       )}
     >
       {/* Avatar */}
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-medium text-foreground">
-        {avatarSrc ? (
-          <img
-            src={avatarSrc}
-            alt={displayName}
-            className="h-10 w-10 rounded-full object-cover"
-          />
-        ) : (
-          initials
-        )}
-      </div>
+      <ContactAvatar
+        name={displayName}
+        avatarUrl={contact?.avatar_url}
+        className="h-10 w-10 shrink-0 text-sm"
+      />
 
       {/* Content */}
       <div className="min-w-0 flex-1">
@@ -307,6 +304,30 @@ function ConversationItem({
             {conversation.last_message_text || "No messages yet"}
           </p>
           <div className="flex shrink-0 items-center gap-1.5">
+            {conversation.is_lead && (
+              <span
+                className="flex h-4 w-4 items-center justify-center rounded-full bg-amber-500/15 text-amber-500"
+                title="Lead"
+              >
+                <Star className="h-2.5 w-2.5 fill-current" />
+              </span>
+            )}
+            {conversation.is_escalated && (
+              <span
+                className="flex h-4 w-4 items-center justify-center rounded-full bg-red-500/15 text-red-500"
+                title="Escalated to human"
+              >
+                <AlertCircle className="h-2.5 w-2.5" />
+              </span>
+            )}
+            {conversation.has_customer_replied && (
+              <span
+                className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-500"
+                title="Contact replied"
+              >
+                <Reply className="h-2.5 w-2.5" />
+              </span>
+            )}
             {conversation.unread_count > 0 && (
               <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
                 {conversation.unread_count}

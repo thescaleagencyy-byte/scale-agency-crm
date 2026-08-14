@@ -157,6 +157,19 @@ export interface Conversation {
   updated_at: string;
   first_agent_reply_at?: string | null;
   sla_deadline_at?: string | null;
+  /** True once the contact has sent a message beyond their first inbound — a genuine reply, not just the opening ad-triggered greeting. */
+  has_customer_replied: boolean;
+  /** True once a bot has escalated this conversation to a human. Decoupled from `status` so it doesn't collide with manual Open/Pending/Closed triage. */
+  is_escalated: boolean;
+  /** True once the contact has given a real, on-topic answer to a qualifying question — doesn't require a second message, but does require content beyond the opening greeting. */
+  is_lead: boolean;
+  /** Meta CTWA ad referral, captured on the first inbound message when present. Populated by /api/whatsapp/webhook; not present for organic conversations. */
+  ad_source_url?: string | null;
+  /** Meta's ad id for the CTWA ad that started this conversation — joins against meta_ad_insights.ad_id for spend/ROAS rollups. */
+  ad_source_id?: string | null;
+  ad_headline?: string | null;
+  ad_ctwa_clid?: string | null;
+  referral_data?: Record<string, unknown> | null;
   contact?: Contact;
 }
 
