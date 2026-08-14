@@ -605,6 +605,27 @@ async function processMessage(
     return
   }
 
+  // Idempotency guard — Meta retries webhook delivery when our response
+  // is slow or times out, which otherwise inserts the same inbound
+  // message twice (each retry gets a fresh internal id, so the customer
+  // sees the exact same text appear as two separate bubbles).
+  // messages.message_id only has a plain lookup index, not a unique
+  // constraint (see idx_messages_message_id, migration 001) — adding
+  // one now would first need existing duplicate rows cleaned up without
+  // orphaning reply/reaction references, so this is an app-level
+  // check-before-insert rather than a DB-enforced guarantee. The race
+  // window is small in practice: Meta's retries are spaced out, not
+  // fired concurrently.
+  const { data: existingMessage } = await supabaseAdmin()
+    .from('messages')
+    .select('id')
+    .eq('message_id', message.id)
+    .maybeSingle()
+  if (existingMessage) {
+    console.warn('[webhook] duplicate delivery for message_id, skipping:', message.id)
+    return
+  }
+
   // Parse message content based on type
   const { contentText, mediaUrl, mediaType, interactiveReplyId } =
     await parseMessageContent(message, accessToken)
