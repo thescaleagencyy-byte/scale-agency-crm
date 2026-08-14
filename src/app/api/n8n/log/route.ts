@@ -5,6 +5,7 @@ import { normalizePhone } from '@/lib/whatsapp/phone-utils'
 import { encryptContent, decryptContent } from '@/lib/crypto'
 import { detectsQualifyingReply } from '@/lib/inbox/qualified-reply'
 import { triggerLeadAlert } from '@/lib/alerts/lead-alert'
+import { findExistingInstagramContact } from '@/lib/contacts/instagram-dedupe'
 
 /**
  * POST /api/n8n/log
@@ -18,8 +19,15 @@ import { triggerLeadAlert } from '@/lib/alerts/lead-alert'
  * Auth: x-n8n-api-key header must match N8N_SEND_API_KEY env var.
  *
  * Body:
- *   phone_number    string  — the other party's phone
+ *   phone_number    string  — the other party's phone. Required unless
+ *                             channel is 'instagram'.
  *   message         string  — message text to log
+ *   channel         string? — 'whatsapp' (default) or 'instagram'.
+ *                             Determines whether contact resolution
+ *                             uses phone_number or instagram_id.
+ *   instagram_id    string? — Meta's Instagram-Scoped ID (IGSID).
+ *                             Required when channel is 'instagram',
+ *                             used instead of phone_number.
  *   phone_number_id string? — WABA phone_number_id the bot is bound to;
  *                             resolves tenant. Falls back to "most
  *                             recently updated connected config" when
@@ -104,6 +112,11 @@ export async function POST(request: Request) {
      * Meta payload — same field /api/whatsapp/webhook's native path
      * already captures. Optional since older callers may not send it. */
     contact_name?: string
+    /** 'whatsapp' (default) or 'instagram'. Determines whether contact
+     * resolution uses phone_number or instagram_id. */
+    channel?: 'whatsapp' | 'instagram'
+    /** Meta's Instagram-Scoped ID — required when channel === 'instagram', used instead of phone_number. */
+    instagram_id?: string
     referral?: {
       source_url?: string
       source_id?: string
@@ -118,7 +131,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  if (!body.phone_number?.trim()) {
+  const channel = body.channel === 'instagram' ? 'instagram' : 'whatsapp'
+  if (channel === 'instagram') {
+    if (!body.instagram_id?.trim()) {
+      return NextResponse.json({ error: 'instagram_id is required when channel is instagram' }, { status: 400 })
+    }
+  } else if (!body.phone_number?.trim()) {
     return NextResponse.json({ error: 'phone_number is required' }, { status: 400 })
   }
   if (!body.message?.trim()) {
@@ -169,9 +187,13 @@ export async function POST(request: Request) {
     userId = configs[0].user_id
   }
 
-  const normalizedPhone = normalizePhone(body.phone_number.trim())
   const contactName = body.contact_name?.trim()
-  const contact = await findExistingContact(admin, accountId, normalizedPhone).catch(() => null)
+  const normalizedPhone = channel === 'whatsapp' ? normalizePhone(body.phone_number!.trim()) : null
+  const instagramId = channel === 'instagram' ? body.instagram_id!.trim() : null
+  const contact =
+    channel === 'instagram'
+      ? await findExistingInstagramContact(admin, accountId, instagramId!).catch(() => null)
+      : await findExistingContact(admin, accountId, normalizedPhone!).catch(() => null)
 
   let conversationId: string | null = null
 
@@ -205,7 +227,14 @@ export async function POST(request: Request) {
     }
     const { data: newContact } = await admin
       .from('contacts')
-      .insert({ account_id: accountId, user_id: userId, phone: normalizedPhone, name: contactName || normalizedPhone })
+      .insert({
+        account_id: accountId,
+        user_id: userId,
+        phone: channel === 'whatsapp' ? normalizedPhone : null,
+        instagram_id: channel === 'instagram' ? instagramId : null,
+        channel,
+        name: contactName || normalizedPhone || instagramId,
+      })
       .select('id')
       .single()
     if (newContact) {
@@ -371,8 +400,8 @@ export async function POST(request: Request) {
     ])
     const alertBase = {
       accountName: account?.name ?? 'Scale OS',
-      contactName: contactRow?.name ?? normalizedPhone,
-      contactPhone: contactRow?.phone ?? normalizedPhone,
+      contactName: contactRow?.name ?? normalizedPhone ?? instagramId,
+      contactPhone: contactRow?.phone ?? normalizedPhone ?? instagramId,
       conversationId,
     }
     if (becomesQualified) triggerLeadAlert({ ...alertBase, type: 'qualified' })
