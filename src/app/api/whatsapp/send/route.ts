@@ -213,6 +213,28 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Instagram credential is missing a page_access_token.' }, { status: 500 })
       }
 
+      // Validate the reply target belongs to this conversation — otherwise
+      // a caller could quote messages they can't see by guessing UUIDs.
+      // Mirrors the WhatsApp path's ownership check below; Instagram
+      // doesn't need to resolve a Meta-side context id since
+      // sendInstagramTextMessage doesn't take a context/quote parameter
+      // in this version, so we only need the ownership gate itself.
+      if (reply_to_message_id) {
+        const { data: parent, error: parentError } = await supabase
+          .from('messages')
+          .select('id, conversation_id')
+          .eq('id', reply_to_message_id)
+          .eq('conversation_id', conversation_id)
+          .maybeSingle()
+
+        if (parentError || !parent) {
+          return NextResponse.json(
+            { error: 'reply_to_message_id not found in this conversation' },
+            { status: 400 }
+          )
+        }
+      }
+
       let igMessageId: string
       try {
         const result = await sendInstagramTextMessage({
@@ -250,11 +272,53 @@ export async function POST(request: Request) {
         )
       }
 
+      // Update conversation — also stamp first_agent_reply_at if not already set
       const now = new Date().toISOString()
+      const { data: convRow } = await supabase
+        .from('conversations')
+        .select('first_agent_reply_at')
+        .eq('id', conversation_id)
+        .single()
       await supabase
         .from('conversations')
-        .update({ last_message_text: content_text, last_message_at: now, updated_at: now })
+        .update({
+          last_message_text: content_text,
+          last_message_at: now,
+          updated_at: now,
+          ...(convRow && !convRow.first_agent_reply_at ? { first_agent_reply_at: now } : {}),
+        })
         .eq('id', conversation_id)
+
+      // Pause any active Flow run for this contact — the agent stepping
+      // in is the strongest "yield, human is here" signal. See PR #2
+      // plan for why we pause (not end): preserves diagnostic state +
+      // lets the agent or the 24h timeout sweep cleanly resolve the
+      // run later. For accounts with no active runs the UPDATE matches
+      // zero rows — cheap and harmless.
+      try {
+        const { error: pauseErr } = await supabaseAdmin()
+          .from('flow_runs')
+          .update({
+            status: 'paused_by_agent',
+            ended_at: new Date().toISOString(),
+            end_reason: 'agent_replied',
+          })
+          .eq('account_id', accountId)
+          .eq('contact_id', contact.id)
+          .eq('status', 'active')
+        if (pauseErr) {
+          // Best-effort — log + continue. The agent's message already
+          // landed at Instagram; don't fail the response over a
+          // bookkeeping miss. Worst case: a stale active run gets caught
+          // by the stale-run cron sweep within 24h.
+          console.error('[flows] pause-on-agent-send failed:', pauseErr.message)
+        }
+      } catch (err) {
+        console.error(
+          '[flows] pause-on-agent-send threw:',
+          err instanceof Error ? err.message : err,
+        )
+      }
 
       return NextResponse.json({
         success: true,

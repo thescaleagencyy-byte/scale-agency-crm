@@ -67,6 +67,20 @@ export async function GET(request: Request) {
 
     if (!config) continue
 
+    // Instagram contacts (or any contact with no phone) can't receive a
+    // WhatsApp template send. Task 5 made Instagram contacts selectable
+    // in the drip enrollment picker, so this is now reachable — route it
+    // through the same failure path as any other send error rather than
+    // crashing the whole cron batch on a non-null assertion.
+    if (!enrollment.contact?.phone) {
+      console.error(
+        `[drip/cron] send failed for enrollment ${enrollment.id}: Contact has no phone number — not a WhatsApp contact`,
+      )
+      await admin.from('drip_enrollments').update({ status: 'failed' }).eq('id', enrollment.id)
+      failed++
+      continue
+    }
+
     const rawToken = config.access_token
     const token = isLegacyFormat(rawToken) ? rawToken : decrypt(rawToken)
 
@@ -74,7 +88,7 @@ export async function GET(request: Request) {
       await sendTemplateMessage({
         phoneNumberId: config.phone_number_id,
         accessToken: token,
-        to: enrollment.contact!.phone,
+        to: enrollment.contact.phone,
         templateName: step.template_name,
         language: step.template_language,
       })

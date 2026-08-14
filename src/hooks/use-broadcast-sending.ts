@@ -195,6 +195,15 @@ export function useBroadcastSending(): UseBroadcastSendingReturn {
       contacts = contacts.filter((c) => !excludedIds.has(c.id));
     }
 
+    // Broadcasts are WhatsApp-template-only — there's no Instagram
+    // equivalent of a template send. Filter Instagram contacts out here
+    // rather than letting them silently no-op further down the pipeline
+    // (an all-Instagram batch would otherwise resolve to zero API
+    // recipients and leave its broadcast_recipients rows stuck pending).
+    // Contacts with no channel set (pre-migration legacy rows) pass
+    // through — `channel` defaults to 'whatsapp' in the DB.
+    contacts = contacts.filter((c) => c.channel === 'whatsapp' || !c.channel);
+
     return contacts;
   }
 
