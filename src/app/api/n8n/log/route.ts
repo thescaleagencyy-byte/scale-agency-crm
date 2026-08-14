@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/flows/admin-client'
 import { findExistingContact } from '@/lib/contacts/dedupe'
 import { normalizePhone } from '@/lib/whatsapp/phone-utils'
-import { encryptContent } from '@/lib/crypto'
+import { encryptContent, decryptContent } from '@/lib/crypto'
 
 /**
  * POST /api/n8n/log
@@ -228,6 +228,32 @@ export async function POST(request: Request) {
     body.media_id?.trim() && contentType !== 'text' && contentType !== 'interactive'
       ? `/api/whatsapp/media/${body.media_id.trim()}`
       : null
+
+  // Idempotency guard — the n8n bot flow already runs its own lock +
+  // dedupe logic, but under contention its lock is a bounded 4-retry
+  // wait that force-proceeds without a real guarantee, so this endpoint
+  // can still get hit twice for the same message. The payload carries
+  // no Meta message_id to key off (unlike /api/whatsapp/webhook), so
+  // dedupe by content instead: if this sender's most recent messages in
+  // this conversation already contain this exact text, treat it as a
+  // repeat delivery rather than a new message. Tradeoff: a genuine
+  // back-to-back identical message (e.g. someone retyping "ok" twice)
+  // would also get suppressed — accepted as the far rarer case compared
+  // to retry-duplicates.
+  const { data: recentSameSender } = await admin
+    .from('messages')
+    .select('content_text')
+    .eq('conversation_id', conversationId)
+    .eq('sender_type', senderType)
+    .eq('content_type', contentType)
+    .order('created_at', { ascending: false })
+    .limit(3)
+  const isDuplicate = (recentSameSender ?? []).some(
+    (m) => decryptContent(m.content_text) === messageText,
+  )
+  if (isDuplicate) {
+    return NextResponse.json({ success: true, duplicate: true })
+  }
 
   const timestampSeconds = Number(body.timestamp)
   const createdAt =
