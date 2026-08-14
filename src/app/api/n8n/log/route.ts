@@ -3,6 +3,8 @@ import { supabaseAdmin } from '@/lib/flows/admin-client'
 import { findExistingContact } from '@/lib/contacts/dedupe'
 import { normalizePhone } from '@/lib/whatsapp/phone-utils'
 import { encryptContent, decryptContent } from '@/lib/crypto'
+import { detectsQualifyingReply } from '@/lib/inbox/qualified-reply'
+import { triggerLeadAlert } from '@/lib/alerts/lead-alert'
 
 /**
  * POST /api/n8n/log
@@ -268,6 +270,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, duplicate: true })
   }
 
+  // Fetch the message immediately before this one (any sender) so the
+  // qualified-lead check below can see whether it was a bot/agent
+  // question — must happen before the insert, otherwise the row we
+  // just inserted would be its own "preceding" message.
+  const { data: precedingRow } = await admin
+    .from('messages')
+    .select('sender_type, content_text')
+    .eq('conversation_id', conversationId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  const precedingMessage = precedingRow
+    ? { sender_type: precedingRow.sender_type, content_text: decryptContent(precedingRow.content_text) }
+    : null
+
   const timestampSeconds = Number(body.timestamp)
   const createdAt =
     Number.isFinite(timestampSeconds) && timestampSeconds > 0
@@ -308,6 +325,31 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to log message.' }, { status: 500 })
   }
 
+  // Qualified-lead detection — deterministic, rule-based (no LLM call):
+  // real signal that a real business question got a real answer, kept
+  // separate from is_lead (n8n's own judgment call, already proven too
+  // loose, and depended on by meta-ads/rollup.ts for ad ROI reporting
+  // so it can't be redefined here). Only customer messages can qualify
+  // a conversation.
+  const qualifiesNow =
+    senderType === 'customer' &&
+    detectsQualifyingReply({
+      precedingMessage,
+      newMessage: { content_type: contentType, content_text: messageText },
+    })
+
+  // Fetch prior state to detect true false→true transitions — both for
+  // is_qualified (computed here) and is_escalated (reported by the bot
+  // via body.is_escalated) — so the real-time alert fires exactly once
+  // per conversation per event type, not on every subsequent message.
+  const { data: priorState } = await admin
+    .from('conversations')
+    .select('is_qualified, is_escalated')
+    .eq('id', conversationId)
+    .maybeSingle()
+  const becomesQualified = qualifiesNow && !priorState?.is_qualified
+  const becomesEscalated = body.is_escalated === true && !priorState?.is_escalated
+
   await admin
     .from('conversations')
     .update({
@@ -318,8 +360,24 @@ export async function POST(request: Request) {
       ...(requestedStatus ? { status: requestedStatus } : {}),
       ...(body.is_escalated === true ? { is_escalated: true } : {}),
       ...(body.is_lead === true ? { is_lead: true } : {}),
+      ...(qualifiesNow ? { is_qualified: true } : {}),
     })
     .eq('id', conversationId)
+
+  if (becomesQualified || becomesEscalated) {
+    const [{ data: account }, { data: contactRow }] = await Promise.all([
+      admin.from('accounts').select('name').eq('id', accountId).maybeSingle(),
+      admin.from('contacts').select('name, phone').eq('id', contact?.id ?? '').maybeSingle(),
+    ])
+    const alertBase = {
+      accountName: account?.name ?? 'Scale OS',
+      contactName: contactRow?.name ?? normalizedPhone,
+      contactPhone: contactRow?.phone ?? normalizedPhone,
+      conversationId,
+    }
+    if (becomesQualified) triggerLeadAlert({ ...alertBase, type: 'qualified' })
+    if (becomesEscalated) triggerLeadAlert({ ...alertBase, type: 'escalated' })
+  }
 
   return NextResponse.json({ success: true, message_id: msg.id, conversation_id: conversationId })
 }

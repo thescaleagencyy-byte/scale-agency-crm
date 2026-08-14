@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import type { Conversation, ConversationStatus } from "@/types";
-import { Search, Inbox as InboxIcon, Reply, AlertCircle, Star } from "lucide-react";
+import { Search, Inbox as InboxIcon, Reply, AlertCircle, Star, BadgeCheck } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -31,11 +31,12 @@ const STATUS_COLORS: Record<ConversationStatus, string> = {
   closed: "bg-muted-foreground",
 };
 
-type InboxFilter = ConversationStatus | "all" | "unread" | "escalated" | "leads";
+type InboxFilter = ConversationStatus | "all" | "unread" | "escalated" | "leads" | "qualified";
 
 const FILTER_OPTIONS: { label: string; value: InboxFilter }[] = [
   { label: "All", value: "all" },
   { label: "Unread", value: "unread" },
+  { label: "Qualified", value: "qualified" },
   { label: "Leads", value: "leads" },
   { label: "Escalations", value: "escalated" },
   { label: "Open", value: "open" },
@@ -116,6 +117,8 @@ export function ConversationList({
       result = result.filter((c) => c.is_escalated);
     } else if (filter === "leads") {
       result = result.filter((c) => c.is_lead);
+    } else if (filter === "qualified") {
+      result = result.filter((c) => c.is_qualified);
     } else if (filter !== "all") {
       result = result.filter((c) => c.status === filter);
     }
@@ -304,6 +307,14 @@ function ConversationItem({
             {conversation.last_message_text || "No messages yet"}
           </p>
           <div className="flex shrink-0 items-center gap-1.5">
+            {conversation.is_qualified && (
+              <span
+                className="flex h-4 w-4 items-center justify-center rounded-full bg-blue-500/15 text-blue-500"
+                title="Qualified — answered a real business question"
+              >
+                <BadgeCheck className="h-2.5 w-2.5" />
+              </span>
+            )}
             {conversation.is_lead && (
               <span
                 className="flex h-4 w-4 items-center justify-center rounded-full bg-amber-500/15 text-amber-500"
