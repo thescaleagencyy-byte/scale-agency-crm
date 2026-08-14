@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import type { Conversation, ConversationStatus } from "@/types";
-import { Search, Inbox as InboxIcon, Reply, AlertCircle, Star, BadgeCheck } from "lucide-react";
+import { Search, Inbox as InboxIcon, Reply, AlertCircle, Star, BadgeCheck, Image as ImageIcon } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -329,6 +329,14 @@ function ConversationItem({
                 title="Escalated to human"
               >
                 <AlertCircle className="h-2.5 w-2.5" />
+              </span>
+            )}
+            {conversation.contact?.channel === 'instagram' && (
+              <span
+                className="flex h-4 w-4 items-center justify-center rounded-full bg-pink-500/15 text-pink-500"
+                title="Instagram"
+              >
+                <ImageIcon className="h-2.5 w-2.5" />
               </span>
             )}
             {conversation.has_customer_replied && (
