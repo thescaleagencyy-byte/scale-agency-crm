@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/flows/admin-client'
 import { composeDigest } from '@/lib/digest/compose'
+import { checkCronAuth } from '@/lib/cron-auth'
 
 // GET /api/digest/cron — generates + stores today's digest for every
 // account. Protect with DIGEST_CRON_SECRET (x-cron-secret header or
@@ -15,11 +16,8 @@ import { composeDigest } from '@/lib/digest/compose'
 // so it's visible in-app; delivery is the next real step once a
 // template exists.
 export async function GET(request: Request) {
-  const secret = process.env.DIGEST_CRON_SECRET
-  const auth = request.headers.get('x-cron-secret') ?? new URL(request.url).searchParams.get('secret')
-  if (secret && auth !== secret) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const authError = checkCronAuth(request, 'DIGEST_CRON_SECRET')
+  if (authError) return authError
 
   const admin = supabaseAdmin()
   const { data: accounts, error } = await admin.from('accounts').select('id, default_currency')
