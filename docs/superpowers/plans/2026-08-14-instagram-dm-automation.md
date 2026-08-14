@@ -60,20 +60,20 @@ create unique index if not exists idx_contacts_instagram_id
 
 - [ ] **Step 2: Send this file's contents to Umer to paste into the Supabase SQL Editor.** Wait for his confirmation it ran successfully before starting Task 2 — every later task assumes these columns exist.
 
-- [ ] **Step 3: Update the `Contact` type**
+- [ ] **Step 3: Add the two new fields to the `Contact` type**
 
-Find the `Contact` interface in `src/types/index.ts` (has `phone: string` today — check the exact current line before editing, since other fields may have shifted). Change `phone` to optional/nullable and add the two new fields:
+Find the `Contact` interface in `src/types/index.ts` (check the exact current shape before editing, since other fields may have shifted). Add `instagram_id` and `channel` — **leave `phone` as `string` for now, do not change it to nullable here.** The DB column is nullable as of this migration, but no code path creates a null-phone contact until Task 5, and changing this shared type now would break every existing WhatsApp call site that correctly treats `phone` as always-present today — that cleanup belongs in the task that actually introduces null-phone contacts, not this one, so every task stays independently tsc-clean (Global Constraints).
 
 ```ts
 export interface Contact {
   id: string;
   account_id: string;
   user_id: string;
-  /** Nullable for Instagram-only contacts — see channel/instagram_id. */
-  phone: string | null;
+  phone: string;
   name: string;
-  /** Meta's Instagram-Scoped ID — set only when channel === 'instagram'. Exact-match identity, no normalization (unlike phone). */
+  /** Meta's Instagram-Scoped ID — set only when channel === 'instagram'. Exact-match identity, no normalization (unlike phone). Null for every WhatsApp contact. */
   instagram_id: string | null;
+  /** Defaults to 'whatsapp' for every existing row (DB default). */
   channel: 'whatsapp' | 'instagram';
   // ...existing fields below, unchanged
 }
@@ -85,7 +85,7 @@ Read the file first to see the exact existing shape and merge these fields in wi
 
 Run: `cd /Users/umerahmed/Projects/scale-agency-crm && rm -rf .next && npx tsc --noEmit`
 
-Expected: real errors surface here — every place that currently treats `contact.phone` as always-a-string (e.g. `sanitizePhoneForMeta(contact.phone)` in `whatsapp/send/route.ts`) will now fail to typecheck, since `phone` is nullable. **Do not silence these with `!` or `as string`** — each one is a real place that needs a channel check added. Task 5 fixes the send route specifically; note any other call sites tsc surfaces here for later tasks to address, don't leave any unresolved.
+Expected: clean. This task only adds new fields — nothing existing changes type, so nothing should break.
 
 - [ ] **Step 5: Commit**
 
@@ -452,7 +452,17 @@ git push origin main
 
 Kept as the same endpoint deliberately (not a new `/api/instagram/send`) — the frontend already has 3 call sites hardcoded to this URL and has no reason to know which channel a conversation is on before sending.
 
-- [ ] **Step 1: Capture the Instagram Page id at verification time**
+- [ ] **Step 1: Make `Contact.phone` nullable and fix the fallout**
+
+Task 1 deliberately left `Contact.phone` typed as `string` (not `string | null`) even though the DB column became nullable, since no code path created a null-phone contact yet. This task is where that stops being true — Instagram contacts flow through here. Flip the type now, in `src/types/index.ts`:
+
+```ts
+  phone: string | null;
+```
+
+Run `cd /Users/umerahmed/Projects/scale-agency-crm && rm -rf .next && npx tsc --noEmit` immediately after this one-line change, before writing any of the rest of this task. Every error it reports is a real place in the codebase that currently assumes `contact.phone` is always a string — fix each one with a proper channel/null check (not `!` or `as string`), across every file tsc flags, not only `whatsapp/send/route.ts`. Common shapes you'll likely hit: a WhatsApp-only display fallback like `contact.name || contact.phone` (safe as-is, `||` already handles null), versus a direct call like `sanitizePhoneForMeta(contact.phone)` with no preceding guard (unsafe, needs one). Re-run tsc after each fix until it's clean, then continue to Step 2.
+
+- [ ] **Step 2: Capture the Instagram Page id at verification time**
 
 `integrations.config` currently only stores `{ page: data.name }` for the Instagram/Facebook verifier — the numeric Page id (`1112429075279428` for Scale AI, confirmed live this session) was never captured, even though the Graph API's `/me` call already returns it as `data.id`. Fix the verifier to store it, so `/api/whatsapp/send` (Step 3 below) has a real place to read it from instead of a hardcoded value that would silently go stale if the connected account ever changes.
 
@@ -477,7 +487,7 @@ Change the last line to also capture the id:
 
 This only takes effect the next time the integration is saved (the connect route writes `meta` into `config` on save — see `src/app/api/integrations/connect/route.ts:77`). After this ships, re-save the Instagram integration once from Settings → Integrations (paste the same token back in) so `config.pageId` actually populates — flag this to Umer as a required manual step before Task 5's send path can work, don't assume it backfills itself.
 
-- [ ] **Step 2: Locate the phone-validation gate**
+- [ ] **Step 3: Locate the phone-validation gate**
 
 In `src/app/api/whatsapp/send/route.ts`, find:
 
@@ -502,9 +512,9 @@ In `src/app/api/whatsapp/send/route.ts`, find:
 
 This whole block, plus everything through the Meta send attempt, assumes WhatsApp. Wrap it in a channel branch.
 
-- [ ] **Step 3: Add the Instagram branch**
+- [ ] **Step 4: Add the Instagram branch**
 
-Replace the block from Step 1 through the existing `try { ... } catch` around the Meta send (the `attempt`/`phoneVariants` loop) with:
+Replace the block from Step 3 through the existing `try { ... } catch` around the Meta send (the `attempt`/`phoneVariants` loop) with:
 
 ```ts
     const contact = conversation.contact
@@ -621,7 +631,7 @@ Replace the block from Step 1 through the existing `try { ... } catch` around th
     }
 ```
 
-- [ ] **Step 4: Add imports**
+- [ ] **Step 5: Add imports**
 
 ```ts
 import { decryptText } from '@/lib/crypto'
@@ -630,21 +640,26 @@ import { sendInstagramTextMessage } from '@/lib/instagram/graph-api'
 
 (`decryptText` may already be imported under a different alias — check before adding a duplicate.)
 
-- [ ] **Step 5: Typecheck**
+- [ ] **Step 6: Typecheck**
 
 Run: `cd /Users/umerahmed/Projects/scale-agency-crm && rm -rf .next && npx tsc --noEmit`
 Expected: clean.
 
-- [ ] **Step 6: Lint, then commit**
+- [ ] **Step 7: Lint, then commit**
+
+Step 1's tsc fallout may have touched files beyond the two listed below (any file that read `contact.phone` without a guard) — lint and stage everything Step 1-4 actually changed, not just this fixed list:
 
 ```bash
-npx eslint src/app/api/whatsapp/send/route.ts src/lib/integration-verify.ts
-git add src/app/api/whatsapp/send/route.ts src/lib/integration-verify.ts
-git commit -m "Branch /api/whatsapp/send on contact.channel; capture Instagram page id on verify"
+git status --short
+npx eslint src/app/api/whatsapp/send/route.ts src/lib/integration-verify.ts src/types/index.ts
+# plus any other file Step 1's tsc fallout touched — eslint those too
+git add -A -- src/app/api/whatsapp/send/route.ts src/lib/integration-verify.ts src/types/index.ts
+# plus any other file Step 1's tsc fallout touched
+git commit -m "Branch /api/whatsapp/send on contact.channel; make Contact.phone nullable; capture Instagram page id on verify"
 git push origin main
 ```
 
-Then re-save the Instagram credential once from Settings → Integrations (Step 1) so `config.pageId` actually populates before testing an Instagram send.
+Then re-save the Instagram credential once from Settings → Integrations (Step 2) so `config.pageId` actually populates before testing an Instagram send.
 
 ---
 
