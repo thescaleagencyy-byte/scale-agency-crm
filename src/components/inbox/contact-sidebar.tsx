@@ -138,7 +138,7 @@ export function ContactSidebar({ contact, conversationId }: ContactSidebarProps)
     );
   }
 
-  const displayName = contact.name || contact.phone;
+  const displayName = contact.name || contact.phone || "Unknown";
 
   return (
     <div className="flex h-full w-70 flex-col border-l border-border bg-card">

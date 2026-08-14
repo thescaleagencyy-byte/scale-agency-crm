@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireRole, toErrorResponse } from '@/lib/auth/account'
-import { encryptContent } from '@/lib/crypto'
+import { encryptContent, decryptText } from '@/lib/crypto'
+import { sendInstagramTextMessage } from '@/lib/instagram/graph-api'
 import {
   sendTextMessage,
   sendTemplateMessage,
@@ -167,7 +168,103 @@ export async function POST(request: Request) {
     }
 
     const contact = conversation.contact
-    if (!contact?.phone) {
+    if (!contact) {
+      return NextResponse.json({ error: 'Contact not found' }, { status: 400 })
+    }
+
+    if (contact.channel === 'instagram') {
+      if (message_type !== 'text') {
+        return NextResponse.json(
+          { error: 'Instagram sends only support text messages in this version.' },
+          { status: 400 },
+        )
+      }
+      if (!contact.instagram_id) {
+        return NextResponse.json({ error: 'Contact has no Instagram id' }, { status: 400 })
+      }
+
+      const { data: integration, error: integrationError } = await supabase
+        .from('integrations')
+        .select('credentials_encrypted, config')
+        .eq('account_id', accountId)
+        .eq('service', 'instagram')
+        .eq('status', 'connected')
+        .maybeSingle()
+
+      if (integrationError || !integration?.credentials_encrypted) {
+        return NextResponse.json(
+          { error: 'Instagram not connected. Connect it in Settings → Integrations first.' },
+          { status: 400 },
+        )
+      }
+
+      const igPageId = (integration.config as { pageId?: string } | null)?.pageId
+      if (!igPageId) {
+        return NextResponse.json(
+          { error: 'Instagram integration is missing a page id — re-save the credential in Settings → Integrations to refresh it.' },
+          { status: 500 },
+        )
+      }
+
+      const { page_access_token: pageAccessToken } = JSON.parse(
+        decryptText(integration.credentials_encrypted),
+      ) as { page_access_token?: string }
+      if (!pageAccessToken) {
+        return NextResponse.json({ error: 'Instagram credential is missing a page_access_token.' }, { status: 500 })
+      }
+
+      let igMessageId: string
+      try {
+        const result = await sendInstagramTextMessage({
+          igUserId: igPageId,
+          accessToken: pageAccessToken,
+          to: contact.instagram_id,
+          text: content_text,
+        })
+        igMessageId = result.messageId
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown Instagram API error'
+        console.error('Instagram Graph API send failed:', message)
+        return NextResponse.json({ error: `Instagram API error: ${message}` }, { status: 502 })
+      }
+
+      const { data: messageRecord, error: msgError } = await supabase
+        .from('messages')
+        .insert({
+          conversation_id,
+          sender_type: 'agent',
+          content_type: 'text',
+          content_text: encryptContent(content_text),
+          message_id: igMessageId,
+          status: 'sent',
+          reply_to_message_id: reply_to_message_id || null,
+        })
+        .select()
+        .single()
+
+      if (msgError) {
+        console.error('Error inserting sent Instagram message:', msgError)
+        return NextResponse.json(
+          { error: `Message sent to Instagram but failed to save to DB: ${msgError.message}` },
+          { status: 500 },
+        )
+      }
+
+      const now = new Date().toISOString()
+      await supabase
+        .from('conversations')
+        .update({ last_message_text: content_text, last_message_at: now, updated_at: now })
+        .eq('id', conversation_id)
+
+      return NextResponse.json({
+        success: true,
+        message_id: messageRecord.id,
+        instagram_message_id: igMessageId,
+      })
+    }
+
+    // --- Existing WhatsApp path below, unchanged ---
+    if (!contact.phone) {
       return NextResponse.json(
         { error: 'Contact phone number not found' },
         { status: 400 }

@@ -67,7 +67,7 @@ async function verifyMetaGraphToken(fields: Record<string, string>): Promise<Ver
   const res = await fetch(`https://graph.facebook.com/v19.0/me?access_token=${encodeURIComponent(token)}`)
   const data = await res.json()
   if (data.error) return { ok: false, error: `Meta rejected the token: ${data.error.message}.` }
-  return { ok: true, meta: { page: data.name } }
+  return { ok: true, meta: { page: data.name, pageId: data.id } }
 }
 
 async function verifyMetaAdsToken(fields: Record<string, string>): Promise<VerifyResult> {
