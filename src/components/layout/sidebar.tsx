@@ -113,11 +113,6 @@ interface NavItem {
   icon: typeof LayoutDashboard;
   /** Feature key — item hidden when that feature is disabled. */
   feature?: string;
-  /**
-   * When true, the nav row renders a small "Beta" chip after the label.
-   * Purely informational — doesn't affect routing or access.
-   */
-  beta?: boolean;
 }
 
 interface NavGroup {
@@ -135,11 +130,11 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/dashboard",    label: "Dashboard",     icon: LayoutDashboard, feature: "dashboard" },
       { href: "/meta-ads",     label: "Meta Ads",      icon: Megaphone,       feature: "meta_ads" },
-      { href: "/copilot",      label: "CEO Copilot",   icon: Zap,             feature: "copilot", beta: true },
-      { href: "/business-knowledge", label: "Business Knowledge", icon: Brain, feature: "business-knowledge", beta: true },
+      { href: "/copilot",      label: "CEO Copilot",   icon: Zap,             feature: "copilot" },
+      { href: "/business-knowledge", label: "Business Knowledge", icon: Brain, feature: "business-knowledge" },
       { href: "/analytics",    label: "Analytics",     icon: BarChart3,       feature: "analytics" },
-      { href: "/competitors",  label: "Competitor Intel", icon: Radar,        feature: "competitors", beta: true },
-      { href: "/predictions",  label: "Predictions",   icon: Sparkles,        feature: "predictions", beta: true },
+      { href: "/competitors",  label: "Competitor Intel", icon: Radar,        feature: "competitors" },
+      { href: "/predictions",  label: "Predictions",   icon: Sparkles,        feature: "predictions" },
     ],
   },
   {
@@ -168,7 +163,7 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/broadcasts",   label: "Broadcasts",    icon: Radio,           feature: "broadcasts" },
       { href: "/drip",         label: "Drip Campaigns",icon: Zap,             feature: "drip" },
-      { href: "/content-calendar", label: "Content Calendar", icon: CalendarClock, feature: "content-calendar", beta: true },
+      { href: "/content-calendar", label: "Content Calendar", icon: CalendarClock, feature: "content-calendar" },
       { href: "/qr-codes",     label: "QR Codes",      icon: QrCode,          feature: "qr-codes" },
     ],
   },
@@ -179,7 +174,7 @@ const ALL_NAV_GROUPS: NavGroup[] = [
       { href: "/automations",  label: "Automations",   icon: Zap,             feature: "automations" },
       { href: "/flows",        label: "Flows",         icon: Workflow,        feature: "flows" },
       { href: "/n8n",          label: "n8n",           icon: Workflow,        feature: "n8n" },
-      { href: "/integrations", label: "Integration Hub", icon: Plug,          feature: "integrations", beta: true },
+      { href: "/integrations", label: "Integration Hub", icon: Plug,          feature: "integrations" },
     ],
   },
 ];
@@ -402,14 +397,6 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                           <item.icon className="h-[17px] w-[17px]" strokeWidth={isActive ? 2.2 : 1.8} />
                         </span>
                         {!collapsed && <span className="flex-1">{item.label}</span>}
-                        {!collapsed && item.beta && (
-                          <span
-                            aria-label="Beta feature"
-                            className="rounded-full border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-amber-300"
-                          >
-                            Beta
-                          </span>
-                        )}
                         {!collapsed && showUnreadDot && (
                           <span
                             aria-label={`${totalUnread} unread conversation${totalUnread === 1 ? "" : "s"}`}
