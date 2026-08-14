@@ -20,6 +20,7 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/flows/admin-client'
 import { decryptText } from '@/lib/crypto'
 import { fetchAdInsights } from '@/lib/meta-ads/marketing-api'
+import { checkCronAuth } from '@/lib/cron-auth'
 
 const DEFAULT_WINDOW_DAYS = 3
 
@@ -28,12 +29,10 @@ function isoDate(d: Date): string {
 }
 
 export async function GET(request: Request) {
-  const secret = process.env.META_ADS_CRON_SECRET
+  const authError = checkCronAuth(request, 'META_ADS_CRON_SECRET')
+  if (authError) return authError
+
   const url = new URL(request.url)
-  const auth = request.headers.get('x-cron-secret') ?? url.searchParams.get('secret')
-  if (secret && auth !== secret) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
 
   const daysParam = Number(url.searchParams.get('days'))
   const windowDays = Number.isFinite(daysParam) && daysParam > 0 ? Math.min(daysParam, 90) : DEFAULT_WINDOW_DAYS

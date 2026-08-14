@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/flows/admin-client'
 import { decrypt, isLegacyFormat } from '@/lib/whatsapp/encryption'
 import { sendTemplateMessage } from '@/lib/whatsapp/meta-api'
+import { checkCronAuth } from '@/lib/cron-auth'
 
 /**
  * GET /api/drip/cron
@@ -15,11 +16,8 @@ import { sendTemplateMessage } from '@/lib/whatsapp/meta-api'
  * Protect with DRIP_CRON_SECRET header or query param.
  */
 export async function GET(request: Request) {
-  const secret = process.env.DRIP_CRON_SECRET
-  const auth = request.headers.get('x-cron-secret') ?? new URL(request.url).searchParams.get('secret')
-  if (secret && auth !== secret) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const authError = checkCronAuth(request, 'DRIP_CRON_SECRET')
+  if (authError) return authError
 
   const admin = supabaseAdmin()
   const now = new Date().toISOString()

@@ -22,15 +22,13 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/flows/admin-client'
 import { engineSendTemplate } from '@/lib/automations/meta-send'
+import { checkCronAuth } from '@/lib/cron-auth'
 
 const BATCH_LIMIT = 50
 
 export async function GET(request: Request) {
-  const secret = process.env.RECOVERY_CRON_SECRET
-  const auth = request.headers.get('x-cron-secret') ?? new URL(request.url).searchParams.get('secret')
-  if (secret && auth !== secret) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const authError = checkCronAuth(request, 'RECOVERY_CRON_SECRET')
+  if (authError) return authError
 
   const admin = supabaseAdmin()
   const now = new Date()
