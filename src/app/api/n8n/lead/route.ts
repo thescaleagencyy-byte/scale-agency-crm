@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, after } from 'next/server'
 import { supabaseAdmin } from '@/lib/flows/admin-client'
 import { findExistingContact } from '@/lib/contacts/dedupe'
 import { normalizePhone } from '@/lib/whatsapp/phone-utils'
 import { scoreLead } from '@/lib/leads/score'
+import { triageLead } from '@/lib/leads/triage'
 
 /**
  * POST /api/n8n/lead
@@ -125,6 +126,17 @@ export async function POST(request: Request) {
     console.error('[n8n/lead] DB insert failed:', error)
     return NextResponse.json({ error: 'Failed to save lead.' }, { status: 500 })
   }
+
+  // Fire after the response so a slow/failed OpenAI call never delays or
+  // breaks n8n's webhook delivery — the lead is already saved either way.
+  // No-ops quietly if OPENAI_API_KEY isn't set (triageLead returns null).
+  after(async () => {
+    try {
+      await triageLead(admin, lead)
+    } catch (err) {
+      console.error('[n8n/lead] auto-triage failed for', lead.id, err)
+    }
+  })
 
   return NextResponse.json({ success: true, lead_id: lead.id })
 }
