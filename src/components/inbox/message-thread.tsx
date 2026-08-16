@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
@@ -14,7 +15,6 @@ import type {
   Profile,
 } from "@/types";
 import {
-  MessageSquare,
   ChevronDown,
   UserPlus,
   Check,
@@ -141,22 +141,29 @@ const STATUS_OPTIONS: { label: string; value: ConversationStatus; color: string 
  * WhatsApp-style doodle background applied to the chat area (both the
  * active thread and the empty state). Clients with a bespoke tile in
  * /public/clients/<slug>-doodle.svg get their own motif (AshWheelz:
- * trucks, cranes, forklifts); everyone else keeps the generic doodle.
- * Allow-list rather than convention so a client without a custom file
- * never 404s into a blank background.
+ * trucks, cranes, forklifts) — untouched, still live for them.
+ * Everyone else (including Scale Agency's own account) gets a plain
+ * background instead of the old generic icon-pattern doodle, which
+ * read as clutter rather than a real brand touch — see CLIENT_LOGO
+ * below for what replaces it in the empty state.
  *
  * Defined once at module scope so the two render paths can't drift —
  * if we ever switch the asset, both spots update together.
  */
 const CLIENTS_WITH_DOODLE = ["ashwheelz"];
 const DOODLE_SLUG = CLIENT_NAME.toLowerCase().replace(/\s+/g, "");
-const DOODLE_URL = CLIENTS_WITH_DOODLE.includes(DOODLE_SLUG)
-  ? `/clients/${DOODLE_SLUG}-doodle.svg`
-  : "/inbox-doodle.svg";
-// Inline style (not a Tailwind arbitrary value): the URL is computed at
-// module load, and Tailwind's JIT can't compile dynamic class strings.
+const HAS_CUSTOM_DOODLE = CLIENTS_WITH_DOODLE.includes(DOODLE_SLUG);
 const DOODLE_BG_CLASSES = "bg-background bg-repeat";
-const DOODLE_BG_STYLE = { backgroundImage: `url('${DOODLE_URL}')` } as const;
+const DOODLE_BG_STYLE = HAS_CUSTOM_DOODLE
+  ? ({ backgroundImage: `url('/clients/${DOODLE_SLUG}-doodle.svg')` } as const)
+  : ({} as const);
+
+// Same fallback chain the sidebar/login/appearance-panel logos already
+// use — a client-specific PNG if this deployment is white-labeled,
+// otherwise Scale Agency's own default branding.
+const CLIENT_LOGO = CLIENT_NAME
+  ? `/clients/${CLIENT_NAME.toLowerCase().replace(/\s+/g, "")}.png`
+  : "/branding.jpeg";
 
 export function MessageThread({
   conversation,
@@ -867,14 +874,16 @@ export function MessageThread({
       });
   }, [conversation?.id, conversation?.assigned_agent_id, user?.id, onAssignChange]);
 
-  // Empty state — same WhatsApp-style doodle background as the active
-  // thread below, so swapping between empty/selected doesn't change the
-  // pattern under the user's eye.
+  // Empty state — same background treatment as the active thread below
+  // (plain for most accounts, custom doodle only for the allow-listed
+  // clients above), so swapping between empty/selected doesn't change
+  // the surface under the user's eye. Shows this account's own logo
+  // instead of a generic chat-bubble icon.
   if (!conversation || !contact) {
     return (
       <div className={cn("flex flex-1 flex-col items-center justify-center", DOODLE_BG_CLASSES)} style={DOODLE_BG_STYLE}>
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 ring-1 ring-primary/15">
-          <MessageSquare className="h-7 w-7 text-primary" />
+        <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-primary/10 ring-1 ring-primary/15">
+          <Image src={CLIENT_LOGO} alt="" width={64} height={64} className="h-full w-full object-cover" />
         </div>
         <h3 className="mt-4 text-sm font-medium text-foreground">
           Select a conversation
