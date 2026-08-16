@@ -202,9 +202,6 @@ export function MessageThread({
     }, 700);
   }, [isRefreshing, onRefresh]);
   const [replyTo, setReplyTo] = useState<ReplyDraft | null>(null);
-  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
-  const [composerDraft, setComposerDraft] = useState<string | undefined>();
-  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [viewerCount, setViewerCount] = useState(0);
   const [handoffSummary, setHandoffSummary] = useState<{
     customer_intent?: string;
@@ -420,32 +417,8 @@ export function MessageThread({
   // a quote pulled from conversation A shouldn't bleed into conversation B.
   useEffect(() => {
     setReplyTo(null);
-    setAiSuggestions([]);
     setHandoffSummary(null);
   }, [conversationId]);
-
-  // Fetch AI reply suggestions when messages load and last message is from customer
-  useEffect(() => {
-    if (!conversationId || !messages.length) return;
-    const lastMsg = messages[messages.length - 1];
-    if (lastMsg?.sender_type !== 'customer') return;
-    let cancelled = false;
-    setLoadingSuggestions(true);
-    fetch('/api/intelligence/suggest', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ conversation_id: conversationId }),
-    })
-      .then(r => r.json())
-      .then(({ suggestions }) => { if (!cancelled) setAiSuggestions(suggestions ?? []); })
-      .catch(() => { if (!cancelled) setAiSuggestions([]); })
-      .finally(() => { if (!cancelled) setLoadingSuggestions(false); });
-    // Guards against a slow response for a since-abandoned conversation
-    // landing after the agent has already switched threads — without
-    // this, suggestions for conversation A could pop up while viewing B.
-    return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conversationId, messages.length]);
 
   // Fetch handoff summary when last bot-sent message is detected and agent is now viewing
   useEffect(() => {
@@ -1233,35 +1206,6 @@ export function MessageThread({
         </div>
       )}
 
-      {/* AI Reply Suggestions */}
-      {(aiSuggestions.length > 0 || loadingSuggestions) && (
-        <div className="border-t border-border bg-card px-4 py-2">
-          {loadingSuggestions ? (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <div className="h-3 w-3 animate-spin rounded-full border border-primary border-t-transparent" />
-              Generating suggestions...
-            </div>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {aiSuggestions.map((s, i) => (
-                <button
-                  key={i}
-                  onClick={() => { setComposerDraft(s); setAiSuggestions([]); }}
-                  className="max-w-[280px] truncate rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs text-primary hover:bg-primary/20 transition-colors text-left"
-                  title={s}
-                >
-                  {s}
-                </button>
-              ))}
-              <button
-                onClick={() => setAiSuggestions([])}
-                className="text-xs text-muted-foreground hover:text-foreground"
-              >✕</button>
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Composer */}
       <MessageComposer
         conversationId={conversation.id}
@@ -1270,8 +1214,6 @@ export function MessageThread({
         onSendMedia={handleSendMedia}
         onOpenTemplates={handleOpenTemplates}
         replyTo={replyTo}
-        draftText={composerDraft}
-        onDraftConsumed={() => setComposerDraft(undefined)}
         onClearReply={() => setReplyTo(null)}
       />
 

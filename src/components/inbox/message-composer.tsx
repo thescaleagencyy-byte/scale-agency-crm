@@ -99,9 +99,6 @@ interface MessageComposerProps {
   onOpenTemplates: () => void;
   replyTo?: ReplyDraft | null;
   onClearReply?: () => void;
-  /** Pre-fill the composer text (e.g. from AI suggestion click). */
-  draftText?: string;
-  onDraftConsumed?: () => void;
 }
 
 function formatDuration(seconds: number): string {
@@ -130,19 +127,8 @@ export function MessageComposer({
   onOpenTemplates,
   replyTo,
   onClearReply,
-  draftText,
-  onDraftConsumed,
 }: MessageComposerProps) {
   const [text, setText] = useState("");
-
-  // Pre-fill from AI suggestion
-  useEffect(() => {
-    if (!draftText) return;
-    setText(draftText);
-    textareaRef.current?.focus();
-    onDraftConsumed?.();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draftText]);
   const [sending, setSending] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
