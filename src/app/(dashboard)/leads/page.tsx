@@ -304,7 +304,15 @@ export default function LeadsPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-      <div className={`panel-float overflow-hidden ${selectedLead ? 'lg:col-span-3' : 'lg:col-span-5'}`}>
+      {/* .panel-float's shared --radius-3xl (~31px) reads as an oval
+          against this page's flat, edge-to-edge table — inline style
+          overrides it (plain CSS class beats a Tailwind utility here,
+          so a competing className wouldn't win) without touching the
+          shared class other panel-float pages still use as-is. */}
+      <div
+        className={`panel-float overflow-hidden ${selectedLead ? 'lg:col-span-3' : 'lg:col-span-5'}`}
+        style={{ borderRadius: '12px' }}
+      >
         {loading ? (
           <div className="flex items-center justify-center gap-2 py-16 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
