@@ -284,16 +284,35 @@ export async function POST(request: Request) {
   // back-to-back identical message (e.g. someone retyping "ok" twice)
   // would also get suppressed — accepted as the far rarer case compared
   // to retry-duplicates.
+  //
+  // Bounded to a 10-minute window (2026-08-16 audit fix) — the original
+  // "last 3 messages, no time bound" version caused a real incident
+  // during the 2026-08-15 outage backfill: replaying the same batch
+  // more than 3 times made the lookback miss genuine retry-duplicates
+  // (fixed then by hand-computing and deleting 171 leftover rows), and
+  // in the other direction it can wrongly suppress a genuine unrelated
+  // repeat (e.g. "Hi" sent again a week later) if it happens to still
+  // be in the sender's last 3 messages. A time bound fixes both: a
+  // retry-duplicate always lands within seconds of the original, so a
+  // duplicate outside 10 minutes is essentially always a new message.
+  const timestampSeconds = Number(body.timestamp)
+  const effectiveMs =
+    Number.isFinite(timestampSeconds) && timestampSeconds > 0
+      ? timestampSeconds * 1000
+      : Date.now()
+  const DEDUPE_WINDOW_MS = 10 * 60 * 1000
   const { data: recentSameSender } = await admin
     .from('messages')
-    .select('content_text')
+    .select('content_text, created_at')
     .eq('conversation_id', conversationId)
     .eq('sender_type', senderType)
     .eq('content_type', contentType)
     .order('created_at', { ascending: false })
     .limit(3)
   const isDuplicate = (recentSameSender ?? []).some(
-    (m) => decryptContent(m.content_text) === messageText,
+    (m) =>
+      decryptContent(m.content_text) === messageText &&
+      Math.abs(effectiveMs - new Date(m.created_at).getTime()) < DEDUPE_WINDOW_MS,
   )
   if (isDuplicate) {
     return NextResponse.json({ success: true, duplicate: true })
@@ -314,7 +333,6 @@ export async function POST(request: Request) {
     ? { sender_type: precedingRow.sender_type, content_text: decryptContent(precedingRow.content_text) }
     : null
 
-  const timestampSeconds = Number(body.timestamp)
   const createdAt =
     Number.isFinite(timestampSeconds) && timestampSeconds > 0
       ? new Date(timestampSeconds * 1000).toISOString()
