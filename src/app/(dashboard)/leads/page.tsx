@@ -36,7 +36,7 @@ function ScoreBadge({ score }: { score: number }) {
     score >= 50 ? 'bg-yellow-500/15 text-yellow-600 border-yellow-500/30' :
                   'bg-muted text-muted-foreground border-border';
   return (
-    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${color}`}>
+    <span className={`inline-flex h-5 w-fit items-center justify-center rounded-4xl border px-2 py-0.5 text-xs font-medium ${color}`}>
       {score}
     </span>
   );
@@ -56,7 +56,7 @@ function QualityBadge({ quality, summary }: { quality: string | null; summary: s
   return (
     <span
       title={summary ?? undefined}
-      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold capitalize ${QUALITY_STYLE[quality] ?? QUALITY_STYLE.cold}`}
+      className={`inline-flex h-5 w-fit items-center justify-center rounded-4xl border px-2 py-0.5 text-xs font-medium capitalize ${QUALITY_STYLE[quality] ?? QUALITY_STYLE.cold}`}
     >
       {quality}
     </span>
@@ -317,6 +317,12 @@ export default function LeadsPage() {
             <p className="text-xs text-muted-foreground">Leads from qualified WhatsApp conversations appear here</p>
           </div>
         ) : (
+          // p-1.5 wrapper: the table's header border/checkbox otherwise sit
+          // flush against panel-float's rounded corner with zero gap, so
+          // overflow-hidden clips the straight border line at a shallow
+          // tangent to the arc — renders as a fuzzy, irregular corner
+          // instead of a clean curve. A small inset fixes it.
+          <div className="p-1.5">
           <Table>
             <TableHeader>
               <TableRow className="border-border hover:bg-transparent">
@@ -366,7 +372,7 @@ export default function LeadsPage() {
                   <TableCell className="text-sm text-foreground">{lead.company ?? '—'}</TableCell>
                   <TableCell>
                     {lead.source ? (
-                      <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground capitalize">
+                      <span className="inline-flex h-5 w-fit items-center justify-center rounded-4xl border border-border bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground capitalize">
                         {lead.source.replace(/_/g, ' ')}
                       </span>
                     ) : <span className="text-muted-foreground">—</span>}
@@ -397,7 +403,7 @@ export default function LeadsPage() {
                       {lead.status === 'new' && Date.now() - new Date(lead.created_at).getTime() > 3 * 86400000 && (
                         <span
                           title="No contact in 3+ days"
-                          className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-1.5 py-0.5 text-[10px] font-medium text-cyan-600"
+                          className="inline-flex h-5 w-fit items-center justify-center rounded-4xl border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-xs font-medium text-cyan-600"
                         >
                           🥶 Going cold
                         </span>
@@ -448,6 +454,7 @@ export default function LeadsPage() {
               ))}
             </TableBody>
           </Table>
+          </div>
         )}
       </div>
 
