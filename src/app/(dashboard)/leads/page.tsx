@@ -308,9 +308,15 @@ export default function LeadsPage() {
           against this page's flat, edge-to-edge table — inline style
           overrides it (plain CSS class beats a Tailwind utility here,
           so a competing className wouldn't win) without touching the
-          shared class other panel-float pages still use as-is. */}
+          shared class other panel-float pages still use as-is.
+          min-w-0 is the real fix for the right edge bleeding past the
+          viewport: a grid item defaults to min-width:auto, which
+          respects its content's full intrinsic width — the table
+          needs horizontal scroll (more columns than fit), so without
+          this the grid TRACK itself stretches to the table's full
+          width instead of the table scrolling inside a bounded box. */}
       <div
-        className={`panel-float overflow-hidden ${selectedLead ? 'lg:col-span-3' : 'lg:col-span-5'}`}
+        className={`panel-float overflow-hidden min-w-0 ${selectedLead ? 'lg:col-span-3' : 'lg:col-span-5'}`}
         style={{ borderRadius: '12px' }}
       >
         {loading ? (

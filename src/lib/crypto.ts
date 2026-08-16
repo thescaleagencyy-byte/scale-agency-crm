@@ -43,12 +43,29 @@ export function encryptContent(text: string | null | undefined): string | null {
   return encryptText(text);
 }
 
+// Real ciphertext is base64(iv[12] + tag[16] + ciphertext) — at least
+// 28 raw bytes, so >= 36 base64 chars, no whitespace, base64 charset
+// only. A genuine legacy plaintext row essentially never matches this
+// shape by chance, so a decrypt failure on a string that DOES match it
+// is almost certainly a real failure (wrong/missing key, corrupted
+// row) worth an alarm — not a legacy row silently falling back.
+const LOOKS_LIKE_CIPHERTEXT = /^[A-Za-z0-9+/]{36,}={0,2}$/;
+
 /** Decrypt content_text if present, else return null. */
 export function decryptContent(text: string | null | undefined): string | null {
   if (!text) return null;
   try {
     return decryptText(text);
-  } catch {
+  } catch (err) {
+    if (LOOKS_LIKE_CIPHERTEXT.test(text)) {
+      // Previously silent — a message that really was encrypted just
+      // got shown to a user as raw base64 ciphertext instead of text,
+      // and nothing logged it. Surfacing this is the only way an
+      // intermittent decrypt failure (e.g. MESSAGE_ENCRYPTION_KEY
+      // inconsistent across serverless instances) ever gets noticed
+      // before a human spots garbled text in the inbox.
+      console.error('[decryptContent] decrypt failed for what looks like real ciphertext:', err instanceof Error ? err.message : err);
+    }
     // Not encrypted (legacy row) — return as-is
     return text;
   }
