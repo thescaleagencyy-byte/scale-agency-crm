@@ -769,3 +769,78 @@ export interface DripEnrollment {
   completed_at: string | null;
   contact?: Contact;
 }
+
+// ============================================================
+// Cold email outreach (migration 080)
+// ============================================================
+
+export type OutreachProspectStatus = 'active' | 'unsubscribed' | 'bounced';
+
+export interface OutreachProspect {
+  id: string;
+  account_id: string;
+  email: string;
+  name: string | null;
+  company: string | null;
+  source: string | null;
+  status: OutreachProspectStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export type OutreachSequenceStatus = 'draft' | 'active' | 'paused' | 'archived';
+
+export interface OutreachSequence {
+  id: string;
+  account_id: string;
+  user_id: string;
+  name: string;
+  status: OutreachSequenceStatus;
+  daily_cap: number;
+  send_window_start_hour: number;
+  send_window_end_hour: number;
+  created_at: string;
+  updated_at: string;
+  steps?: OutreachStep[];
+  enrollment_count?: number;
+}
+
+export interface OutreachStep {
+  id: string;
+  sequence_id: string;
+  position: number;
+  delay_days: number;
+  subject: string;
+  body: string;
+  created_at: string;
+}
+
+export type OutreachEnrollmentStatus = 'active' | 'completed' | 'unsubscribed' | 'bounced' | 'replied' | 'failed';
+
+export interface OutreachEnrollment {
+  id: string;
+  sequence_id: string;
+  prospect_id: string;
+  account_id: string;
+  current_step: number;
+  status: OutreachEnrollmentStatus;
+  enrolled_at: string;
+  next_send_at: string | null;
+  completed_at: string | null;
+  prospect?: OutreachProspect;
+}
+
+export interface OutreachSend {
+  id: string;
+  enrollment_id: string;
+  step_id: string | null;
+  prospect_id: string;
+  account_id: string;
+  sequence_id: string;
+  subject: string | null;
+  sent_at: string;
+  status: 'sent' | 'failed';
+  error_message: string | null;
+  message_id: string | null;
+  created_at: string;
+}

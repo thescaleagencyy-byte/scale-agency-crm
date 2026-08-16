@@ -78,8 +78,12 @@ export const INTEGRATIONS_CATALOG: IntegrationDef[] = [
     service: 'gmail',
     name: 'Gmail',
     category: 'email',
-    description: 'Send/receive customer emails.',
-    docsHint: 'Blocked on a one-time setup: Umer needs to register one Google Cloud OAuth app (shared across all clients) before this can be a "Connect with Google" button. Not client-specific work.',
+    description: 'Send outreach/transactional email via your Gmail account (SMTP + app password).',
+    docsHint: 'Uses an app password, not full Gmail OAuth (that still needs the one-time Google Cloud OAuth app registration, not built yet). Requires 2-Step Verification enabled on the Gmail account, then generate an app password at myaccount.google.com/apppasswords and paste it here.',
+    credentialFields: [
+      { key: 'email', label: 'Gmail address', placeholder: 'you@gmail.com' },
+      { key: 'app_password', label: 'App password', placeholder: '16-character app password' },
+    ],
   },
   {
     service: 'outlook',

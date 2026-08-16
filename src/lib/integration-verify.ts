@@ -13,6 +13,24 @@ export interface VerifyResult {
   meta?: Record<string, unknown>
 }
 
+async function verifyGmail(fields: Record<string, string>): Promise<VerifyResult> {
+  const email = fields.email?.trim()
+  const appPassword = fields.app_password?.trim()
+  if (!email || !appPassword) return { ok: false, error: 'Gmail address and app password are both required.' }
+
+  // Dynamic import — nodemailer is only needed by the outreach feature,
+  // no reason to pull it into every route that imports this module.
+  const nodemailer = (await import('nodemailer')).default
+  const transporter = nodemailer.createTransport({ service: 'gmail', auth: { user: email, pass: appPassword } })
+  try {
+    await transporter.verify()
+    return { ok: true, meta: { email } }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    return { ok: false, error: `Gmail rejected the credentials: ${message}. Make sure 2-Step Verification is on and this is an app password, not the account password.` }
+  }
+}
+
 async function verifyStripe(fields: Record<string, string>): Promise<VerifyResult> {
   const key = fields.secret_key?.trim()
   if (!key) return { ok: false, error: 'Secret key required.' }
@@ -102,4 +120,5 @@ export const VERIFIERS: Record<string, (fields: Record<string, string>) => Promi
   facebook: verifyMetaGraphToken,
   instagram: verifyMetaGraphToken,
   meta_ads: verifyMetaAdsToken,
+  gmail: verifyGmail,
 }
