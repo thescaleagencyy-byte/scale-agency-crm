@@ -630,6 +630,9 @@ export interface Lead {
   conversation_id: string | null;
   raw_handoff: string | null;
   source: string | null;
+  ai_quality: 'hot' | 'warm' | 'cold' | null;
+  ai_summary: string | null;
+  ai_triaged_at: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -1,4 +1,5 @@
-import { X, StickyNote, Bell, MessageCircle } from 'lucide-react';
+import { useState } from 'react';
+import { X, StickyNote, Bell, MessageCircle, Pencil, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { AvatarStack } from '@/components/ui/avatar-stack';
 import type { Lead } from '@/types';
@@ -13,7 +14,14 @@ interface LeadDetailPanelProps {
   onStatusChange: (status: Lead['status']) => void;
   onOpenNotes: () => void;
   onOpenReminder: () => void;
+  onFieldChange: (field: 'company' | 'customer_name', value: string) => void;
 }
+
+const AI_QUALITY_STYLE: Record<string, string> = {
+  hot: 'bg-red-500/15 text-red-400',
+  warm: 'bg-amber-500/15 text-amber-400',
+  cold: 'bg-white/10 text-white/60',
+};
 
 // The dark detail pane from the reference image — sits beside the light
 // list panel, always dark regardless of page mode (same trick the
@@ -29,6 +37,7 @@ export function LeadDetailPanel({
   onStatusChange,
   onOpenNotes,
   onOpenReminder,
+  onFieldChange,
 }: LeadDetailPanelProps) {
   const factors = lead.score_factors ? Object.entries(lead.score_factors) : [];
 
@@ -43,9 +52,12 @@ export function LeadDetailPanel({
             avatars={[{ label: lead.customer_name || lead.customer_phone || '?' }]}
           />
           <div>
-            <p className="font-heading text-base font-semibold leading-tight">
-              {lead.customer_name || 'Unnamed lead'}
-            </p>
+            <EditableText
+              value={lead.customer_name}
+              placeholder="Unnamed lead"
+              onSave={(v) => onFieldChange('customer_name', v)}
+              className="font-heading text-base font-semibold leading-tight"
+            />
             <p className="text-xs text-white/50">{lead.customer_phone}</p>
           </div>
         </div>
@@ -67,14 +79,31 @@ export function LeadDetailPanel({
           <span className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white/80">
             Score {lead.score ?? 0}
           </span>
+          {lead.ai_quality && (
+            <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize ${AI_QUALITY_STYLE[lead.ai_quality]}`}>
+              AI: {lead.ai_quality}
+            </span>
+          )}
         </div>
+
+        {lead.ai_summary && (
+          <p className="rounded-2xl bg-white/5 p-3 text-xs leading-relaxed text-white/70">{lead.ai_summary}</p>
+        )}
 
         <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
           <Field label="Service" value={lead.service_type} />
           <Field label="Site" value={lead.project_site} />
           <Field label="Duration" value={lead.duration} />
           <Field label="Quantity" value={lead.quantity} />
-          <Field label="Company" value={lead.company} />
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/40">Company</p>
+            <EditableText
+              value={lead.company}
+              placeholder="—"
+              onSave={(v) => onFieldChange('company', v)}
+              className="mt-0.5 text-sm text-white/90"
+            />
+          </div>
           <Field label="Source" value={lead.source?.replace(/_/g, ' ')} />
         </div>
 
@@ -161,5 +190,52 @@ function Field({ label, value }: { label: string; value?: string | null }) {
       <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/40">{label}</p>
       <p className="mt-0.5 text-sm text-white/90">{value || '—'}</p>
     </div>
+  );
+}
+
+// Click-to-edit text, used for the two fields that turned out to
+// matter most in practice (customer_name, company) — every other
+// field is bot-captured structured data (service/site/duration/etc)
+// that doesn't need a manual override path.
+function EditableText({
+  value, placeholder, onSave, className,
+}: { value: string | null; placeholder: string; onSave: (v: string) => void; className?: string }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value ?? '');
+
+  if (editing) {
+    return (
+      <div className="mt-0.5 flex items-center gap-1.5">
+        <input
+          autoFocus
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') { onSave(draft); setEditing(false); }
+            if (e.key === 'Escape') { setDraft(value ?? ''); setEditing(false); }
+          }}
+          className={`w-full rounded-md border border-white/20 bg-white/10 px-2 py-1 text-white outline-none focus:border-primary ${className ?? ''}`}
+        />
+        <button
+          type="button"
+          onClick={() => { onSave(draft); setEditing(false); }}
+          className="shrink-0 rounded-full bg-primary/20 p-1 text-primary hover:bg-primary/30"
+          aria-label="Save"
+        >
+          <Check className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => { setDraft(value ?? ''); setEditing(true); }}
+      className={`group mt-0.5 flex items-center gap-1.5 text-left ${className ?? ''}`}
+    >
+      <span className={value ? '' : 'text-white/40'}>{value || placeholder}</span>
+      <Pencil className="h-3 w-3 shrink-0 text-white/0 group-hover:text-white/40" />
+    </button>
   );
 }
