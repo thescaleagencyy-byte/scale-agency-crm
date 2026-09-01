@@ -364,10 +364,10 @@ export default function DashboardPage() {
       />
 
       {/* Daily briefing — proactive digest, see components/dashboard/daily-digest-card */}
-      <DailyDigestCard />
+      {hasFeature('daily_digest') && <DailyDigestCard />}
 
       {/* Autonomous Daily Agent v1 — draft-and-approve queue, see components/dashboard/agent-queue-card */}
-      <AgentQueueCard />
+      {hasFeature('agent_queue') && <AgentQueueCard />}
 
       {/* Quick actions */}
       <QuickActions />
