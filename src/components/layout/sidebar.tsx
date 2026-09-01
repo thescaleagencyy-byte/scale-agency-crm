@@ -39,6 +39,8 @@ import {
   FileText,
   Wrench,
   Phone,
+  Megaphone,
+  Mail,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
 import { hasFeature, CLIENT_NAME, CLIENT_INDUSTRY, APP_NAME } from "@/lib/features";
@@ -112,11 +114,6 @@ interface NavItem {
   icon: typeof LayoutDashboard;
   /** Feature key — item hidden when that feature is disabled. */
   feature?: string;
-  /**
-   * When true, the nav row renders a small "Beta" chip after the label.
-   * Purely informational — doesn't affect routing or access.
-   */
-  beta?: boolean;
 }
 
 interface NavGroup {
@@ -133,24 +130,25 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     label: "Overview",
     items: [
       { href: "/dashboard",    label: "Dashboard",     icon: LayoutDashboard, feature: "dashboard" },
-      { href: "/copilot",      label: "CEO Copilot",   icon: Zap,             feature: "copilot", beta: true },
-      { href: "/business-knowledge", label: "Business Knowledge", icon: Brain, feature: "business-knowledge", beta: true },
       { href: "/analytics",    label: "Analytics",     icon: BarChart3,       feature: "analytics" },
-      { href: "/competitors",  label: "Competitor Intel", icon: Radar,        feature: "competitors", beta: true },
-      { href: "/predictions",  label: "Predictions",   icon: Sparkles,        feature: "predictions", beta: true },
+      { href: "/copilot",      label: "CEO Copilot",   icon: Zap,             feature: "copilot" },
+      { href: "/meta-ads",     label: "Meta Ads",      icon: Megaphone,       feature: "meta_ads" },
+      { href: "/predictions",  label: "Predictions",   icon: Sparkles,        feature: "predictions" },
+      { href: "/competitors",  label: "Competitor Intel", icon: Radar,        feature: "competitors" },
+      { href: "/business-knowledge", label: "Business Knowledge", icon: Brain, feature: "business-knowledge" },
     ],
   },
   {
     label: "Engage",
     items: [
       { href: "/inbox",        label: "Inbox",         icon: MessageCircle,   feature: "inbox" },
-      { href: "/contacts",     label: "Contacts",      icon: Users,           feature: "contacts" },
       { href: "/leads",        label: "Leads",         icon: Target,          feature: "leads" },
-      { href: "/quotes",       label: "Quotes",        icon: FileText,        feature: "quotes" },
-      { href: "/services",     label: "Services",      icon: Wrench,          feature: "services" },
-      { href: "/voice",        label: "Voice Agent",   icon: Phone,           feature: "voice" },
+      { href: "/contacts",     label: "Contacts",      icon: Users,           feature: "contacts" },
       { href: "/pipelines",    label: "Pipelines",     icon: GitBranch,       feature: "pipelines" },
+      { href: "/quotes",       label: "Quotes",        icon: FileText,        feature: "quotes" },
       { href: "/appointments", label: "Appointments",  icon: CalendarDays,    feature: "appointments" },
+      { href: "/voice",        label: "Voice Agent",   icon: Phone,           feature: "voice" },
+      { href: "/services",     label: "Services",      icon: Wrench,          feature: "services" },
       { href: "/contracts",    label: "Contracts",     icon: FileSignature,   feature: "contracts" },
     ],
   },
@@ -166,7 +164,8 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/broadcasts",   label: "Broadcasts",    icon: Radio,           feature: "broadcasts" },
       { href: "/drip",         label: "Drip Campaigns",icon: Zap,             feature: "drip" },
-      { href: "/content-calendar", label: "Content Calendar", icon: CalendarClock, feature: "content-calendar", beta: true },
+      { href: "/outreach",     label: "Cold Email",    icon: Mail,            feature: "outreach" },
+      { href: "/content-calendar", label: "Content Calendar", icon: CalendarClock, feature: "content-calendar" },
       { href: "/qr-codes",     label: "QR Codes",      icon: QrCode,          feature: "qr-codes" },
     ],
   },
@@ -174,10 +173,10 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     label: "Automate",
     items: [
       { href: "/flows-builder",label: "Flow Builder",  icon: Brain,           feature: "flows" },
-      { href: "/automations",  label: "Automations",   icon: Zap,             feature: "automations" },
       { href: "/flows",        label: "Flows",         icon: Workflow,        feature: "flows" },
+      { href: "/automations",  label: "Automations",   icon: Zap,             feature: "automations" },
       { href: "/n8n",          label: "n8n",           icon: Workflow,        feature: "n8n" },
-      { href: "/integrations", label: "Integration Hub", icon: Plug,          feature: "integrations", beta: true },
+      { href: "/integrations", label: "Integration Hub", icon: Plug,          feature: "integrations" },
     ],
   },
 ];
@@ -400,14 +399,6 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                           <item.icon className="h-[17px] w-[17px]" strokeWidth={isActive ? 2.2 : 1.8} />
                         </span>
                         {!collapsed && <span className="flex-1">{item.label}</span>}
-                        {!collapsed && item.beta && (
-                          <span
-                            aria-label="Beta feature"
-                            className="rounded-full border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-amber-300"
-                          >
-                            Beta
-                          </span>
-                        )}
                         {!collapsed && showUnreadDot && (
                           <span
                             aria-label={`${totalUnread} unread conversation${totalUnread === 1 ? "" : "s"}`}

@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
   Search, ChevronLeft, ChevronRight, MoreHorizontal, TrendingUp, Loader2,
-  StickyNote, Bell, CheckSquare, Square,
+  StickyNote, Bell, CheckSquare, Square, Sparkles,
 } from 'lucide-react';
 import { AvatarStack } from '@/components/ui/avatar-stack';
 import { LeadDetailPanel } from '@/components/leads/lead-detail-panel';
@@ -36,8 +36,29 @@ function ScoreBadge({ score }: { score: number }) {
     score >= 50 ? 'bg-yellow-500/15 text-yellow-600 border-yellow-500/30' :
                   'bg-muted text-muted-foreground border-border';
   return (
-    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${color}`}>
+    <span className={`inline-flex h-5 w-fit items-center justify-center rounded-4xl border px-2 py-0.5 text-xs font-medium ${color}`}>
       {score}
+    </span>
+  );
+}
+
+// Real intent read from the conversation (see /api/leads/triage) —
+// separate from ScoreBadge, which is just the has_name/has_company
+// point count and rates spam the same as a genuine buyer if neither
+// filled in a "company" field.
+const QUALITY_STYLE: Record<string, string> = {
+  hot: 'bg-red-500/15 text-red-600 border-red-500/30',
+  warm: 'bg-amber-500/15 text-amber-600 border-amber-500/30',
+  cold: 'bg-muted text-muted-foreground border-border',
+};
+function QualityBadge({ quality, summary }: { quality: string | null; summary: string | null }) {
+  if (!quality) return <span className="text-xs text-muted-foreground">—</span>;
+  return (
+    <span
+      title={summary ?? undefined}
+      className={`inline-flex h-5 w-fit items-center justify-center rounded-4xl border px-2 py-0.5 text-xs font-medium capitalize ${QUALITY_STYLE[quality] ?? QUALITY_STYLE.cold}`}
+    >
+      {quality}
     </span>
   );
 }
@@ -52,6 +73,7 @@ export default function LeadsPage() {
   const [updating, setUpdating] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkUpdating, setBulkUpdating] = useState(false);
+  const [triaging, setTriaging] = useState(false);
 
   const [notesLead, setNotesLead] = useState<Lead | null>(null);
   const [reminderLead, setReminderLead] = useState<Lead | null>(null);
@@ -152,6 +174,24 @@ export default function LeadsPage() {
     setUpdating(null);
   }
 
+  // Leads had no edit path at all before this — confirmed a real gap
+  // during the 2026-08-16 audit (4 CRM leads with garbage `company`
+  // values needed a raw DB script to fix, since neither this page nor
+  // any API route could touch the field). Same session-scoped update
+  // pattern as updateStatus, just parameterized over the field name.
+  async function updateLeadField(id: string, field: 'company' | 'customer_name', value: string) {
+    const supabase = createClient();
+    const trimmed = value.trim();
+    const { error } = await supabase
+      .from('leads')
+      .update({ [field]: trimmed || null, updated_at: new Date().toISOString() })
+      .eq('id', id);
+    if (error) { toast.error('Update failed'); return; }
+    setLeads(prev => prev.map(l => l.id === id ? { ...l, [field]: trimmed || null } : l));
+    setSelectedLead(prev => prev && prev.id === id ? { ...prev, [field]: trimmed || null } : prev);
+    toast.success('Saved');
+  }
+
   async function bulkUpdateStatus(status: LeadStatus) {
     if (!selected.size) return;
     setBulkUpdating(true);
@@ -165,6 +205,21 @@ export default function LeadsPage() {
     toast.success(`${selected.size} leads marked ${STATUS_LABEL[status]}`);
     setSelected(new Set());
     load();
+  }
+
+  async function triageNewLeads() {
+    setTriaging(true);
+    try {
+      const res = await fetch('/api/leads/triage', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+      const data = await res.json();
+      if (!res.ok) { toast.error(data.error ?? 'Triage failed'); return; }
+      if (data.triaged === 0) toast('No untriaged leads to analyze');
+      else { toast.success(`Analyzed ${data.triaged} lead${data.triaged === 1 ? '' : 's'}`); load(); }
+    } catch (e) {
+      toast.error(String(e));
+    } finally {
+      setTriaging(false);
+    }
   }
 
   function toggleSelect(id: string) {
@@ -217,6 +272,20 @@ export default function LeadsPage() {
           ))}
         </div>
 
+        {selected.size === 0 && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={triageNewLeads}
+            disabled={triaging}
+            className="gap-1.5 text-xs"
+            title="Read each untriaged lead's conversation and judge real buying intent — separate from the Score column, which only counts filled-in fields"
+          >
+            {triaging ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+            Analyze new leads
+          </Button>
+        )}
+
         {selected.size > 0 && (
           <div className="ml-auto flex items-center gap-2">
             <span className="text-xs text-muted-foreground">{selected.size} selected</span>
@@ -235,7 +304,21 @@ export default function LeadsPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-      <div className={`panel-float overflow-hidden ${selectedLead ? 'lg:col-span-3' : 'lg:col-span-5'}`}>
+      {/* .panel-float's shared --radius-3xl (~31px) reads as an oval
+          against this page's flat, edge-to-edge table — inline style
+          overrides it (plain CSS class beats a Tailwind utility here,
+          so a competing className wouldn't win) without touching the
+          shared class other panel-float pages still use as-is.
+          min-w-0 is the real fix for the right edge bleeding past the
+          viewport: a grid item defaults to min-width:auto, which
+          respects its content's full intrinsic width — the table
+          needs horizontal scroll (more columns than fit), so without
+          this the grid TRACK itself stretches to the table's full
+          width instead of the table scrolling inside a bounded box. */}
+      <div
+        className={`panel-float overflow-hidden min-w-0 ${selectedLead ? 'lg:col-span-3' : 'lg:col-span-5'}`}
+        style={{ borderRadius: '12px' }}
+      >
         {loading ? (
           <div className="flex items-center justify-center gap-2 py-16 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -248,6 +331,12 @@ export default function LeadsPage() {
             <p className="text-xs text-muted-foreground">Leads from qualified WhatsApp conversations appear here</p>
           </div>
         ) : (
+          // p-1.5 wrapper: the table's header border/checkbox otherwise sit
+          // flush against panel-float's rounded corner with zero gap, so
+          // overflow-hidden clips the straight border line at a shallow
+          // tangent to the arc — renders as a fuzzy, irregular corner
+          // instead of a clean curve. A small inset fixes it.
+          <div className="p-1.5">
           <Table>
             <TableHeader>
               <TableRow className="border-border hover:bg-transparent">
@@ -263,6 +352,7 @@ export default function LeadsPage() {
                 <TableHead className="text-muted-foreground">Company</TableHead>
                 <TableHead className="text-muted-foreground">Source</TableHead>
                 <TableHead className="text-muted-foreground">Score</TableHead>
+                <TableHead className="text-muted-foreground">AI Quality</TableHead>
                 <TableHead className="text-muted-foreground">Assigned to</TableHead>
                 <TableHead className="text-muted-foreground">Status</TableHead>
                 <TableHead className="text-muted-foreground">Date</TableHead>
@@ -296,12 +386,13 @@ export default function LeadsPage() {
                   <TableCell className="text-sm text-foreground">{lead.company ?? '—'}</TableCell>
                   <TableCell>
                     {lead.source ? (
-                      <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground capitalize">
+                      <span className="inline-flex h-5 w-fit items-center justify-center rounded-4xl border border-border bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground capitalize">
                         {lead.source.replace(/_/g, ' ')}
                       </span>
                     ) : <span className="text-muted-foreground">—</span>}
                   </TableCell>
                   <TableCell><ScoreBadge score={lead.score ?? 0} /></TableCell>
+                  <TableCell><QualityBadge quality={lead.ai_quality} summary={lead.ai_summary} /></TableCell>
                   <TableCell>
                     {(() => {
                       const agentUserId = lead.conversation_id
@@ -326,7 +417,7 @@ export default function LeadsPage() {
                       {lead.status === 'new' && Date.now() - new Date(lead.created_at).getTime() > 3 * 86400000 && (
                         <span
                           title="No contact in 3+ days"
-                          className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-1.5 py-0.5 text-[10px] font-medium text-cyan-600"
+                          className="inline-flex h-5 w-fit items-center justify-center rounded-4xl border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-xs font-medium text-cyan-600"
                         >
                           🥶 Going cold
                         </span>
@@ -377,6 +468,7 @@ export default function LeadsPage() {
               ))}
             </TableBody>
           </Table>
+          </div>
         )}
       </div>
 
@@ -392,6 +484,7 @@ export default function LeadsPage() {
             onStatusChange={(s) => updateStatus(selectedLead.id, s)}
             onOpenNotes={() => setNotesLead(selectedLead)}
             onOpenReminder={() => setReminderLead(selectedLead)}
+            onFieldChange={(field, value) => updateLeadField(selectedLead.id, field, value)}
           />
         </div>
       )}

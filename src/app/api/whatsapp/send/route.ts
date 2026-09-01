@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { encryptContent } from '@/lib/crypto'
+import { requireRole, toErrorResponse } from '@/lib/auth/account'
+import { encryptContent, decryptText } from '@/lib/crypto'
+import { sendInstagramTextMessage } from '@/lib/instagram/graph-api'
 import {
   sendTextMessage,
   sendTemplateMessage,
@@ -28,18 +29,19 @@ import { countMonthlyOutboundMessages } from '@/lib/billing/usage'
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient()
-
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+    // Sending a real WhatsApp message is a write action — viewers are
+    // read-only (see canSendMessages() in lib/auth/roles.ts), so this
+    // must be gated at 'agent' or above, not just "is logged in".
+    let supabase: Awaited<ReturnType<typeof requireRole>>['supabase']
+    let user: { id: string }
+    let accountId: string
+    try {
+      const ctx = await requireRole('agent')
+      supabase = ctx.supabase
+      user = { id: ctx.userId }
+      accountId = ctx.accountId
+    } catch (err) {
+      return toErrorResponse(err)
     }
 
     // Per-user rate limit. Bucket key is scoped to this route so
@@ -47,23 +49,6 @@ export async function POST(request: Request) {
     const limit = checkRateLimit(`send:${user.id}`, RATE_LIMITS.send)
     if (!limit.success) {
       return rateLimitResponse(limit)
-    }
-
-    // Resolve the caller's account_id. Every downstream lookup
-    // (conversation, whatsapp_config, message_templates) is account-
-    // scoped post-multi-user, so the previous `user_id` filters
-    // returned nothing for teammates who didn't author the row.
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('account_id')
-      .eq('user_id', user.id)
-      .maybeSingle()
-    const accountId = profile?.account_id as string | undefined
-    if (!accountId) {
-      return NextResponse.json(
-        { error: 'Your profile is not linked to an account.' },
-        { status: 403 },
-      )
     }
 
     // Plan message cap — Scale Agency's own deployment only. Client
@@ -183,7 +168,167 @@ export async function POST(request: Request) {
     }
 
     const contact = conversation.contact
-    if (!contact?.phone) {
+    if (!contact) {
+      return NextResponse.json({ error: 'Contact not found' }, { status: 400 })
+    }
+
+    if (contact.channel === 'instagram') {
+      if (message_type !== 'text') {
+        return NextResponse.json(
+          { error: 'Instagram sends only support text messages in this version.' },
+          { status: 400 },
+        )
+      }
+      if (!contact.instagram_id) {
+        return NextResponse.json({ error: 'Contact has no Instagram id' }, { status: 400 })
+      }
+
+      const { data: integration, error: integrationError } = await supabase
+        .from('integrations')
+        .select('credentials_encrypted, config')
+        .eq('account_id', accountId)
+        .eq('service', 'instagram')
+        .eq('status', 'connected')
+        .maybeSingle()
+
+      if (integrationError || !integration?.credentials_encrypted) {
+        return NextResponse.json(
+          { error: 'Instagram not connected. Connect it in Settings → Integrations first.' },
+          { status: 400 },
+        )
+      }
+
+      const igPageId = (integration.config as { pageId?: string } | null)?.pageId
+      if (!igPageId) {
+        return NextResponse.json(
+          { error: 'Instagram integration is missing a page id — re-save the credential in Settings → Integrations to refresh it.' },
+          { status: 500 },
+        )
+      }
+
+      const { page_access_token: pageAccessToken } = JSON.parse(
+        decryptText(integration.credentials_encrypted),
+      ) as { page_access_token?: string }
+      if (!pageAccessToken) {
+        return NextResponse.json({ error: 'Instagram credential is missing a page_access_token.' }, { status: 500 })
+      }
+
+      // Validate the reply target belongs to this conversation — otherwise
+      // a caller could quote messages they can't see by guessing UUIDs.
+      // Mirrors the WhatsApp path's ownership check below; Instagram
+      // doesn't need to resolve a Meta-side context id since
+      // sendInstagramTextMessage doesn't take a context/quote parameter
+      // in this version, so we only need the ownership gate itself.
+      if (reply_to_message_id) {
+        const { data: parent, error: parentError } = await supabase
+          .from('messages')
+          .select('id, conversation_id')
+          .eq('id', reply_to_message_id)
+          .eq('conversation_id', conversation_id)
+          .maybeSingle()
+
+        if (parentError || !parent) {
+          return NextResponse.json(
+            { error: 'reply_to_message_id not found in this conversation' },
+            { status: 400 }
+          )
+        }
+      }
+
+      let igMessageId: string
+      try {
+        const result = await sendInstagramTextMessage({
+          igUserId: igPageId,
+          accessToken: pageAccessToken,
+          to: contact.instagram_id,
+          text: content_text,
+        })
+        igMessageId = result.messageId
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown Instagram API error'
+        console.error('Instagram Graph API send failed:', message)
+        return NextResponse.json({ error: `Instagram API error: ${message}` }, { status: 502 })
+      }
+
+      const { data: messageRecord, error: msgError } = await supabase
+        .from('messages')
+        .insert({
+          conversation_id,
+          sender_type: 'agent',
+          content_type: 'text',
+          content_text: encryptContent(content_text),
+          message_id: igMessageId,
+          status: 'sent',
+          reply_to_message_id: reply_to_message_id || null,
+        })
+        .select()
+        .single()
+
+      if (msgError) {
+        console.error('Error inserting sent Instagram message:', msgError)
+        return NextResponse.json(
+          { error: `Message sent to Instagram but failed to save to DB: ${msgError.message}` },
+          { status: 500 },
+        )
+      }
+
+      // Update conversation — also stamp first_agent_reply_at if not already set
+      const now = new Date().toISOString()
+      const { data: convRow } = await supabase
+        .from('conversations')
+        .select('first_agent_reply_at')
+        .eq('id', conversation_id)
+        .single()
+      await supabase
+        .from('conversations')
+        .update({
+          last_message_text: content_text,
+          last_message_at: now,
+          updated_at: now,
+          ...(convRow && !convRow.first_agent_reply_at ? { first_agent_reply_at: now } : {}),
+        })
+        .eq('id', conversation_id)
+
+      // Pause any active Flow run for this contact — the agent stepping
+      // in is the strongest "yield, human is here" signal. See PR #2
+      // plan for why we pause (not end): preserves diagnostic state +
+      // lets the agent or the 24h timeout sweep cleanly resolve the
+      // run later. For accounts with no active runs the UPDATE matches
+      // zero rows — cheap and harmless.
+      try {
+        const { error: pauseErr } = await supabaseAdmin()
+          .from('flow_runs')
+          .update({
+            status: 'paused_by_agent',
+            ended_at: new Date().toISOString(),
+            end_reason: 'agent_replied',
+          })
+          .eq('account_id', accountId)
+          .eq('contact_id', contact.id)
+          .eq('status', 'active')
+        if (pauseErr) {
+          // Best-effort — log + continue. The agent's message already
+          // landed at Instagram; don't fail the response over a
+          // bookkeeping miss. Worst case: a stale active run gets caught
+          // by the stale-run cron sweep within 24h.
+          console.error('[flows] pause-on-agent-send failed:', pauseErr.message)
+        }
+      } catch (err) {
+        console.error(
+          '[flows] pause-on-agent-send threw:',
+          err instanceof Error ? err.message : err,
+        )
+      }
+
+      return NextResponse.json({
+        success: true,
+        message_id: messageRecord.id,
+        instagram_message_id: igMessageId,
+      })
+    }
+
+    // --- Existing WhatsApp path below, unchanged ---
+    if (!contact.phone) {
       return NextResponse.json(
         { error: 'Contact phone number not found' },
         { status: 400 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
@@ -14,7 +15,6 @@ import type {
   Profile,
 } from "@/types";
 import {
-  MessageSquare,
   ChevronDown,
   UserPlus,
   Check,
@@ -46,7 +46,7 @@ import { TemplatePicker } from "./template-picker";
 import { buildReplyPreview } from "./reply-quote";
 import { toast } from "sonner";
 import { CLIENT_NAME } from "@/lib/features";
-import { useBrandLogo } from "@/hooks/use-brand-logo";
+import { ContactAvatar } from "./contact-avatar";
 
 interface ReplyDraft {
   id: string;
@@ -141,22 +141,29 @@ const STATUS_OPTIONS: { label: string; value: ConversationStatus; color: string 
  * WhatsApp-style doodle background applied to the chat area (both the
  * active thread and the empty state). Clients with a bespoke tile in
  * /public/clients/<slug>-doodle.svg get their own motif (AshWheelz:
- * trucks, cranes, forklifts); everyone else keeps the generic doodle.
- * Allow-list rather than convention so a client without a custom file
- * never 404s into a blank background.
+ * trucks, cranes, forklifts) — untouched, still live for them.
+ * Everyone else (including Scale Agency's own account) gets a plain
+ * background instead of the old generic icon-pattern doodle, which
+ * read as clutter rather than a real brand touch — see CLIENT_LOGO
+ * below for what replaces it in the empty state.
  *
  * Defined once at module scope so the two render paths can't drift —
  * if we ever switch the asset, both spots update together.
  */
 const CLIENTS_WITH_DOODLE = ["ashwheelz"];
 const DOODLE_SLUG = CLIENT_NAME.toLowerCase().replace(/\s+/g, "");
-const DOODLE_URL = CLIENTS_WITH_DOODLE.includes(DOODLE_SLUG)
-  ? `/clients/${DOODLE_SLUG}-doodle.svg`
-  : "/inbox-doodle.svg";
-// Inline style (not a Tailwind arbitrary value): the URL is computed at
-// module load, and Tailwind's JIT can't compile dynamic class strings.
+const HAS_CUSTOM_DOODLE = CLIENTS_WITH_DOODLE.includes(DOODLE_SLUG);
 const DOODLE_BG_CLASSES = "bg-background bg-repeat";
-const DOODLE_BG_STYLE = { backgroundImage: `url('${DOODLE_URL}')` } as const;
+const DOODLE_BG_STYLE = HAS_CUSTOM_DOODLE
+  ? ({ backgroundImage: `url('/clients/${DOODLE_SLUG}-doodle.svg')` } as const)
+  : ({} as const);
+
+// Same fallback chain the sidebar/login/appearance-panel logos already
+// use — a client-specific PNG if this deployment is white-labeled,
+// otherwise Scale Agency's own default branding.
+const CLIENT_LOGO = CLIENT_NAME
+  ? `/clients/${CLIENT_NAME.toLowerCase().replace(/\s+/g, "")}.png`
+  : "/branding.jpeg";
 
 export function MessageThread({
   conversation,
@@ -174,7 +181,6 @@ export function MessageThread({
   onToggleContactPanel,
 }: MessageThreadProps) {
   const { user } = useAuth();
-  const brandLogo = useBrandLogo();
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
@@ -203,9 +209,6 @@ export function MessageThread({
     }, 700);
   }, [isRefreshing, onRefresh]);
   const [replyTo, setReplyTo] = useState<ReplyDraft | null>(null);
-  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
-  const [composerDraft, setComposerDraft] = useState<string | undefined>();
-  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [viewerCount, setViewerCount] = useState(0);
   const [handoffSummary, setHandoffSummary] = useState<{
     customer_intent?: string;
@@ -421,27 +424,8 @@ export function MessageThread({
   // a quote pulled from conversation A shouldn't bleed into conversation B.
   useEffect(() => {
     setReplyTo(null);
-    setAiSuggestions([]);
     setHandoffSummary(null);
   }, [conversationId]);
-
-  // Fetch AI reply suggestions when messages load and last message is from customer
-  useEffect(() => {
-    if (!conversationId || !messages.length) return;
-    const lastMsg = messages[messages.length - 1];
-    if (lastMsg?.sender_type !== 'customer') return;
-    setLoadingSuggestions(true);
-    fetch('/api/intelligence/suggest', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ conversation_id: conversationId }),
-    })
-      .then(r => r.json())
-      .then(({ suggestions }) => setAiSuggestions(suggestions ?? []))
-      .catch(() => setAiSuggestions([]))
-      .finally(() => setLoadingSuggestions(false));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conversationId, messages.length]);
 
   // Fetch handoff summary when last bot-sent message is detected and agent is now viewing
   useEffect(() => {
@@ -449,14 +433,18 @@ export function MessageThread({
     const hasBotMessages = messages.some(m => m.sender_type === 'bot');
     const lastSenderIsAgent = messages[messages.length - 1]?.sender_type === 'agent';
     if (!hasBotMessages || lastSenderIsAgent) return;
+    let cancelled = false;
     fetch('/api/ai/conversation-summary', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ conversation_id: conversationId }),
     })
       .then(r => r.json())
-      .then(({ summary }) => setHandoffSummary(summary ?? null))
+      .then(({ summary }) => { if (!cancelled) setHandoffSummary(summary ?? null); })
       .catch(() => {});
+    // Same staleness guard as above — a summary for an abandoned
+    // conversation shouldn't render after the agent has moved on.
+    return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId]);
 
@@ -886,14 +874,16 @@ export function MessageThread({
       });
   }, [conversation?.id, conversation?.assigned_agent_id, user?.id, onAssignChange]);
 
-  // Empty state — same WhatsApp-style doodle background as the active
-  // thread below, so swapping between empty/selected doesn't change the
-  // pattern under the user's eye.
+  // Empty state — same background treatment as the active thread below
+  // (plain for most accounts, custom doodle only for the allow-listed
+  // clients above), so swapping between empty/selected doesn't change
+  // the surface under the user's eye. Shows this account's own logo
+  // instead of a generic chat-bubble icon.
   if (!conversation || !contact) {
     return (
       <div className={cn("flex flex-1 flex-col items-center justify-center", DOODLE_BG_CLASSES)} style={DOODLE_BG_STYLE}>
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 ring-1 ring-primary/15">
-          <MessageSquare className="h-7 w-7 text-primary" />
+        <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-primary/10 ring-1 ring-primary/15">
+          <Image src={CLIENT_LOGO} alt="" width={64} height={64} className="h-full w-full object-cover" />
         </div>
         <h3 className="mt-4 text-sm font-medium text-foreground">
           Select a conversation
@@ -905,7 +895,7 @@ export function MessageThread({
     );
   }
 
-  const displayName = contact.name || contact.phone;
+  const displayName = contact.name || contact.phone || "Unknown";
   const messageGroups = groupMessagesByDate(messages);
   const currentStatus = STATUS_OPTIONS.find(
     (s) => s.value === conversation.status
@@ -942,17 +932,11 @@ export function MessageThread({
               <ArrowLeft className="h-5 w-5" />
             </button>
           )}
-          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-sm font-semibold text-primary ring-1 ring-primary/15">
-            {(contact.avatar_url || brandLogo) ? (
-              <img
-                src={contact.avatar_url || brandLogo!}
-                alt={displayName}
-                className="h-9 w-9 rounded-full object-cover"
-              />
-            ) : (
-              displayName.charAt(0).toUpperCase()
-            )}
-          </div>
+          <ContactAvatar
+            name={displayName}
+            avatarUrl={contact.avatar_url}
+            className="h-9 w-9 flex-shrink-0 text-sm ring-1 ring-primary/15"
+          />
           <div className="min-w-0">
             <h2 className="truncate text-sm font-semibold text-foreground">{displayName}</h2>
             <p className="truncate text-xs text-muted-foreground">{contact.phone}</p>
@@ -1231,35 +1215,6 @@ export function MessageThread({
         </div>
       )}
 
-      {/* AI Reply Suggestions */}
-      {(aiSuggestions.length > 0 || loadingSuggestions) && (
-        <div className="border-t border-border bg-card px-4 py-2">
-          {loadingSuggestions ? (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <div className="h-3 w-3 animate-spin rounded-full border border-primary border-t-transparent" />
-              Generating suggestions...
-            </div>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {aiSuggestions.map((s, i) => (
-                <button
-                  key={i}
-                  onClick={() => { setComposerDraft(s); setAiSuggestions([]); }}
-                  className="max-w-[280px] truncate rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs text-primary hover:bg-primary/20 transition-colors text-left"
-                  title={s}
-                >
-                  {s}
-                </button>
-              ))}
-              <button
-                onClick={() => setAiSuggestions([])}
-                className="text-xs text-muted-foreground hover:text-foreground"
-              >✕</button>
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Composer */}
       <MessageComposer
         conversationId={conversation.id}
@@ -1268,8 +1223,6 @@ export function MessageThread({
         onSendMedia={handleSendMedia}
         onOpenTemplates={handleOpenTemplates}
         replyTo={replyTo}
-        draftText={composerDraft}
-        onDraftConsumed={() => setComposerDraft(undefined)}
         onClearReply={() => setReplyTo(null)}
       />
 

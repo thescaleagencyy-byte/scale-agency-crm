@@ -13,6 +13,24 @@ export interface VerifyResult {
   meta?: Record<string, unknown>
 }
 
+async function verifyGmail(fields: Record<string, string>): Promise<VerifyResult> {
+  const email = fields.email?.trim()
+  const appPassword = fields.app_password?.trim()
+  if (!email || !appPassword) return { ok: false, error: 'Gmail address and app password are both required.' }
+
+  // Dynamic import — nodemailer is only needed by the outreach feature,
+  // no reason to pull it into every route that imports this module.
+  const nodemailer = (await import('nodemailer')).default
+  const transporter = nodemailer.createTransport({ service: 'gmail', auth: { user: email, pass: appPassword } })
+  try {
+    await transporter.verify()
+    return { ok: true, meta: { email } }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    return { ok: false, error: `Gmail rejected the credentials: ${message}. Make sure 2-Step Verification is on and this is an app password, not the account password.` }
+  }
+}
+
 async function verifyStripe(fields: Record<string, string>): Promise<VerifyResult> {
   const key = fields.secret_key?.trim()
   if (!key) return { ok: false, error: 'Secret key required.' }
@@ -67,7 +85,28 @@ async function verifyMetaGraphToken(fields: Record<string, string>): Promise<Ver
   const res = await fetch(`https://graph.facebook.com/v19.0/me?access_token=${encodeURIComponent(token)}`)
   const data = await res.json()
   if (data.error) return { ok: false, error: `Meta rejected the token: ${data.error.message}.` }
-  return { ok: true, meta: { page: data.name } }
+  return { ok: true, meta: { page: data.name, pageId: data.id } }
+}
+
+async function verifyMetaAdsToken(fields: Record<string, string>): Promise<VerifyResult> {
+  const adAccountId = fields.ad_account_id?.trim()
+  const token = fields.access_token?.trim()
+  if (!adAccountId || !token) return { ok: false, error: 'Ad account ID and access token are both required.' }
+  const res = await fetch(
+    `https://graph.facebook.com/v21.0/act_${adAccountId}?fields=name,account_status,currency&access_token=${encodeURIComponent(token)}`,
+  )
+  const data = await res.json()
+  if (data.error) {
+    // Error #200 specifically means the token's system user isn't
+    // assigned to this ad account, or lacks ads_read — the most
+    // common failure mode here, worth a specific message rather than
+    // the generic passthrough every other verifier uses.
+    if (data.error.code === 200) {
+      return { ok: false, error: "Meta rejected the token: this token's system user isn't assigned to this ad account, or lacks ads_read." }
+    }
+    return { ok: false, error: `Meta rejected the token: ${data.error.message}.` }
+  }
+  return { ok: true, meta: { adAccountName: data.name, accountStatus: data.account_status, currency: data.currency } }
 }
 
 // Service key → verifier. Services not listed here have no
@@ -80,4 +119,6 @@ export const VERIFIERS: Record<string, (fields: Record<string, string>) => Promi
   slack: verifySlack,
   facebook: verifyMetaGraphToken,
   instagram: verifyMetaGraphToken,
+  meta_ads: verifyMetaAdsToken,
+  gmail: verifyGmail,
 }

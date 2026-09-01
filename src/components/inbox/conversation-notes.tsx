@@ -39,7 +39,7 @@ export function ConversationNotes({ conversationId, accountId }: ConversationNot
   const [mentionIdx, setMentionIdx] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  async function load() {
+  async function load(cancelledRef: { current: boolean }) {
     const db = createClient();
     const { data: notesData } = await db
       .from('conversation_notes')
@@ -52,6 +52,10 @@ export function ConversationNotes({ conversationId, accountId }: ConversationNot
       .select('user_id, full_name')
       .eq('account_id', accountId)
       .limit(50);
+
+    // A slow response for a conversation the agent has since navigated
+    // away from shouldn't overwrite the newer conversation's notes.
+    if (cancelledRef.current) return;
 
     const mapped = (notesData ?? []).map((n: Record<string, unknown>) => ({
       id: n.id as string,
@@ -66,7 +70,23 @@ export function ConversationNotes({ conversationId, accountId }: ConversationNot
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, [conversationId]);
+  // Reset + reload on conversation change — a legitimate prop-driven
+  // sync, not state derived from other state (same pattern used in
+  // deal-form.tsx's open/reset effect).
+  useEffect(() => {
+    const cancelledRef = { current: false };
+    setLoading(true);
+    // A note draft typed for one conversation shouldn't carry over and
+    // risk being sent against a different one.
+    setText('');
+    setMentionOpen(false);
+    setMentionQuery('');
+    load(cancelledRef);
+    return () => {
+      cancelledRef.current = true;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationId]);
 
   const filteredMembers = mentionQuery
     ? members.filter(m => m.full_name?.toLowerCase().includes(mentionQuery.toLowerCase()))
@@ -133,7 +153,7 @@ export function ConversationNotes({ conversationId, accountId }: ConversationNot
     setSending(false);
     if (error) { toast.error(error.message); return; }
     setText('');
-    load();
+    load({ current: false });
   }
 
   async function deleteNote(id: string) {

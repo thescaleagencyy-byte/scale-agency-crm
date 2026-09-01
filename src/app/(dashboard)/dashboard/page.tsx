@@ -17,10 +17,12 @@ import {
   loadRecentContacts,
   loadResponseTime,
 } from '@/lib/dashboard/queries'
+import { loadMetaAdsCampaignPerformance } from '@/lib/meta-ads/rollup'
 import type {
   ActivityItem,
   ConversationsSeriesPoint,
   DemandSlice,
+  MetaAdsPerformance,
   MetricsBundle,
   PipelineDonutData,
   RecentContact,
@@ -40,6 +42,7 @@ import { ActivityFeed } from '@/components/dashboard/activity-feed'
 import { RevenueForecast } from '@/components/dashboard/revenue-forecast'
 import { EquipmentDemandPanel } from '@/components/dashboard/equipment-demand-panel'
 import { ActiveSitesPanel } from '@/components/dashboard/active-sites-panel'
+import { MetaAdsPerformancePanel } from '@/components/dashboard/meta-ads-performance-panel'
 
 const RENTAL_INDUSTRY = (() => {
   const ind = (CLIENT_INDUSTRY || CLIENT_NAME).toLowerCase()
@@ -82,6 +85,9 @@ export default function DashboardPage() {
 
   const [activeSites, setActiveSites] = useState<SiteSlice[] | null>(null)
   const [activeSitesLoading, setActiveSitesLoading] = useState(RENTAL_INDUSTRY)
+
+  const [metaAds, setMetaAds] = useState<MetaAdsPerformance | null>(null)
+  const [metaAdsLoading, setMetaAdsLoading] = useState(hasFeature('meta_ads'))
 
 
   const loadAll = useCallback(() => {
@@ -144,6 +150,13 @@ export default function DashboardPage() {
         .then((s) => setActiveSites(s))
         .catch((err) => console.error('[dashboard] active sites failed:', err))
         .finally(() => setActiveSitesLoading(false))
+    }
+
+    if (hasFeature('meta_ads')) {
+      void loadMetaAdsCampaignPerformance(db, 30)
+        .then((m) => setMetaAds(m))
+        .catch((err) => console.error('[dashboard] meta ads failed:', err))
+        .finally(() => setMetaAdsLoading(false))
     }
   }, [])
 
@@ -398,6 +411,9 @@ export default function DashboardPage() {
           <ActiveSitesPanel data={activeSites} loading={activeSitesLoading} />
         </div>
       )}
+
+      {/* Meta Ads Analytics — spend joined against leads + won deals */}
+      {hasFeature('meta_ads') && <MetaAdsPerformancePanel data={metaAds} loading={metaAdsLoading} />}
 
       {/* Response time */}
       <ResponseTimeChart data={responseTime} loading={responseTimeLoading} />

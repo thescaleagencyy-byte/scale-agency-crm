@@ -1,7 +1,9 @@
 import { NextResponse, after } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { decrypt, encrypt, isLegacyFormat } from '@/lib/whatsapp/encryption'
-import { encryptContent } from '@/lib/crypto'
+import { encryptContent, decryptContent } from '@/lib/crypto'
+import { detectsQualifyingReply } from '@/lib/inbox/qualified-reply'
+import { triggerLeadAlert } from '@/lib/alerts/lead-alert'
 import { getMediaUrl, downloadMedia } from '@/lib/whatsapp/meta-api'
 import { normalizePhone } from '@/lib/whatsapp/phone-utils'
 import { findExistingContact, isUniqueViolation } from '@/lib/contacts/dedupe'
@@ -609,6 +611,27 @@ async function processMessage(
     return
   }
 
+  // Idempotency guard — Meta retries webhook delivery when our response
+  // is slow or times out, which otherwise inserts the same inbound
+  // message twice (each retry gets a fresh internal id, so the customer
+  // sees the exact same text appear as two separate bubbles).
+  // messages.message_id only has a plain lookup index, not a unique
+  // constraint (see idx_messages_message_id, migration 001) — adding
+  // one now would first need existing duplicate rows cleaned up without
+  // orphaning reply/reaction references, so this is an app-level
+  // check-before-insert rather than a DB-enforced guarantee. The race
+  // window is small in practice: Meta's retries are spaced out, not
+  // fired concurrently.
+  const { data: existingMessage } = await supabaseAdmin()
+    .from('messages')
+    .select('id')
+    .eq('message_id', message.id)
+    .maybeSingle()
+  if (existingMessage) {
+    console.warn('[webhook] duplicate delivery for message_id, skipping:', message.id)
+    return
+  }
+
   // Parse message content based on type
   const { contentText, mediaUrl, mediaType, interactiveReplyId } =
     await parseMessageContent(message, accessToken)
@@ -664,6 +687,21 @@ async function processMessage(
     .eq('sender_type', 'customer')
   const isFirstInboundMessage = (priorCustomerMsgCount ?? 0) === 0
 
+  // Fetch the message immediately before this one so the qualified-lead
+  // check below can see whether it was a bot/agent question — must
+  // happen before the insert, otherwise this new row would be its own
+  // "preceding" message.
+  const { data: precedingRow } = await supabaseAdmin()
+    .from('messages')
+    .select('sender_type, content_text')
+    .eq('conversation_id', conversation.id)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  const precedingMessage = precedingRow
+    ? { sender_type: precedingRow.sender_type, content_text: decryptContent(precedingRow.content_text) }
+    : null
+
   const { error: msgError } = await supabaseAdmin().from('messages').insert({
     conversation_id: conversation.id,
     sender_type: 'customer',
@@ -685,6 +723,18 @@ async function processMessage(
     return
   }
 
+  // Qualified-lead detection — deterministic, rule-based (no LLM call):
+  // real signal that a real business question got a real answer, kept
+  // separate from is_lead (already proven too loose, and depended on
+  // by meta-ads/rollup.ts for ad ROI reporting so it can't be
+  // redefined here). `conversation` was loaded before this message
+  // arrived, so `conversation.is_qualified` is the prior state.
+  const qualifiesNow = detectsQualifyingReply({
+    precedingMessage,
+    newMessage: { content_type: contentType, content_text: contentText },
+  })
+  const becomesQualified = qualifiesNow && !conversation.is_qualified
+
   // Update conversation
   const { error: convError } = await supabaseAdmin()
     .from('conversations')
@@ -693,11 +743,30 @@ async function processMessage(
       last_message_at: new Date().toISOString(),
       unread_count: (conversation.unread_count || 0) + 1,
       updated_at: new Date().toISOString(),
+      // A message beyond their first inbound is a genuine reply, not
+      // just the opening greeting — surfaced in the inbox list.
+      ...(isFirstInboundMessage ? {} : { has_customer_replied: true }),
+      ...(qualifiesNow ? { is_qualified: true } : {}),
     })
     .eq('id', conversation.id)
 
   if (convError) {
     console.error('Error updating conversation:', convError)
+  }
+
+  if (becomesQualified) {
+    const { data: account } = await supabaseAdmin()
+      .from('accounts')
+      .select('name')
+      .eq('id', accountId)
+      .maybeSingle()
+    triggerLeadAlert({
+      type: 'qualified',
+      accountName: account?.name ?? 'Scale OS',
+      contactName: contactRecord.name ?? senderPhone,
+      contactPhone: contactRecord.phone ?? senderPhone,
+      conversationId: conversation.id,
+    })
   }
 
   // If this contact was a recent broadcast recipient, flag the reply

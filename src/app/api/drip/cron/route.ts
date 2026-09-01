@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/flows/admin-client'
 import { decrypt, isLegacyFormat } from '@/lib/whatsapp/encryption'
 import { sendTemplateMessage } from '@/lib/whatsapp/meta-api'
+import { checkCronAuth } from '@/lib/cron-auth'
 
 /**
  * GET /api/drip/cron
@@ -15,11 +16,8 @@ import { sendTemplateMessage } from '@/lib/whatsapp/meta-api'
  * Protect with DRIP_CRON_SECRET header or query param.
  */
 export async function GET(request: Request) {
-  const secret = process.env.DRIP_CRON_SECRET
-  const auth = request.headers.get('x-cron-secret') ?? new URL(request.url).searchParams.get('secret')
-  if (secret && auth !== secret) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const authError = checkCronAuth(request, 'DRIP_CRON_SECRET')
+  if (authError) return authError
 
   const admin = supabaseAdmin()
   const now = new Date().toISOString()
@@ -69,6 +67,20 @@ export async function GET(request: Request) {
 
     if (!config) continue
 
+    // Instagram contacts (or any contact with no phone) can't receive a
+    // WhatsApp template send. Task 5 made Instagram contacts selectable
+    // in the drip enrollment picker, so this is now reachable — route it
+    // through the same failure path as any other send error rather than
+    // crashing the whole cron batch on a non-null assertion.
+    if (!enrollment.contact?.phone) {
+      console.error(
+        `[drip/cron] send failed for enrollment ${enrollment.id}: Contact has no phone number — not a WhatsApp contact`,
+      )
+      await admin.from('drip_enrollments').update({ status: 'failed' }).eq('id', enrollment.id)
+      failed++
+      continue
+    }
+
     const rawToken = config.access_token
     const token = isLegacyFormat(rawToken) ? rawToken : decrypt(rawToken)
 
@@ -76,7 +88,7 @@ export async function GET(request: Request) {
       await sendTemplateMessage({
         phoneNumberId: config.phone_number_id,
         accessToken: token,
-        to: enrollment.contact!.phone,
+        to: enrollment.contact.phone,
         templateName: step.template_name,
         language: step.template_language,
       })
