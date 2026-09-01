@@ -249,7 +249,11 @@ async function forwardToN8n(rawBody: string, body: { entry?: WhatsAppWebhookEntr
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: rawBody,
-        signal: AbortSignal.timeout(5000),
+        // n8n's webhook trigger doesn't respond until the whole workflow
+        // finishes — an AI Agent call alone can take 5s+. 5000ms aborted
+        // real runs mid-flight (observed: a 5,243ms AshWheelz execution),
+        // silently dropping the forward (caught below, never surfaced).
+        signal: AbortSignal.timeout(15000),
       }),
     ),
   )

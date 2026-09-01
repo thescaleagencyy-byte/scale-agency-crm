@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
-import type { Conversation, ConversationStatus } from "@/types";
+import type { Conversation, ConversationStatus, Profile } from "@/types";
 import { Search, Inbox as InboxIcon } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Input } from "@/components/ui/input";
@@ -51,6 +51,36 @@ export function ConversationList({
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<InboxFilter>("all");
   const [loading, setLoading] = useState(true);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+
+  // Same query as MessageThread's assignee dropdown — RLS scopes rows
+  // to the current account's team, so this doubles as the id->name
+  // lookup for the assignee label in each list row.
+  useEffect(() => {
+    let cancelled = false;
+    const supabase = createClient();
+    supabase
+      .from("profiles")
+      .select("*")
+      .order("full_name")
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) {
+          console.error("Failed to fetch profiles:", error);
+          return;
+        }
+        setProfiles((data as Profile[]) ?? []);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const agentNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const p of profiles) map.set(p.user_id, p.full_name);
+    return map;
+  }, [profiles]);
 
   // Keep the latest callback in a ref so the fetch effect below can
   // have a stable, empty-dep identity. Previously the fetch useCallback
@@ -225,6 +255,11 @@ export function ConversationList({
                 conversation={conv}
                 isActive={conv.id === activeConversationId}
                 onSelect={handleSelect}
+                assignedAgentName={
+                  conv.assigned_agent_id
+                    ? agentNameById.get(conv.assigned_agent_id)
+                    : undefined
+                }
               />
             ))}
           </div>
@@ -250,12 +285,14 @@ interface ConversationItemProps {
   conversation: Conversation;
   isActive: boolean;
   onSelect: (conversation: Conversation) => void;
+  assignedAgentName?: string;
 }
 
 function ConversationItem({
   conversation,
   isActive,
   onSelect,
+  assignedAgentName,
 }: ConversationItemProps) {
   const contact = conversation.contact;
   const displayName = contact?.name || contact?.phone || "Unknown";
@@ -321,6 +358,14 @@ function ConversationItem({
             />
           </div>
         </div>
+        {assignedAgentName && (
+          <div className="mt-0.5 flex items-center gap-1">
+            <span className="text-[10px] text-muted-foreground/40">·</span>
+            <span className="truncate text-[11px] font-medium text-primary/85">
+              {assignedAgentName}
+            </span>
+          </div>
+        )}
       </div>
     </button>
   );
