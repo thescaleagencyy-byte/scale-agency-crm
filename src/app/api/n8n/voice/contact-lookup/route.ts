@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/flows/admin-client'
 import { findExistingContact } from '@/lib/contacts/dedupe'
 import { normalizePhone } from '@/lib/whatsapp/phone-utils'
+import { parseToolRequest, isUsablePhone, str, toolResponse } from '@/lib/voice/tool-payload'
 
 /**
  * POST /api/n8n/voice/contact-lookup
@@ -26,34 +27,45 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  let body: { customer_phone?: string }
+  let raw: unknown
   try {
-    body = await request.json()
+    raw = await request.json()
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  if (!body.customer_phone?.trim()) {
-    return NextResponse.json({ error: 'customer_phone is required' }, { status: 400 })
+  // Vapi wraps tool arguments in { message: { toolCalls: [...] } }; n8n posts flat.
+  const { args, toolCallId, callerPhone } = parseToolRequest(raw)
+  const argPhone = str(args, 'customer_phone')
+  const phone = callerPhone ?? (isUsablePhone(argPhone) ? argPhone : null)
+
+  // A browser test call has no caller ID. That is not an error — it just means
+  // there is nobody to recognise, so answer "unknown caller" and let the call run.
+  if (!phone) {
+    return NextResponse.json(toolResponse(toolCallId, { found: false }))
   }
 
   const admin = supabaseAdmin()
 
-  const { data: configs } = await admin
+  const accountIdHeader = str(args, 'account_id') ?? request.headers.get('x-account-id')?.trim() ?? null
+  const configQuery = admin
     .from('whatsapp_config')
     .select('account_id, updated_at, created_at')
     .eq('status', 'connected')
+  const { data: configs } = await (accountIdHeader
+    ? configQuery.eq('account_id', accountIdHeader)
+    : configQuery)
   if (!configs?.length) {
-    return NextResponse.json({ found: false })
+    return NextResponse.json(toolResponse(toolCallId, { found: false }))
   }
   configs.sort((a, b) => ((b.updated_at ?? b.created_at) > (a.updated_at ?? a.created_at) ? 1 : -1))
   const accountId = configs[0].account_id
 
-  const normalizedPhone = normalizePhone(body.customer_phone.trim())
+  const normalizedPhone = normalizePhone(phone)
   const contact = await findExistingContact(admin, accountId, normalizedPhone).catch(() => null)
 
   if (!contact) {
-    return NextResponse.json({ found: false })
+    return NextResponse.json(toolResponse(toolCallId, { found: false }))
   }
 
   const { data: recentLead } = await admin
@@ -65,7 +77,7 @@ export async function POST(request: Request) {
     .limit(1)
     .maybeSingle()
 
-  return NextResponse.json({
+  return NextResponse.json(toolResponse(toolCallId, {
     found: true,
     name: contact.name ?? null,
     recent_request: recentLead
@@ -77,5 +89,5 @@ export async function POST(request: Request) {
           when: recentLead.created_at,
         }
       : null,
-  })
+  }))
 }

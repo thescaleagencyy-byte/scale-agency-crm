@@ -4,6 +4,7 @@ import { findExistingContact } from '@/lib/contacts/dedupe'
 import { normalizePhone } from '@/lib/whatsapp/phone-utils'
 import { scoreLead } from '@/lib/leads/score'
 import { triageLead } from '@/lib/leads/triage'
+import { parseToolRequest, isUsablePhone, str, toolResponse } from '@/lib/voice/tool-payload'
 
 /**
  * POST /api/n8n/lead
@@ -12,7 +13,9 @@ import { triageLead } from '@/lib/leads/triage'
  * Auth: x-n8n-api-key header must match N8N_SEND_API_KEY env var.
  *
  * Body:
- *   phone_number_id string  — WABA phone_number_id the n8n workflow is bound to; resolves tenant
+ *   account_id      string? — account UUID; resolves tenant (what the voice agent and
+ *                             /api/n8n/send use). Either this or phone_number_id is required.
+ *   phone_number_id string? — WABA phone_number_id the n8n workflow is bound to; resolves tenant
  *   customer_phone  string  — recipient phone
  *   customer_name   string? — name from WhatsApp profile
  *   service_type    string? — equipment/service needed
@@ -33,28 +36,46 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  let body: {
-    phone_number_id?: string
-    customer_phone?: string
-    customer_name?: string
-    service_type?: string
-    project_site?: string
-    duration?: string
-    quantity?: string
-    company?: string
-    raw_handoff?: string
-  }
+  let raw: unknown
   try {
-    body = await request.json()
+    raw = await request.json()
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  if (!body.customer_phone?.trim()) {
-    return NextResponse.json({ error: 'customer_phone is required' }, { status: 400 })
+  // Accepts both the flat n8n body and Vapi's { message: { toolCalls: [...] } } wrapper.
+  const { args, toolCallId, callerPhone } = parseToolRequest(raw)
+  const fail = (error: string, status: number) =>
+    NextResponse.json(toolResponse(toolCallId, { error }), { status })
+
+  const body = {
+    account_id: str(args, 'account_id'),
+    phone_number_id: str(args, 'phone_number_id'),
+    customer_phone: str(args, 'customer_phone'),
+    customer_name: str(args, 'customer_name'),
+    service_type: str(args, 'service_type'),
+    project_site: str(args, 'project_site'),
+    duration: str(args, 'duration'),
+    start_date: str(args, 'start_date'),
+    quantity: str(args, 'quantity'),
+    company: str(args, 'company'),
+    raw_handoff: str(args, 'raw_handoff'),
   }
-  if (!body.phone_number_id?.trim()) {
-    return NextResponse.json({ error: 'phone_number_id is required' }, { status: 400 })
+
+  // Caller ID from the telephony layer beats anything the model typed: on voice
+  // calls the model has been known to emit a literal "{{customer.number}}" or
+  // invent a plausible-looking Saudi number.
+  const phone = callerPhone ?? (isUsablePhone(body.customer_phone) ? body.customer_phone : null)
+  if (!phone) {
+    return fail('customer_phone is required', 400)
+  }
+
+  // Tenancy key. account_id is what /api/n8n/send and the voice tool send;
+  // phone_number_id is what the WhatsApp workflow sends. Never fall back to
+  // "most recently updated config" — that leaks leads across clients.
+  const tenantAccountId = body.account_id ?? request.headers.get('x-account-id')?.trim() ?? null
+  if (!tenantAccountId && !body.phone_number_id) {
+    return fail('account_id or phone_number_id is required', 400)
   }
 
   const admin = supabaseAdmin()
@@ -63,27 +84,26 @@ export async function POST(request: Request) {
   // same tenancy key /api/whatsapp/webhook uses. Picking "most recently
   // updated connected config" instead would let any client's config touch
   // (reconnect, token refresh) silently steal another tenant's leads.
-  const { data: configRows, error: configError } = await admin
-    .from('whatsapp_config')
-    .select('account_id')
-    .eq('phone_number_id', body.phone_number_id.trim())
-    .eq('status', 'connected')
+  const configQuery = admin.from('whatsapp_config').select('account_id').eq('status', 'connected')
+  const { data: configRows, error: configError } = await (tenantAccountId
+    ? configQuery.eq('account_id', tenantAccountId)
+    : configQuery.eq('phone_number_id', body.phone_number_id!))
 
   if (configError) {
     console.error('[n8n/lead] config fetch failed:', configError)
-    return NextResponse.json({ error: 'Failed to resolve account.' }, { status: 500 })
+    return fail('Failed to resolve account.', 500)
   }
   if (!configRows?.length) {
-    return NextResponse.json({ error: 'No connected WhatsApp config for phone_number_id.' }, { status: 404 })
+    return fail('No connected account for the supplied account_id/phone_number_id.', 404)
   }
-  if (configRows.length > 1) {
+  if (tenantAccountId === null && configRows.length > 1) {
     console.error('[n8n/lead] multiple configs for phone_number_id:', body.phone_number_id, configRows)
-    return NextResponse.json({ error: 'Ambiguous account for phone_number_id.' }, { status: 409 })
+    return fail('Ambiguous account for phone_number_id.', 409)
   }
   const accountId = configRows[0].account_id
 
   // Resolve contact + conversation IDs (best-effort, don't block on failure)
-  const normalizedPhone = normalizePhone(body.customer_phone.trim())
+  const normalizedPhone = normalizePhone(phone)
   const contact = await findExistingContact(admin, accountId, normalizedPhone).catch(() => null)
   let conversationId: string | null = null
   if (contact) {
@@ -97,12 +117,12 @@ export async function POST(request: Request) {
   }
 
   const leadFields = {
-    customer_name: body.customer_name?.trim() || null,
-    service_type: body.service_type?.trim() || null,
-    project_site: body.project_site?.trim() || null,
-    duration: body.duration?.trim() || null,
-    quantity: body.quantity?.trim() || null,
-    company: body.company?.trim() || null,
+    customer_name: body.customer_name ?? null,
+    service_type: body.service_type ?? null,
+    project_site: body.project_site ?? null,
+    duration: body.duration ?? null,
+    quantity: body.quantity ?? null,
+    company: body.company ?? null,
   }
   const { score, factors } = scoreLead(leadFields)
 
@@ -112,7 +132,9 @@ export async function POST(request: Request) {
       account_id: accountId,
       ...leadFields,
       customer_phone: normalizedPhone,
-      raw_handoff: body.raw_handoff?.trim() || null,
+      raw_handoff: [body.start_date ? `start_date=${body.start_date}` : null, body.raw_handoff ?? null]
+        .filter(Boolean)
+        .join(' | ') || null,
       contact_id: contact?.id ?? null,
       conversation_id: conversationId,
       status: 'new',
@@ -124,7 +146,7 @@ export async function POST(request: Request) {
 
   if (error) {
     console.error('[n8n/lead] DB insert failed:', error)
-    return NextResponse.json({ error: 'Failed to save lead.' }, { status: 500 })
+    return fail('Failed to save lead.', 500)
   }
 
   // Fire after the response so a slow/failed OpenAI call never delays or
@@ -138,5 +160,11 @@ export async function POST(request: Request) {
     }
   })
 
-  return NextResponse.json({ success: true, lead_id: lead.id })
+  return NextResponse.json(
+    toolResponse(toolCallId, {
+      success: true,
+      lead_id: lead.id,
+      result: 'Request logged for the ops team.',
+    }),
+  )
 }
