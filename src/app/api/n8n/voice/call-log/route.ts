@@ -14,7 +14,8 @@ import { normalizePhone } from '@/lib/whatsapp/phone-utils'
  *
  * Auth: x-n8n-api-key header must match N8N_SEND_API_KEY env var.
  *
- * Body: vapi_call_id (required), customer_phone, customer_name,
+ * Body: vapi_call_id (required), account_id (required - or x-account-id
+ * header), customer_phone, customer_name,
  * call_type, language_used, resolved, escalated_to_ops, summary,
  * transcript, recording_url, ended_reason, duration_seconds, cost_usd,
  * started_at, ended_at — all optional besides vapi_call_id.
@@ -31,6 +32,7 @@ export async function POST(request: Request) {
   }
 
   let body: {
+    account_id?: string
     vapi_call_id?: string
     customer_phone?: string
     customer_name?: string
@@ -59,14 +61,26 @@ export async function POST(request: Request) {
 
   const admin = supabaseAdmin()
 
+  // Tenancy key. Same contract as /api/n8n/lead: the caller names its account.
+  // Deliberately NO "most recent connected config" fallback - that resolves one
+  // client's call log onto another client's account.
+  const tenantAccountId =
+    (body as { account_id?: string }).account_id?.trim() ||
+    request.headers.get('x-account-id')?.trim() ||
+    null
+  if (!tenantAccountId) {
+    return NextResponse.json({ error: 'account_id is required' }, { status: 400 })
+  }
+
   const { data: configs } = await admin
     .from('whatsapp_config')
-    .select('account_id, updated_at, created_at')
+    .select('account_id')
     .eq('status', 'connected')
+    .eq('account_id', tenantAccountId)
+    .limit(1)
   if (!configs?.length) {
-    return NextResponse.json({ error: 'No active WhatsApp config.' }, { status: 404 })
+    return NextResponse.json({ error: 'No connected account for the supplied account_id.' }, { status: 404 })
   }
-  configs.sort((a, b) => ((b.updated_at ?? b.created_at) > (a.updated_at ?? a.created_at) ? 1 : -1))
   const accountId = configs[0].account_id
 
   let contactId: string | null = null

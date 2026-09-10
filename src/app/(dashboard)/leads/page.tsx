@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
   Search, ChevronLeft, ChevronRight, MoreHorizontal, TrendingUp, Loader2,
-  StickyNote, Bell, CheckSquare, Square, Sparkles,
+  StickyNote, Bell, CheckSquare, Square, Sparkles, Trash2,
 } from 'lucide-react';
 import { AvatarStack } from '@/components/ui/avatar-stack';
 import { LeadDetailPanel } from '@/components/leads/lead-detail-panel';
@@ -205,6 +205,28 @@ export default function LeadsPage() {
     toast.success(`${selected.size} leads marked ${STATUS_LABEL[status]}`);
     setSelected(new Set());
     load();
+  }
+
+  // Admin-only, and irreversible — hence the confirm. Goes through the API
+  // route rather than the browser client so the account scope is enforced
+  // server-side.
+  async function deleteLead(lead: Lead) {
+    const label = lead.customer_name || lead.company || lead.customer_phone || 'this lead';
+    if (!window.confirm(`Permanently delete ${label}? This cannot be undone.`)) return;
+    setUpdating(lead.id);
+    try {
+      const res = await fetch(`/api/leads/${lead.id}`, { method: 'DELETE' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { toast.error(data.error ?? 'Delete failed'); return; }
+      toast.success('Lead deleted');
+      setSelectedLead(prev => (prev?.id === lead.id ? null : prev));
+      setSelected(prev => { const next = new Set(prev); next.delete(lead.id); return next; });
+      load();
+    } catch (e) {
+      toast.error(String(e));
+    } finally {
+      setUpdating(null);
+    }
   }
 
   async function triageNewLeads() {
@@ -460,6 +482,13 @@ export default function LeadsPage() {
                               View conversation
                             </DropdownMenuItem>
                           )}
+                          <DropdownMenuItem
+                            onClick={() => deleteLead(lead)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="h-3.5 w-3.5 mr-2" />
+                            Delete lead
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
