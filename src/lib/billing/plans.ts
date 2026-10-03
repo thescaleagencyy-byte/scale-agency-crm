@@ -31,3 +31,25 @@ export const PLAN_LIMITS: Record<string, PlanLimits> = {
 export function limitsForPlan(planName: string): PlanLimits {
   return PLAN_LIMITS[planName] ?? PLAN_LIMITS.free;
 }
+
+// ------------------------------------------------------------
+// Public self-serve pricing (USD, monthly) + the Stripe Price ID
+// env var each plan reads at checkout time. Only plans with a real
+// stripe_secret_key AND a matching price ID set go through actual
+// Stripe Checkout — see /api/billing/checkout. `enterprise` has no
+// entry: it stays a manual "contact us" quote by design.
+//
+// Figures below are a placeholder anchored to comparable WhatsApp-
+// CRM SaaS pricing for an international (UK/UAE/US) SMB buyer —
+// confirm/adjust before relying on them publicly.
+// ------------------------------------------------------------
+
+export interface StripePlanConfig {
+  amountUSD: number;
+  priceEnvVar: string;
+}
+
+export const STRIPE_PLANS: Record<string, StripePlanConfig> = {
+  starter: { amountUSD: 49, priceEnvVar: "STRIPE_PRICE_ID_STARTER" },
+  growth: { amountUSD: 149, priceEnvVar: "STRIPE_PRICE_ID_GROWTH" },
+};

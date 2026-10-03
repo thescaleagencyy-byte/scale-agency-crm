@@ -81,6 +81,10 @@ const STATUS_STYLES: Record<Subscription['status'], string> = {
 };
 
 const UPGRADE_PLANS = ['starter', 'growth', 'enterprise'] as const;
+// Enterprise is a manual quote, not a fixed Stripe price — only these
+// two go through card checkout. Keep in sync with STRIPE_PLANS in
+// src/lib/billing/plans.ts.
+const CARD_PAYABLE_PLANS: string[] = ['starter', 'growth'];
 
 export function BillingPanel() {
   const canManage = useCan('manage-billing');
@@ -120,7 +124,11 @@ export function BillingPanel() {
 
   async function payByCard() {
     setCardLoading(true);
-    const res = await fetch('/api/billing/checkout', { method: 'POST' });
+    const res = await fetch('/api/billing/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plan_name: selectedPlan }),
+    });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {
       toast.error(json.error ?? 'Card payment is not connected yet');
@@ -305,10 +313,12 @@ export function BillingPanel() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <Button type="button" variant="outline" onClick={payByCard} disabled={cardLoading} className="justify-start">
-                  {cardLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CreditCard className="h-4 w-4 mr-2" />}
-                  Pay by card
-                </Button>
+                {CARD_PAYABLE_PLANS.includes(selectedPlan) && (
+                  <Button type="button" variant="outline" onClick={payByCard} disabled={cardLoading} className="justify-start">
+                    {cardLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CreditCard className="h-4 w-4 mr-2" />}
+                    Pay by card
+                  </Button>
+                )}
                 <Button type="button" variant="outline" onClick={requestManualUpgrade} disabled={manualLoading} className="justify-start">
                   {manualLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Landmark className="h-4 w-4 mr-2" />}
                   Bank / JazzCash / Easypaisa

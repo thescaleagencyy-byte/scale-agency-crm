@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Check } from 'lucide-react'
-import { PLAN_LIMITS, UNLIMITED } from '@/lib/billing/plans'
+import { PLAN_LIMITS, STRIPE_PLANS, UNLIMITED } from '@/lib/billing/plans'
 import { FEATURE_GATING_ENABLED } from '@/lib/features'
 
 export const metadata: Metadata = {
@@ -60,8 +60,8 @@ export default function PricingPage() {
       <section className="mx-auto max-w-3xl px-6 pt-14 pb-10 text-center">
         <h1 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-5xl">Simple, honest pricing</h1>
         <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-          Start free. Pricing is quoted per business, not a fixed card charge — start a plan
-          request from inside the app and we'll confirm your rate directly.
+          Start free. Upgrade with a card in under a minute — no sales call required. Pakistani
+          customers can also pay by bank transfer, JazzCash, or Easypaisa.
         </p>
       </section>
 
@@ -81,7 +81,14 @@ export default function PricingPage() {
                 <p className="text-sm font-semibold text-foreground capitalize">{id}</p>
                 <p className="mt-1 text-xs text-muted-foreground min-h-[2.5rem]">{copy.tagline}</p>
                 <p className="mt-4 text-2xl font-bold text-foreground">
-                  {id === 'free' ? 'Free' : id === 'enterprise' ? 'Custom' : 'Contact us'}
+                  {id === 'free' && 'Free'}
+                  {id === 'enterprise' && 'Custom'}
+                  {id in STRIPE_PLANS && (
+                    <>
+                      ${STRIPE_PLANS[id].amountUSD}
+                      <span className="text-sm font-medium text-muted-foreground">/mo</span>
+                    </>
+                  )}
                 </p>
                 <div className="mt-4 space-y-1.5 text-xs text-muted-foreground">
                   <p>{fmtLimit(limits.seats)} team seat{limits.seats === 1 ? '' : 's'}</p>
@@ -110,8 +117,8 @@ export default function PricingPage() {
           })}
         </div>
         <p className="mt-8 text-center text-xs text-muted-foreground">
-          Paid plans: request an upgrade from Settings → Billing once you're signed up. We'll confirm
-          your price and send payment details (card, bank transfer, JazzCash, or Easypaisa).
+          Sign up free, then upgrade any time from Settings → Billing — pay instantly by card, or by
+          bank transfer / JazzCash / Easypaisa if you&apos;re in Pakistan.
         </p>
       </section>
 
