@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Brain, Plus, Trash2, X, Sparkles } from 'lucide-react';
+import { Loader2, Brain, Plus, Trash2, X, Sparkles, Lightbulb } from 'lucide-react';
 
 interface KnowledgeRow {
   id: string;
@@ -15,6 +15,13 @@ interface KnowledgeRow {
   title: string;
   content: string;
   created_at: string;
+}
+
+interface KnowledgeGap {
+  id: string;
+  question_pattern: string;
+  sample_quote: string | null;
+  occurrence_count: number;
 }
 
 const CATEGORIES = ['pricing', 'sop', 'policy', 'tone', 'products', 'team', 'goals', 'general'] as const;
@@ -31,20 +38,43 @@ export default function BusinessKnowledgePage() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [generating, setGenerating] = useState(false);
+  const [gaps, setGaps] = useState<KnowledgeGap[]>([]);
+  const [fromGapId, setFromGapId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const supabase = createClient();
     setLoading(true);
-    const { data, error } = await supabase
-      .from('business_knowledge')
-      .select('id, category, title, content, created_at')
-      .order('category');
-    if (error) toast.error(error.message);
-    else setRows((data as KnowledgeRow[]) ?? []);
+    const [knowledgeRes, gapsRes] = await Promise.all([
+      supabase.from('business_knowledge').select('id, category, title, content, created_at').order('category'),
+      supabase
+        .from('knowledge_gaps')
+        .select('id, question_pattern, sample_quote, occurrence_count')
+        .eq('status', 'open')
+        .order('occurrence_count', { ascending: false })
+        .limit(10),
+    ]);
+    if (knowledgeRes.error) toast.error(knowledgeRes.error.message);
+    else setRows((knowledgeRes.data as KnowledgeRow[]) ?? []);
+    if (!gapsRes.error) setGaps((gapsRes.data as KnowledgeGap[]) ?? []);
     setLoading(false);
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  function addFromGap(gap: KnowledgeGap) {
+    setTitle(gap.question_pattern);
+    setContent(gap.sample_quote ? `(Draft — customers keep asking: "${gap.sample_quote}") ` : '');
+    setCategory('general');
+    setFromGapId(gap.id);
+    setAdding(true);
+  }
+
+  async function dismissGap(id: string) {
+    const supabase = createClient();
+    const { error } = await supabase.from('knowledge_gaps').update({ status: 'dismissed' }).eq('id', id);
+    if (error) toast.error(error.message);
+    else setGaps((prev) => prev.filter((g) => g.id !== id));
+  }
 
   async function save() {
     if (!title.trim() || !content.trim()) {
@@ -64,7 +94,10 @@ export default function BusinessKnowledgePage() {
     if (error) toast.error(error.message);
     else {
       toast.success('Added — the Copilot will use this from now on.');
-      setTitle(''); setContent(''); setCategory('general'); setAdding(false);
+      if (fromGapId) {
+        await supabase.from('knowledge_gaps').update({ status: 'added' }).eq('id', fromGapId);
+      }
+      setTitle(''); setContent(''); setCategory('general'); setAdding(false); setFromGapId(null);
       load();
     }
   }
@@ -121,7 +154,7 @@ export default function BusinessKnowledgePage() {
         <div className="card-elevated p-4 space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold text-foreground">New fact</p>
-            <button onClick={() => setAdding(false)} className="text-muted-foreground hover:text-foreground">
+            <button onClick={() => { setAdding(false); setFromGapId(null); }} className="text-muted-foreground hover:text-foreground">
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -142,6 +175,34 @@ export default function BusinessKnowledgePage() {
             {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
             Save
           </Button>
+        </div>
+      )}
+
+      {gaps.length > 0 && (
+        <div className="card-elevated p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <Lightbulb className="h-4 w-4 text-primary" />
+            <p className="text-sm font-semibold text-foreground">Customers keep asking about this — not saved yet</p>
+          </div>
+          <div className="divide-y divide-border">
+            {gaps.map((gap) => (
+              <div key={gap.id} className="flex items-start justify-between gap-3 py-2.5">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-foreground">{gap.question_pattern}</p>
+                    <Badge variant="outline" className="text-[10px]">{gap.occurrence_count}x</Badge>
+                  </div>
+                  {gap.sample_quote && <p className="mt-0.5 text-xs text-muted-foreground italic">&quot;{gap.sample_quote}&quot;</p>}
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Button size="sm" variant="outline" onClick={() => addFromGap(gap)}>Add</Button>
+                  <button onClick={() => dismissGap(gap.id)} className="text-muted-foreground hover:text-foreground" title="Dismiss">
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

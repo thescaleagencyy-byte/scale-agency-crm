@@ -28,6 +28,7 @@ import { BillingPanel } from '@/components/settings/billing-panel';
 import { RecoveryPanel } from '@/components/settings/recovery-panel';
 import { LeadAlertPanel } from '@/components/settings/lead-alert-panel';
 import { AIAlertsPanel } from '@/components/settings/ai-alerts-panel';
+import { GrowthFeaturesPanel } from '@/components/settings/growth-features-panel';
 import {
   resolveSection,
   type SettingsSection,
@@ -131,6 +132,7 @@ function SettingsPageInner() {
     recovery: <RecoveryPanel />,
     'hot-leads': <LeadAlertPanel />,
     'ai-alerts': <AIAlertsPanel />,
+    'growth-features': <GrowthFeaturesPanel />,
   };
 
   return (
