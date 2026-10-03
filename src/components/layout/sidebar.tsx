@@ -44,7 +44,7 @@ import {
   Landmark,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
-import { hasFeature, CLIENT_NAME, CLIENT_INDUSTRY, APP_NAME } from "@/lib/features";
+import { hasFeature, CLIENT_NAME, CLIENT_INDUSTRY, APP_NAME, AR_COLLECTIONS_ENABLED } from "@/lib/features";
 
 const CLIENT_LOGO = CLIENT_NAME
   ? `/clients/${CLIENT_NAME.toLowerCase().replace(/\s+/g, '')}.png`
@@ -158,7 +158,9 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/revenue",      label: "Revenue",       icon: TrendingUp,      feature: "revenue" },
       { href: "/invoices",     label: "Invoices",      icon: Receipt,         feature: "invoices" },
-      { href: "/ar-collections", label: "AR Collections", icon: Landmark,     feature: "ar-collections" },
+      ...(AR_COLLECTIONS_ENABLED
+        ? [{ href: "/ar-collections", label: "AR Collections", icon: Landmark }]
+        : []),
     ],
   },
   {

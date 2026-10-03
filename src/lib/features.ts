@@ -18,6 +18,13 @@ export function hasFeature(key: string): boolean {
   return ENABLED_FEATURES.has(key)
 }
 
+// Standalone flag for the AR Collections section — deliberately NOT part
+// of the shared NEXT_PUBLIC_FEATURES comma-list. That var is "Secret"-typed
+// in Vercel (value unreadable via CLI, only the dashboard UI), so editing
+// it blind risks silently dropping an existing client feature. A dedicated
+// var is a safe additive change: nothing existing is touched.
+export const AR_COLLECTIONS_ENABLED = process.env.NEXT_PUBLIC_AR_COLLECTIONS === 'true'
+
 // Client branding — set on per-client deployments to white-label the UI.
 // Empty string = Scale Agency default branding.
 export const CLIENT_NAME = process.env.NEXT_PUBLIC_CLIENT_NAME ?? ''
@@ -50,7 +57,6 @@ export const PATH_FEATURE_MAP: Record<string, string> = {
   '/meta-ads':      'meta_ads',
   '/copilot':       'copilot',
   '/invoices':      'invoices',
-  '/ar-collections': 'ar-collections',
   '/content-calendar': 'content-calendar',
   '/revenue':       'revenue',
   '/integrations':  'integrations',
