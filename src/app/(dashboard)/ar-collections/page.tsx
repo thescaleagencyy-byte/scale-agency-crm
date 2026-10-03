@@ -42,6 +42,7 @@ const TONE_LABEL: Record<string, string> = {
   final: 'Final',
   demand: 'Demand',
   escalated: 'Escalated',
+  no_email: 'No Email On File',
 };
 const TONE_CLASS: Record<string, string> = {
   soft: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
@@ -49,6 +50,7 @@ const TONE_CLASS: Record<string, string> = {
   final: 'bg-orange-500/10 text-orange-400 border-orange-500/30',
   demand: 'bg-red-500/10 text-red-400 border-red-500/30',
   escalated: 'bg-red-500/10 text-red-400 border-red-500/30',
+  no_email: 'bg-muted/60 text-muted-foreground border-border',
 };
 
 function fmtDate(d?: string | null): string {
@@ -346,7 +348,7 @@ export default function ArCollectionsPage() {
       <div className="text-xs text-muted-foreground flex items-center gap-1.5">
         <Wallet className="size-3" />
         <span>
-          This log covers invoices the AR automation has actually chased — it is activity, not the full Odoo receivables book.
+          This log covers invoices the AR automation has actually chased since go-live (2026-09-28) — it is activity, not the full Odoo receivables book.
         </span>
       </div>
     </div>

@@ -15,12 +15,24 @@ async function resolveAccountId(
   return data.account_id as string
 }
 
+// AR1/AR2/AR3 went live against AshWheelz's REAL Odoo on this date
+// (confirmed in project history — `ar1_odoo_config` was switched from
+// `testing_db_22_aug` to `ashwheelz_live_db` on 2026-09-28). Every row
+// touched before this is leftover from pre-launch testing — fake
+// accounts ("TEST Collections") and real-named test rows (Amina Noor,
+// Zainab Rafaqat, Fizza Asghar, Asad Zahid, etc.) chased against a
+// clone database, never cleaned out of this table the way the Odoo
+// test data was. Filtering them out here so this dashboard only ever
+// shows genuine production activity — the table itself still carries
+// the old rows; that's a separate cleanup decision, not a view-layer one.
+const AR_LIVE_SINCE = '2026-09-28'
+
 // Pulls every row from the n8n Data Table that the AR Collections
 // workflows (AR1/AR2/AR3) write to — one row per invoice they've
 // chased, kept current (upserted), not appended daily. This is the
 // real activity log: who got emailed, who got escalated, for how
 // much, and when. Paginates until exhausted (safety cap 3000 rows —
-// well above the live ~1,100 row count as of 2026-09-29).
+// well above the live ~700 real rows as of 2026-09-29).
 async function fetchAllRows(
   apiUrl: string,
   apiKey: string,
@@ -28,9 +40,12 @@ async function fetchAllRows(
 ): Promise<Record<string, unknown>[]> {
   const all: Record<string, unknown>[] = []
   let cursor: string | null = null
+  const filter = JSON.stringify({
+    filters: [{ columnName: 'last_updated', condition: 'gte', value: AR_LIVE_SINCE }],
+  })
 
   while (all.length < 3000) {
-    const params = new URLSearchParams({ limit: '250', sortBy: 'last_updated:desc' })
+    const params = new URLSearchParams({ limit: '250', sortBy: 'last_updated:desc', filter })
     if (cursor) params.set('cursor', cursor)
 
     const res = await fetch(`${apiUrl}/api/v1/data-tables/${tableId}/rows?${params}`, {
