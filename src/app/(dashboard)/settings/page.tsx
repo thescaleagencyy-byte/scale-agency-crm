@@ -27,6 +27,7 @@ import { BrandConfigPanel } from '@/components/settings/brand-config-panel';
 import { BillingPanel } from '@/components/settings/billing-panel';
 import { RecoveryPanel } from '@/components/settings/recovery-panel';
 import { LeadAlertPanel } from '@/components/settings/lead-alert-panel';
+import { AIAlertsPanel } from '@/components/settings/ai-alerts-panel';
 import {
   resolveSection,
   type SettingsSection,
@@ -129,6 +130,7 @@ function SettingsPageInner() {
     billing: <BillingPanel />,
     recovery: <RecoveryPanel />,
     'hot-leads': <LeadAlertPanel />,
+    'ai-alerts': <AIAlertsPanel />,
   };
 
   return (

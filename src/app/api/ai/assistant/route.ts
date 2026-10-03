@@ -48,7 +48,7 @@ interface HistoryMessage {
 // ============================================================
 
 const LEAD_STATUS_VALUES = ['new', 'called', 'won', 'lost'] as const;
-const APPOINTMENT_STATUS_VALUES = ['confirmed', 'completed', 'cancelled'] as const;
+const APPOINTMENT_STATUS_VALUES = ['confirmed', 'completed', 'cancelled', 'no_show'] as const;
 const CONVERSATION_STATUS_VALUES = ['open', 'pending', 'closed'] as const;
 const INVOICE_STATUS_VALUES = ['unpaid', 'paid', 'overdue', 'cancelled'] as const;
 const CONTENT_POST_STATUS_VALUES = ['draft', 'scheduled', 'posted', 'cancelled'] as const;
@@ -73,7 +73,7 @@ const TOOLS: Anthropic.Tool[] = [
   {
     name: 'update_appointment_status',
     description:
-      "Update an appointment's status (confirmed/completed/cancelled) for a contact, found by name or phone. Use for 'cancel X's appointment', 'mark Y's appointment complete', etc. If the search matches more than one appointment, ask the user to be more specific instead of guessing.",
+      "Update an appointment's status (confirmed/completed/cancelled/no_show) for a contact, found by name or phone. Use for 'cancel X's appointment', 'mark Y's appointment complete', etc. If the search matches more than one appointment, ask the user to be more specific instead of guessing.",
     input_schema: {
       type: 'object',
       properties: {
@@ -231,7 +231,7 @@ const OPENAI_TOOLS = [
     function: {
       name: 'update_appointment_status',
       description:
-        "Update an appointment's status (confirmed/completed/cancelled) for a contact, found by name or phone. Use for 'cancel X's appointment', 'mark Y's appointment complete', etc. If the search matches more than one appointment, ask the user to be more specific instead of guessing.",
+        "Update an appointment's status (confirmed/completed/cancelled/no_show) for a contact, found by name or phone. Use for 'cancel X's appointment', 'mark Y's appointment complete', etc. If the search matches more than one appointment, ask the user to be more specific instead of guessing.",
       parameters: {
         type: 'object',
         properties: {

@@ -19,6 +19,7 @@ import {
   Sparkles,
   RefreshCcw,
   Flame,
+  Radar,
   type LucideIcon,
 } from 'lucide-react';
 import { FEATURE_GATING_ENABLED } from '@/lib/features';
@@ -52,6 +53,7 @@ export const SETTINGS_SECTIONS = [
   'billing',
   'recovery',
   'hot-leads',
+  'ai-alerts',
 ] as const;
 
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
@@ -91,6 +93,7 @@ export const SECTION_META: Record<SettingsSection, SectionMeta> = {
   billing: { id: 'billing', label: 'Billing', icon: CreditCard, group: 'workspace' },
   recovery: { id: 'recovery', label: 'Lead Recovery', icon: RefreshCcw, group: 'workspace' },
   'hot-leads': { id: 'hot-leads', label: 'Hot Lead Alerts', icon: Flame, group: 'workspace' },
+  'ai-alerts': { id: 'ai-alerts', label: 'AI Alerts', icon: Radar, group: 'workspace' },
 };
 
 export const RAIL_GROUPS: { label: string | null; group: SectionMeta['group'] }[] = [

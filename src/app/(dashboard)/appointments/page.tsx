@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Plus, Calendar, Clock, X, CheckCircle, Pencil, Copy, RefreshCw, CalendarClock } from 'lucide-react';
+import { Loader2, Plus, Calendar, Clock, X, CheckCircle, Pencil, Copy, RefreshCw, CalendarClock, UserX } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useCan } from '@/hooks/use-can';
@@ -34,6 +34,7 @@ const STATUS_COLOR: Record<string, string> = {
   confirmed: 'border-primary/30 bg-primary/10 text-primary',
   completed: 'border-green-500/30 bg-green-500/10 text-green-400',
   cancelled: 'border-red-500/30 bg-red-500/10 text-red-400',
+  no_show: 'border-orange-500/30 bg-orange-500/10 text-orange-400',
 };
 
 export default function AppointmentsPage() {
@@ -283,13 +284,16 @@ export default function AppointmentsPage() {
                     {a.notes && <p className="text-xs text-muted-foreground mt-0.5 italic">{a.notes}</p>}
                   </div>
                   <Badge variant="outline" className={cn('text-xs capitalize shrink-0', STATUS_COLOR[a.status] ?? '')}>
-                    {a.status}
+                    {a.status === 'no_show' ? 'No-show' : a.status}
                   </Badge>
                   <div className="flex items-center gap-1 shrink-0">
                     {a.status === 'confirmed' && (
                       <>
                         <button onClick={() => updateStatus(a.id, 'completed')} title="Mark completed" className="h-7 w-7 flex items-center justify-center rounded text-muted-foreground hover:text-primary hover:bg-muted">
                           <CheckCircle className="h-3.5 w-3.5" />
+                        </button>
+                        <button onClick={() => updateStatus(a.id, 'no_show')} title="Mark no-show" className="h-7 w-7 flex items-center justify-center rounded text-muted-foreground hover:text-orange-400 hover:bg-muted">
+                          <UserX className="h-3.5 w-3.5" />
                         </button>
                         <button onClick={() => updateStatus(a.id, 'cancelled')} title="Cancel" className="h-7 w-7 flex items-center justify-center rounded text-muted-foreground hover:text-red-400 hover:bg-muted">
                           <X className="h-3.5 w-3.5" />

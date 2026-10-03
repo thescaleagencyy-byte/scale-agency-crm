@@ -102,6 +102,11 @@ export interface Contact {
   email?: string;
   company?: string;
   avatar_url?: string;
+  /** AI-detected language/dialect this contact writes in (e.g. "Urdu",
+   *  "Gulf Arabic") — informational badge only, never drives an
+   *  auto-reply. Null until the dialect-detection cron has enough
+   *  signal. See 082_ai_insight_alerts.sql. */
+  detected_language?: string | null;
   created_at: string;
   updated_at: string;
 }
