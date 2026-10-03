@@ -51,7 +51,7 @@ export async function GET() {
 
     const [{ data: settings, error: settingsErr }, { data: templates, error: templatesErr }] = await Promise.all([
       ctx.supabase.from("ai_alert_settings").select(SELECT_COLUMNS).eq("account_id", ctx.accountId).maybeSingle(),
-      ctx.supabase.from("message_templates").select("name, language").eq("account_id", ctx.accountId).eq("status", "approved"),
+      ctx.supabase.from("message_templates").select("name, language").eq("account_id", ctx.accountId).eq("status", "APPROVED"),
     ]);
 
     if (settingsErr || templatesErr) {

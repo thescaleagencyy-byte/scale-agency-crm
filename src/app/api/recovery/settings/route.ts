@@ -26,7 +26,7 @@ export async function GET() {
         .from("message_templates")
         .select("name, language")
         .eq("account_id", ctx.accountId)
-        .eq("status", "approved"),
+        .eq("status", "APPROVED"),
     ]);
 
     if (settingsErr || templatesErr) {
