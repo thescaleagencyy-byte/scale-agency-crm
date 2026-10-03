@@ -41,6 +41,7 @@ import {
   Phone,
   Megaphone,
   Mail,
+  Landmark,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
 import { hasFeature, CLIENT_NAME, CLIENT_INDUSTRY, APP_NAME } from "@/lib/features";
@@ -157,6 +158,7 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/revenue",      label: "Revenue",       icon: TrendingUp,      feature: "revenue" },
       { href: "/invoices",     label: "Invoices",      icon: Receipt,         feature: "invoices" },
+      { href: "/ar-collections", label: "AR Collections", icon: Landmark,     feature: "ar-collections" },
     ],
   },
   {

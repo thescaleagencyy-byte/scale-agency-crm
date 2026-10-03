@@ -50,6 +50,7 @@ export const PATH_FEATURE_MAP: Record<string, string> = {
   '/meta-ads':      'meta_ads',
   '/copilot':       'copilot',
   '/invoices':      'invoices',
+  '/ar-collections': 'ar-collections',
   '/content-calendar': 'content-calendar',
   '/revenue':       'revenue',
   '/integrations':  'integrations',

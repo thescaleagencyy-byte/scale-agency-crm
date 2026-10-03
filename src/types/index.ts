@@ -264,6 +264,32 @@ export interface N8nConfig {
   updated_at?: string;
 }
 
+// One row = one invoice the AR Collections workflows (AR1/AR2/AR3)
+// have chased. Rows are upserted (tracker_key = client_email:invoice_id)
+// so this is always the CURRENT state per invoice, not a daily log.
+export interface ArTrackerRow {
+  id: number;
+  tracker_key: string;
+  client_email: string;
+  client_name: string;
+  invoice_id: string;
+  invoice_number: string;
+  sar_amount: number;
+  sent_date: string | null;
+  tone: 'soft' | 'firm' | 'final' | 'demand' | 'escalated' | string;
+  reply_received: 'yes' | 'no' | string;
+  reply_intent?: string | null;
+  promise_date?: string | null;
+  promise_amount?: number | null;
+  reply_count?: number | null;
+  vague_count?: number | null;
+  escalated: 'yes' | 'no' | string;
+  status: 'sent' | 'escalated_to_admin' | 'failed_send' | string;
+  last_updated: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface N8nExecution {
   id: string;
   status: 'success' | 'error' | 'running' | 'waiting' | 'crashed';
