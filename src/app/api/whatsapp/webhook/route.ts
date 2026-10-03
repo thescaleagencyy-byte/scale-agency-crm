@@ -10,6 +10,7 @@ import { findExistingContact, isUniqueViolation } from '@/lib/contacts/dedupe'
 import { verifyMetaWebhookSignature } from '@/lib/whatsapp/webhook-signature'
 import { runAutomationsForTrigger } from '@/lib/automations/engine'
 import { dispatchInboundToFlows } from '@/lib/flows/engine'
+import { maybeRespondAsAIEmployee } from '@/lib/ai-employee/respond'
 import {
   handleTemplateWebhookChange,
   isTemplateWebhookField,
@@ -834,6 +835,23 @@ async function processMessage(
     isFirstInboundMessage,
   })
   const flowConsumed = flowResult.consumed
+
+  // AI Employee — the self-serve ordering/FAQ/booking agent. Only
+  // runs when Flows didn't already consume the message (same
+  // "don't double-respond" rule content-level automations follow
+  // below) and only if the account has explicitly turned it on
+  // (checked inside maybeRespondAsAIEmployee itself). Fire-and-forget
+  // via after() so a slow AI call never blocks the webhook's 200 OK.
+  if (!flowConsumed) {
+    after(() =>
+      maybeRespondAsAIEmployee({
+        accountId,
+        userId: configOwnerUserId,
+        contactId: contactRecord.id,
+        conversationId: conversation.id,
+      }).catch((err) => console.error('[ai-employee] dispatch failed:', err)),
+    )
+  }
 
   // Fire any automations that react to this webhook event. All dispatches
   // run here (not earlier) so the contact, conversation, and inbound

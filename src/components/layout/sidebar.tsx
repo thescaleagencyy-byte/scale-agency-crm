@@ -42,6 +42,7 @@ import {
   Megaphone,
   Mail,
   Landmark,
+  Bot,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
 import { hasFeature, CLIENT_NAME, CLIENT_INDUSTRY, APP_NAME, AR_COLLECTIONS_ENABLED } from "@/lib/features";
@@ -176,6 +177,7 @@ const ALL_NAV_GROUPS: NavGroup[] = [
   {
     label: "Automate",
     items: [
+      { href: "/ai-employee",  label: "AI Employee",   icon: Bot,             feature: "ai-employee" },
       { href: "/flows-builder",label: "Flow Builder",  icon: Brain,           feature: "flows" },
       { href: "/flows",        label: "Flows",         icon: Workflow,        feature: "flows" },
       { href: "/automations",  label: "Automations",   icon: Zap,             feature: "automations" },

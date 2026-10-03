@@ -67,4 +67,5 @@ export const PATH_FEATURE_MAP: Record<string, string> = {
   '/services':      'services',
   '/voice':         'voice',
   '/outreach':      'outreach',
+  '/ai-employee':   'ai-employee',
 }
