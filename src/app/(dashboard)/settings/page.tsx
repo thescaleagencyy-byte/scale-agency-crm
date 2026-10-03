@@ -26,6 +26,7 @@ import { NumberHealthPanel } from '@/components/settings/number-health-panel';
 import { BrandConfigPanel } from '@/components/settings/brand-config-panel';
 import { BillingPanel } from '@/components/settings/billing-panel';
 import { RecoveryPanel } from '@/components/settings/recovery-panel';
+import { LeadAlertPanel } from '@/components/settings/lead-alert-panel';
 import {
   resolveSection,
   type SettingsSection,
@@ -127,6 +128,7 @@ function SettingsPageInner() {
     branding: <BrandConfigPanel />,
     billing: <BillingPanel />,
     recovery: <RecoveryPanel />,
+    'hot-leads': <LeadAlertPanel />,
   };
 
   return (
