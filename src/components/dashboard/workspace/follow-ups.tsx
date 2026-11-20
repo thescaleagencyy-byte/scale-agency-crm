@@ -118,7 +118,7 @@ export function FollowUps({
                     )}
                   >
                     <span className={cn('h-2 w-2 shrink-0 rounded-full', days > 7 ? 'bg-red-500' : 'bg-amber-500')} />
-                    <span className="truncate">{days > 7 ? 'Overdue · not called' : 'New · not called'}</span>
+                    <span className="truncate">{days > 7 ? 'Overdue' : 'Not called yet'}</span>
                   </span>
                   <a
                     href={`tel:+${l.phone.replace(/\D/g, '')}`}
