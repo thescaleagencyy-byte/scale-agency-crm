@@ -42,7 +42,11 @@ export function ScheduleBar() {
   const hours = (items ?? []).map((s) => new Date(s.startAt).getHours())
   const start = Math.min(DAY_START, ...hours)
   const end = Math.max(DAY_END, ...hours.map((h) => h + 1))
-  const ticks = [start + 3, start + 6, start + 9].filter((h) => h < end)
+  // With nothing booked the left of the track holds a sentence, so only
+  // the later hour marks show.
+  const ticks = [start + 3, start + 6, start + 9].filter(
+    (h) => h < end && (items === null || items.length > 0 || (h - start) / (end - start) > 0.4),
+  )
   const nowPos = now ? pos(now, start, end) : null
   const nowInDay = now ? now.getHours() >= start && now.getHours() < end : false
 

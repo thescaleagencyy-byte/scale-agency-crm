@@ -105,15 +105,10 @@ export function NewLeads({
                 </p>
                 <div className="mt-auto flex items-end justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="mb-1.5 text-[11px] text-muted-foreground">Source</p>
-                    <div className="flex gap-1">
-                      <span className="truncate rounded-full bg-muted px-2.5 py-1 text-[11px] text-foreground/80">
-                        {sourceLabel(l.source)}
-                      </span>
-                      <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-[11px] text-foreground/80">
-                        {ago(l.createdAt)}
-                      </span>
-                    </div>
+                    <p className="mb-1.5 truncate text-[11px] text-muted-foreground">Source · {ago(l.createdAt)}</p>
+                    <span className="inline-block max-w-full truncate rounded-full bg-muted px-3 py-1 text-[11px] text-foreground/80">
+                      {sourceLabel(l.source)}
+                    </span>
                   </div>
                   <div className="shrink-0 text-right">
                     <p className="mb-1.5 flex items-center justify-end gap-1 text-[11px] text-muted-foreground">

@@ -33,10 +33,10 @@ function BigStat({
 }) {
   return (
     <div className="flex items-end gap-2">
-      <span className="font-heading text-[44px] font-light leading-none tracking-tight tabular-nums text-foreground">
+      <span className="font-heading text-[40px] font-light leading-none tracking-tight tabular-nums text-foreground">
         {loading ? '–' : value.toLocaleString('en-GB')}
       </span>
-      <span className="relative pb-0.5 text-base text-muted-foreground">
+      <span className="relative whitespace-nowrap pb-0.5 text-sm text-muted-foreground">
         {chip && !loading && <span className="absolute -top-6 left-0"><Chip {...chip} /></span>}
         {label}
       </span>
@@ -54,14 +54,14 @@ export function TitleRow({
   title: string
 }) {
   const conv = metrics?.activeConversations
-  const convDiff = conv ? conv.current - conv.previous : 0
+  const convDiff = conv && conv.previous > 0 ? conv.current - conv.previous : 0
   const leadsToday = metrics?.newLeadsToday?.current ?? 0
   const hasLeads = metrics?.newLeads7d !== null && metrics?.newLeads7d !== undefined
 
   return (
-    <div className="flex flex-wrap items-center gap-x-10 gap-y-6">
+    <div className="flex flex-wrap items-center gap-x-8 gap-y-6">
       <div className="flex items-center gap-5">
-        <h1 className="font-heading text-[40px] font-normal uppercase leading-none tracking-tight text-foreground sm:text-[52px]">
+        <h1 className="font-heading text-[36px] font-normal uppercase leading-none tracking-tight text-foreground sm:text-[44px]">
           {title}
         </h1>
         <Link
@@ -75,7 +75,7 @@ export function TitleRow({
         </Link>
       </div>
 
-      <div className="ml-auto flex flex-wrap items-end gap-x-10 gap-y-6 pt-4">
+      <div className="ml-auto flex flex-wrap items-end gap-x-8 gap-y-6 pt-4">
         <BigStat
           value={conv?.current ?? 0}
           label="open chats"
@@ -85,7 +85,7 @@ export function TitleRow({
         {hasLeads && (
           <BigStat
             value={metrics?.newLeads7d ?? 0}
-            label="leads · 7 days"
+            label="new leads"
             loading={loading}
             chip={leadsToday > 0 ? { value: `${leadsToday} today`, good: true } : null}
           />
