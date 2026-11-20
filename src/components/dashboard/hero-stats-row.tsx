@@ -106,7 +106,7 @@ export function HeroStatsRow({ metrics, loading, currency, recentContacts, activ
       </div>
 
       {/* Right: dark callout — this week's messaging activity */}
-      <div className="relative flex flex-col justify-between overflow-hidden rounded-3xl bg-zinc-900 p-6 text-white">
+      <div className="relative flex flex-col justify-between overflow-hidden rounded-3xl bg-zinc-900 p-6 text-white lg:col-span-2">
         <div className="relative flex items-center justify-between">
           <span className="text-xs text-white/60">
             Messages · 7 days

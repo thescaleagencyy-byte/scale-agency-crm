@@ -57,8 +57,8 @@ export function ResponseTimeChart({
         </div>
         <div className="flex items-center gap-3 text-right text-xs">
           {thresholdMinutes > 0 && (
-            <span className="rounded-full border border-red-500/40 bg-red-500/10 px-2 py-0.5 font-medium text-red-500 tabular-nums">
-              target {thresholdMinutes}m
+            <span className="text-muted-foreground tabular-nums">
+              Target {thresholdMinutes} min
             </span>
           )}
           {data && (data.thisWeekAvg != null || data.lastWeekAvg != null) && (

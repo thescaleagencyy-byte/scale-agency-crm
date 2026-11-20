@@ -105,9 +105,9 @@ export function DailyDigestCard() {
 
       <div className="relative mt-4 whitespace-pre-line text-sm leading-relaxed text-white/90">
         {loading ? (
-          <span className="text-white/50">Loading...</span>
+          <span className="text-white/50">Loading…</span>
         ) : digest ? (
-          digest.content
+          stripEmoji(digest.content)
         ) : (
           <span className="text-white/50">No briefing yet — click &quot;Generate now&quot; to create today&apos;s.</span>
         )}
@@ -135,4 +135,9 @@ export function DailyDigestCard() {
       )}
     </div>
   );
+}
+
+// Older briefings were saved with emoji bullets; show them as plain lines.
+function stripEmoji(text: string): string {
+  return text.replace(/[\p{Extended_Pictographic}\uFE0F]\s?/gu, '')
 }
