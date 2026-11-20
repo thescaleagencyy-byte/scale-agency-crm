@@ -32,7 +32,11 @@ import type {
 
 import { CLIENT_NAME, CLIENT_INDUSTRY, hasFeature } from '@/lib/features'
 import { HeroStatsRow } from '@/components/dashboard/hero-stats-row'
-import { DailyDigestCard } from '@/components/dashboard/daily-digest-card'
+import { TitleRow } from '@/components/dashboard/workspace/title-row'
+import { NewLeads } from '@/components/dashboard/workspace/new-leads'
+import { FollowUps } from '@/components/dashboard/workspace/follow-ups'
+import { SummaryPanel } from '@/components/dashboard/workspace/summary-panel'
+import { loadFollowUps, loadNewLeads, type WorkspaceLead } from '@/lib/dashboard/workspace-queries'
 import { AgentQueueCard } from '@/components/dashboard/agent-queue-card'
 import { QuickActions } from '@/components/dashboard/quick-actions'
 import { ConversationsChart } from '@/components/dashboard/conversations-chart'
@@ -88,6 +92,11 @@ export default function DashboardPage() {
 
   const [metaAds, setMetaAds] = useState<MetaAdsPerformance | null>(null)
   const [metaAdsLoading, setMetaAdsLoading] = useState(hasFeature('meta_ads'))
+
+  const [newLeads, setNewLeads] = useState<{ leads: WorkspaceLead[]; total: number }>({ leads: [], total: 0 })
+  const [newLeadsLoading, setNewLeadsLoading] = useState(hasFeature('leads'))
+  const [followUps, setFollowUps] = useState<{ leads: WorkspaceLead[]; total: number }>({ leads: [], total: 0 })
+  const [followUpsLoading, setFollowUpsLoading] = useState(hasFeature('leads'))
 
 
   const loadAll = useCallback(() => {
@@ -152,6 +161,18 @@ export default function DashboardPage() {
         .finally(() => setActiveSitesLoading(false))
     }
 
+    if (hasFeature('leads')) {
+      void loadNewLeads(db, 24)
+        .then(setNewLeads)
+        .catch((err) => console.error('[dashboard] new leads failed:', err))
+        .finally(() => setNewLeadsLoading(false))
+
+      void loadFollowUps(db, 12)
+        .then(setFollowUps)
+        .catch((err) => console.error('[dashboard] follow-ups failed:', err))
+        .finally(() => setFollowUpsLoading(false))
+    }
+
     if (hasFeature('meta_ads')) {
       void loadMetaAdsCampaignPerformance(db, 30)
         .then((m) => setMetaAds(m))
@@ -182,8 +203,6 @@ export default function DashboardPage() {
     },
     [series],
   )
-
-  const heroLabel = CLIENT_NAME || 'The Scale Agency'
 
   const labels = (() => {
     const ind = (CLIENT_INDUSTRY || CLIENT_NAME).toLowerCase()
@@ -231,58 +250,24 @@ export default function DashboardPage() {
     }
   })()
 
-  const dateLine = new Date().toLocaleDateString('en-GB', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  })
-  const updatedAt = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
 
   return (
-    <div className="space-y-5">
-      {/* Page header — names the day, quiet surface, one live dot as the
-          only colour. No glows or washes: the stat row below carries the
-          weight of the screen. */}
-      <div className={`relative overflow-hidden rounded-2xl border border-border bg-card px-6 py-6 sm:px-8 ${RENTAL_INDUSTRY ? 'sm:pb-20' : ''}`}>
-        {RENTAL_INDUSTRY ? (
-          <>
-            {/* Real fleet photos of the equipment this account rents */}
-            <Image
-              src="/clients/ashwheelz-fleet/transporter.png"
-              alt=""
-              aria-hidden
-              width={240}
-              height={160}
-              className="pointer-events-none absolute bottom-2 right-2 hidden h-16 w-auto object-contain sm:block"
-            />
-            <Image
-              src="/clients/ashwheelz-fleet/forklift.png"
-              alt=""
-              aria-hidden
-              width={200}
-              height={160}
-              className="pointer-events-none absolute bottom-2 right-32 hidden h-16 w-auto object-contain sm:block"
-            />
-          </>
-        ) : null}
-        <div className="relative flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="mb-2 text-xs text-muted-foreground">{heroLabel}</p>
-            <h1 suppressHydrationWarning className="font-heading text-[28px] font-medium leading-tight tracking-tight text-foreground sm:text-[32px]">
-              {dateLine}
-            </h1>
-            <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
-              {labels.heroTagline}
-            </p>
-          </div>
-          <div className="flex shrink-0 items-center gap-2 rounded-full border border-border bg-muted/40 px-3 py-1.5">
-            <span className="h-2 w-2 rounded-full bg-primary" aria-hidden />
-            <span className="text-xs text-muted-foreground tabular-nums" suppressHydrationWarning>
-              Updated {updatedAt}
-            </span>
-          </div>
+    <div className="space-y-8">
+      {/* Big page title, one action, the headline numbers on the right */}
+      <TitleRow metrics={metrics} loading={metricsLoading} title="Dashboard" />
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="min-w-0 space-y-8">
+      {RENTAL_INDUSTRY ? (
+        <div className="flex items-center gap-4 overflow-hidden rounded-[26px] bg-card px-6 py-4">
+          <p className="flex-1 text-sm text-muted-foreground">{labels.heroTagline}</p>
+          <Image src="/clients/ashwheelz-fleet/forklift.png" alt="" aria-hidden width={200} height={160} className="h-14 w-auto object-contain" />
+          <Image src="/clients/ashwheelz-fleet/transporter.png" alt="" aria-hidden width={240} height={160} className="h-14 w-auto object-contain" />
         </div>
-      </div>
+      ) : null}
+
+      {hasFeature('leads') && <NewLeads leads={newLeads.leads} total={newLeads.total} loading={newLeadsLoading} />}
+      {hasFeature('leads') && <FollowUps leads={followUps.leads} total={followUps.total} loading={followUpsLoading} />}
 
       {/* Hero stat row — floating light panel (3 real metrics) + dark
           messaging callout. See components/dashboard/hero-stats-row. */}
@@ -302,9 +287,6 @@ export default function DashboardPage() {
           newLeads: labels.newLeads,
         }}
       />
-
-      {/* Daily briefing — proactive digest, see components/dashboard/daily-digest-card */}
-      {hasFeature('daily_digest') && <DailyDigestCard />}
 
       {/* Autonomous Daily Agent v1 — draft-and-approve queue, see components/dashboard/agent-queue-card */}
       {hasFeature('agent_queue') && <AgentQueueCard />}
@@ -362,7 +344,16 @@ export default function DashboardPage() {
       {hasFeature('pipelines') && <RevenueForecast currency={defaultCurrency} />}
 
       {/* Activity feed */}
-      <ActivityFeed items={activity} loading={activityLoading} />
+      <div id="activity" className="scroll-mt-4">
+        <ActivityFeed items={activity} loading={activityLoading} />
+      </div>
+      </div>
+
+      {/* Right column — briefing + latest activity, stays in view */}
+      <div className="min-w-0">
+        <SummaryPanel activity={activity} loading={activityLoading} />
+      </div>
+      </div>
     </div>
   )
 }

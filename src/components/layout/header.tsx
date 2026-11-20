@@ -17,6 +17,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ModeToggle } from "@/components/layout/mode-toggle";
+import { hasFeature } from "@/lib/features";
+import { ScheduleBar } from "@/components/dashboard/workspace/schedule-bar";
 import { AIAssistant } from "@/components/layout/ai-assistant";
 
 const pageTitles: Record<string, string> = {
@@ -55,6 +57,9 @@ export function Header({ onOpenSidebar }: HeaderProps) {
   const pathname = usePathname();
   const { profile, signOut } = useAuth();
   const title = getPageTitle(pathname);
+  // The dashboard has its own big title; its header slot shows today's
+  // schedule instead.
+  const showSchedule = pathname === "/dashboard" && hasFeature("appointments");
 
   const initial =
     profile?.full_name?.charAt(0)?.toUpperCase() ??
@@ -62,7 +67,7 @@ export function Header({ onOpenSidebar }: HeaderProps) {
     "U";
 
   return (
-    <header className="card-elevated relative z-10 mx-3 mt-3 flex h-14 shrink-0 items-center justify-between gap-3 bg-card/90 px-4 backdrop-blur-md lg:mx-4 lg:mt-4 lg:px-6">
+    <header className="relative z-10 flex shrink-0 items-center justify-between gap-3 px-3 pb-1 pt-3 sm:px-6 lg:pt-4">
       <div className="flex min-w-0 items-center gap-2">
         {/* Hamburger — mobile only. 44×44 hit target per Apple HIG. */}
         <button
@@ -73,21 +78,25 @@ export function Header({ onOpenSidebar }: HeaderProps) {
         >
           <Menu className="h-5 w-5" />
         </button>
-        <h1 className="truncate font-heading text-base font-semibold tracking-tight text-foreground sm:text-lg">
-          {title}
-        </h1>
+        {showSchedule ? null : (
+          <h1 className="truncate font-heading text-lg font-normal tracking-tight text-foreground sm:text-xl">
+            {title}
+          </h1>
+        )}
       </div>
 
-      <div className="flex items-center gap-1 sm:gap-2">
+      {showSchedule && <ScheduleBar />}
+
+      <div className="flex shrink-0 items-center gap-1 rounded-full bg-card p-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.05)] sm:gap-1.5">
         <AIAssistant />
         <ModeToggle />
 
         <DropdownMenu>
         <DropdownMenuTrigger
-          className="flex items-center gap-2 rounded-md px-1 py-1 transition-colors hover:bg-muted/70 focus:bg-muted/70 focus:outline-none data-popup-open:bg-muted/70 sm:gap-3 sm:pl-1 sm:pr-3"
+          className="flex items-center gap-2 rounded-full p-0.5 transition-colors hover:bg-muted/70 focus:bg-muted/70 focus:outline-none data-popup-open:bg-muted/70 2xl:gap-3 2xl:pr-3"
           aria-label="Open account menu"
         >
-          <Avatar className="size-8">
+          <Avatar className="size-10">
             {profile?.avatar_url ? (
               <AvatarImage
                 src={profile.avatar_url}
@@ -98,7 +107,7 @@ export function Header({ onOpenSidebar }: HeaderProps) {
               {initial}
             </AvatarFallback>
           </Avatar>
-          <span className="hidden text-sm font-medium text-foreground sm:inline">
+          <span className="hidden text-sm font-medium text-foreground 2xl:inline">
             {profile?.full_name ?? "User"}
           </span>
         </DropdownMenuTrigger>

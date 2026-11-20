@@ -26,7 +26,7 @@ interface DigestRow {
 // every one) instead of the owner reading the list and doing it by
 // hand — the CEO Command Center pattern, scoped to an action that's
 // actually internal and doesn't need a blocked external send.
-export function DailyDigestCard() {
+export function DailyDigestCard({ embedded = false }: { embedded?: boolean } = {}) {
   const [digest, setDigest] = useState<DigestRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -86,11 +86,11 @@ export function DailyDigestCard() {
   const staleLeadsCount = digest?.stats?.staleLeads ?? 0;
 
   return (
-    <div className="relative overflow-hidden rounded-3xl bg-zinc-900 p-6 text-white shadow-elevated">
+    <div className={embedded ? 'relative shrink-0 overflow-hidden rounded-[22px] bg-white/[0.06] p-5 text-white' : 'relative overflow-hidden rounded-3xl bg-zinc-900 p-6 text-white shadow-elevated'}>
       <div className="relative flex items-center justify-between">
-        <span className="flex items-center gap-2 text-[11px] font-semibold text-white/50">
+        <span className="flex items-center gap-2 text-xs text-white/50">
           <Sunrise className="h-3.5 w-3.5" />
-          Daily Briefing {isToday ? '· Today' : digest ? `· ${new Date(digest.generated_at).toLocaleDateString()}` : ''}
+          Daily briefing {isToday ? '· Today' : digest ? `· ${new Date(digest.generated_at).toLocaleDateString()}` : ''}
         </span>
         <button
           type="button"
@@ -103,7 +103,7 @@ export function DailyDigestCard() {
         </button>
       </div>
 
-      <div className="relative mt-4 whitespace-pre-line text-sm leading-relaxed text-white/90">
+      <div className={embedded ? 'relative mt-4 max-h-[260px] overflow-y-auto whitespace-pre-line text-[13px] leading-relaxed text-white/85 [scrollbar-width:thin]' : 'relative mt-4 whitespace-pre-line text-sm leading-relaxed text-white/90'}>
         {loading ? (
           <span className="text-white/50">Loading…</span>
         ) : digest ? (
@@ -125,10 +125,10 @@ export function DailyDigestCard() {
               type="button"
               onClick={approveStaleLeads}
               disabled={approving}
-              className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground transition-transform active:scale-[0.98] disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-left text-xs font-medium text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-50"
             >
               {approving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-              Approve — set follow-up reminders for all {staleLeadsCount} stale leads
+              Set reminders for {staleLeadsCount} quiet leads
             </button>
           )}
         </div>

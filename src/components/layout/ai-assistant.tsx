@@ -206,18 +206,18 @@ export function AIAssistant() {
         aria-label={`Open ${AI_NAME}`}
         title={`${AI_NAME} (${'⌘K'})`}
         aria-expanded={open}
-        className={`relative flex h-10 w-10 items-center justify-center rounded-md transition-colors hover:bg-muted ${
+        className={`relative flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-muted ${
           open ? 'bg-muted text-primary' : 'text-muted-foreground hover:text-foreground'
         }`}
       >
-        <Sparkles className="h-5 w-5" />
+        <Sparkles className="h-[18px] w-[18px]" strokeWidth={1.5} />
         {unread && (
           <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary" />
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 top-12 z-50 flex max-h-[560px] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-xl">
+        <div className="absolute right-0 top-14 z-50 flex max-h-[560px] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-xl">
           {/* Head */}
           <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
             <div className="flex items-center gap-2">

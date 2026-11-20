@@ -46,7 +46,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
         {/* Thinner horizontal padding on mobile so cards have room to
             breathe; capped width on ultra-wide monitors so charts and
             cards don't stretch into unreadable proportions. */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <main className="flex-1 overflow-y-auto px-3 pb-8 pt-4 sm:px-6 sm:pt-6">
           <div className="mx-auto w-full max-w-[1440px]">{children}</div>
         </main>
       </div>

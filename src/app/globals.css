@@ -126,27 +126,28 @@ html[data-mode="dark"] {
 }
 
 html[data-mode="light"] {
-  --background: oklch(0.99 0.002 260);
+  /* Soft grey canvas so white cards and the black rails read as objects */
+  --background: oklch(0.935 0.002 260);
   --foreground: oklch(0.21 0.01 260);
   --card: oklch(1 0 0);
   --card-2: oklch(0.985 0.002 260);
   --card-foreground: oklch(0.21 0.01 260);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.21 0.01 260);
-  --secondary: oklch(0.967 0.003 260);
+  --secondary: oklch(0.955 0.003 260);
   --secondary-foreground: oklch(0.25 0.01 260);
-  --muted: oklch(0.967 0.003 260);
+  --muted: oklch(0.955 0.003 260);
   --muted-foreground: oklch(0.52 0.015 260);
   --accent: oklch(0.96 0.004 260);
   --accent-foreground: oklch(0.25 0.01 260);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0.004 260);
-  --input: oklch(0.922 0.004 260);
+  --border: oklch(0.885 0.004 260);
+  --input: oklch(0.885 0.004 260);
   --chart-2: oklch(0.6 0.1 260);
   --chart-3: oklch(0.7 0.06 260);
   --chart-4: oklch(0.8 0.04 260);
   --chart-5: oklch(0.87 0.03 260);
-  --radius: 0.875rem;
+  --radius: 1rem;
   --sidebar: oklch(0.985 0.002 260);
   --sidebar-foreground: oklch(0.21 0.01 260);
   --sidebar-accent: oklch(0.96 0.004 260);
@@ -430,4 +431,12 @@ html[data-theme="ashwheelz"] {
     border: 3px solid transparent;
     background-clip: padding-box;
   }
+}
+/* ---- Workspace notch: concave fillet where a card edge meets the
+   rounded bite cut from its corner (see dashboard/workspace/primitives) ---- */
+.notch-fillet {
+  width: 20px;
+  height: 20px;
+  background: radial-gradient(circle at 0 100%, transparent 19.5px, var(--background) 20px);
+  pointer-events: none;
 }

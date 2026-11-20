@@ -272,7 +272,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
           open ? "translate-x-0" : "-translate-x-full",
           // Desktop: static, always visible — reset all the mobile framing.
           // width transitions (not translate) so collapse doesn't fight the mobile slide.
-          "lg:static lg:z-0 lg:translate-x-0 lg:transition-[width] lg:duration-200 lg:ease-out",
+          "lg:static lg:z-0 lg:my-3 lg:ml-3 lg:h-[calc(100%-1.5rem)] lg:translate-x-0 lg:rounded-[28px] lg:border-r-0 lg:transition-[width] lg:duration-200 lg:ease-out",
           collapsed ? "lg:w-[72px]" : "lg:w-60",
         )}
         aria-label="Primary"
@@ -360,7 +360,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                   {group.label}
                 </p>
               )}
-              <ul className="flex flex-col gap-0.5">
+              <ul className="flex flex-col gap-1">
                 {group.items.map((item) => {
                   const isActive =
                     pathname === item.href ||
@@ -375,17 +375,14 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                         href={item.href}
                         title={collapsed ? item.label : undefined}
                         className={cn(
-                          "group/navitem relative flex h-9 items-center gap-2.5 rounded-lg px-3 text-sm transition-colors duration-150",
+                          "group/navitem relative flex h-10 items-center gap-2.5 rounded-full px-3.5 text-sm transition-colors duration-150",
                           isActive
-                            ? "bg-muted text-foreground"
+                            ? "bg-primary text-primary-foreground"
                             : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
                         )}
                       >
-                        {isActive && (
-                          <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-primary" aria-hidden />
-                        )}
                         <span aria-hidden="true" className="flex h-5 w-5 shrink-0 items-center justify-center">
-                          <item.icon className={cn("h-[18px] w-[18px]", isActive && "text-primary")} strokeWidth={1.5} />
+                          <item.icon className="h-[18px] w-[18px]" strokeWidth={1.5} />
                         </span>
                         {!collapsed && <span className="flex-1">{item.label}</span>}
                         {!collapsed && showUnreadDot && (
@@ -415,13 +412,13 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                     href={item.href}
                     title={collapsed ? item.label : undefined}
                     className={cn(
-                      "flex h-9 items-center gap-2.5 rounded-lg px-3 text-sm transition-colors duration-150",
+                      "flex h-10 items-center gap-2.5 rounded-full px-3.5 text-sm transition-colors duration-150",
                       isActive
-                        ? "bg-muted text-foreground"
+                        ? "bg-primary text-primary-foreground"
                         : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
                     )}
                   >
-                    <item.icon className={cn("h-[18px] w-[18px] shrink-0", isActive && "text-primary")} strokeWidth={1.5} />
+                    <item.icon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.5} />
                     {!collapsed && item.label}
                   </Link>
                 </li>
