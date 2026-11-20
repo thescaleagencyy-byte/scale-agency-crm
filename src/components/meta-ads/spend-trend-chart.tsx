@@ -30,7 +30,7 @@ export function SpendTrendChart({ data, loading, currency }: SpendTrendChartProp
   return (
     <section className="flex h-full flex-col card-elevated">
       <header className="border-b border-border px-5 py-4">
-        <h2 className="text-sm font-semibold text-foreground">Daily Spend</h2>
+        <h2 className="text-sm font-semibold text-foreground">Daily spend</h2>
         <p className="mt-0.5 text-xs text-muted-foreground">Ad spend by day across all campaigns</p>
       </header>
       <div className="p-5">
@@ -110,7 +110,7 @@ function BarSvg({
           return (
             <g key={t}>
               <line x1={PADDING.left} x2={VB_W - PADDING.right} y1={y} y2={y} stroke="var(--border)" strokeDasharray="3 3" />
-              <text x={PADDING.left - 8} y={y} textAnchor="end" dominantBaseline="middle" className="fill-muted-foreground text-[10px]">
+              <text x={PADDING.left - 8} y={y} textAnchor="end" dominantBaseline="middle" className="fill-muted-foreground text-[11px]">
                 {formatCurrency(t, currency)}
               </text>
             </g>
@@ -119,7 +119,7 @@ function BarSvg({
 
         {data.map((p, i) =>
           i % labelStride === 0 ? (
-            <text key={p.date} x={xFor(i)} y={VB_H - 8} textAnchor="middle" className="fill-muted-foreground text-[10px]">
+            <text key={p.date} x={xFor(i)} y={VB_H - 8} textAnchor="middle" className="fill-muted-foreground text-[11px]">
               {shortDayLabel(p.date)}
             </text>
           ) : null,

@@ -89,7 +89,7 @@ export function AgentQueueCard() {
         <div className="flex items-center gap-2">
           <Bot className="h-4 w-4 text-primary" />
           <div>
-            <p className="text-sm font-semibold text-foreground">Agent Queue</p>
+            <p className="text-sm font-semibold text-foreground">Agent queue</p>
             <p className="text-xs text-muted-foreground">Drafted follow-ups for cold leads — review before anything sends.</p>
           </div>
         </div>

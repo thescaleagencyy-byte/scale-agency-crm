@@ -89,7 +89,7 @@ export default function OnboardingPage() {
         const json = await res.json();
         setConnecting(false);
         if (!res.ok) { toast.error(json.error ?? 'Failed to connect'); return; }
-        toast.success('WhatsApp connected!');
+        toast.success('WhatsApp connected');
         setStep('test');
       },
       {
@@ -120,7 +120,7 @@ export default function OnboardingPage() {
       }),
     });
     setTesting(false);
-    if (res.ok) { setTestSent(true); toast.success('Test message sent!'); }
+    if (res.ok) { setTestSent(true); toast.success('Test message sent'); }
     else { const j = await res.json(); toast.error(j.error ?? 'Send failed'); }
   }
 
@@ -137,7 +137,7 @@ export default function OnboardingPage() {
             return (
               <div key={s.id} className="flex items-center flex-1 last:flex-none">
                 <div className={cn(
-                  'flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold transition-colors',
+                  'flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 text-xs font-semibold transition-colors',
                   done ? 'border-primary bg-primary text-primary-foreground' : active ? 'border-primary text-primary' : 'border-border text-muted-foreground',
                 )}>
                   {done ? <CheckCircle2 className="h-4 w-4" /> : i + 1}
@@ -155,7 +155,7 @@ export default function OnboardingPage() {
           {step === 'welcome' && (
             <>
               <div className="space-y-2">
-                <h1 className="text-2xl font-bold text-foreground">Welcome to your CRM</h1>
+                <h1 className="text-2xl font-semibold text-foreground">Welcome to your CRM</h1>
                 <p className="text-muted-foreground text-sm">Let&apos;s get your WhatsApp Business number connected. It takes about 2 minutes and uses Meta&apos;s official secure flow — no unofficial methods.</p>
               </div>
               <div className="space-y-3">
@@ -191,7 +191,7 @@ export default function OnboardingPage() {
           {step === 'connect' && (
             <>
               <div className="space-y-2">
-                <h2 className="text-xl font-bold text-foreground flex items-center gap-2"><PhoneCall className="h-5 w-5 text-primary" />Connect WhatsApp</h2>
+                <h2 className="text-xl font-semibold text-foreground flex items-center gap-2"><PhoneCall className="h-5 w-5 text-primary" />Connect WhatsApp</h2>
                 <p className="text-muted-foreground text-sm">
                   Click the button below. A Meta popup will open — log in with the Facebook account that manages your WhatsApp Business account, then follow the steps to grant access.
                 </p>
@@ -225,7 +225,7 @@ export default function OnboardingPage() {
                 {connecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Settings2 className="h-4 w-4" />}
                 {connecting ? 'Connecting...' : 'Connect via Meta'}
               </Button>
-              <p className="text-[10px] text-muted-foreground text-center">
+              <p className="text-[11px] text-muted-foreground text-center">
                 Uses Meta&apos;s official Embedded Signup. We never store your Facebook password.
               </p>
             </>
@@ -234,7 +234,7 @@ export default function OnboardingPage() {
           {step === 'test' && (
             <>
               <div className="space-y-2">
-                <h2 className="text-xl font-bold text-foreground flex items-center gap-2"><MessageCircle className="h-5 w-5 text-primary" />Send a test message</h2>
+                <h2 className="text-xl font-semibold text-foreground flex items-center gap-2"><MessageCircle className="h-5 w-5 text-primary" />Send a test message</h2>
                 <p className="text-muted-foreground text-sm">Confirm the connection works by sending a test message to yourself or a colleague.</p>
               </div>
               <div className="space-y-1.5">
@@ -248,7 +248,7 @@ export default function OnboardingPage() {
               </div>
               {testSent ? (
                 <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400 flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4" />Test message sent! Check your WhatsApp.
+                  <CheckCircle2 className="h-4 w-4" />Test message sent. Check your WhatsApp
                 </div>
               ) : (
                 <Button onClick={sendTestMessage} disabled={testing} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
@@ -268,7 +268,7 @@ export default function OnboardingPage() {
                   <CheckCircle2 className="h-8 w-8 text-primary" />
                 </div>
                 <div className="space-y-1">
-                  <h2 className="text-xl font-bold text-foreground">You&apos;re all set!</h2>
+                  <h2 className="text-xl font-semibold text-foreground">You&apos;re all set</h2>
                   <p className="text-sm text-muted-foreground">WhatsApp is connected. Incoming messages will appear in your inbox. Go ahead and explore.</p>
                 </div>
               </div>

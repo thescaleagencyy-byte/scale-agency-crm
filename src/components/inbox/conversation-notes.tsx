@@ -166,7 +166,7 @@ export function ConversationNotes({ conversationId, accountId }: ConversationNot
     <div className="flex h-full flex-col gap-3 p-3">
       <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
         <StickyNote className="h-3.5 w-3.5 text-primary" />
-        Internal Notes
+        Internal notes
         <span className="ml-auto text-muted-foreground font-normal">Visible to team only</span>
       </div>
 
@@ -183,7 +183,7 @@ export function ConversationNotes({ conversationId, accountId }: ConversationNot
                 <div className="flex items-center justify-between gap-2 mb-1">
                   <span className="text-[11px] font-semibold text-amber-400">{isOwn ? 'You' : (n.author_name ?? 'Team')}</span>
                   <div className="flex items-center gap-1">
-                    <span className="text-[10px] text-muted-foreground">{format(new Date(n.created_at), 'MMM d, h:mm a')}</span>
+                    <span className="text-[11px] text-muted-foreground">{format(new Date(n.created_at), 'MMM d, h:mm a')}</span>
                     {isOwn && (
                       <button
                         onClick={() => deleteNote(n.id)}
@@ -213,7 +213,7 @@ export function ConversationNotes({ conversationId, accountId }: ConversationNot
                 )}
                 onMouseDown={e => { e.preventDefault(); insertMention(m); }}
               >
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[11px] font-semibold text-primary">
                   {(m.full_name ?? '?').charAt(0).toUpperCase()}
                 </div>
                 {m.full_name ?? m.user_id}

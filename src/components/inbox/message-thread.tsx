@@ -23,6 +23,7 @@ import {
   RefreshCw,
   PanelRightOpen,
   PanelRightClose,
+  X,
 } from "lucide-react";
 import { format, isToday, isYesterday, differenceInHours } from "date-fns";
 import { Badge } from "@/components/ui/badge";
@@ -942,7 +943,7 @@ export function MessageThread({
             <p className="truncate text-xs text-muted-foreground">
               {contact.phone}
               {contact.detected_language && (
-                <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
                   {contact.detected_language}
                 </span>
               )}
@@ -953,7 +954,7 @@ export function MessageThread({
           <Badge
             variant="outline"
             className={cn(
-              "ml-1 hidden gap-1 text-[10px] sm:ml-2 sm:inline-flex",
+              "ml-1 hidden gap-1 text-[11px] sm:ml-2 sm:inline-flex",
               sessionInfo.expired
                 ? "border-red-500/30 bg-red-500/10 text-red-400"
                 : "border-primary/25 bg-primary/10 text-primary"
@@ -1057,7 +1058,7 @@ export function MessageThread({
               )}
             >
               {assignedAgentId ? (
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary/20 text-[9px] font-bold text-primary">
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary/20 text-[11px] font-semibold text-primary">
                   {(currentAssignee?.full_name ?? "?").charAt(0).toUpperCase()}
                 </span>
               ) : (
@@ -1116,7 +1117,7 @@ export function MessageThread({
         <div className="flex items-center gap-2 border-b border-amber-500/20 bg-amber-500/10 px-4 py-1.5 text-xs text-amber-400">
           <div className="flex -space-x-1">
             {Array.from({ length: Math.min(viewerCount - 1, 3) }).map((_, i) => (
-              <div key={i} className="flex h-4 w-4 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/20 text-[8px] font-bold text-amber-400">
+              <div key={i} className="flex h-4 w-4 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/20 text-[8px] font-semibold text-amber-400">
                 {i + 1}
               </div>
             ))}
@@ -1144,7 +1145,7 @@ export function MessageThread({
               <div key={group.date}>
                 {/* Date separator */}
                 <div className="mb-4 flex items-center justify-center">
-                  <span className="rounded-full bg-muted px-3 py-1 text-[10px] font-medium text-muted-foreground">
+                  <span className="rounded-full bg-muted px-3 py-1 text-[11px] font-medium text-muted-foreground">
                     {formatDateSeparator(group.date)}
                   </span>
                 </div>
@@ -1202,11 +1203,12 @@ export function MessageThread({
       {handoffSummary && (
         <div className="border-t border-border bg-primary/5 px-4 py-3 space-y-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-primary uppercase tracking-wide">AI Handoff Summary</span>
+            <span className="text-xs font-semibold text-primary">AI handoff summary</span>
             <button
               onClick={() => setHandoffSummary(null)}
-              className="text-xs text-muted-foreground hover:text-foreground"
-            >✕</button>
+              aria-label="Dismiss summary"
+              className="text-muted-foreground transition-colors hover:text-foreground"
+            ><X className="h-3.5 w-3.5" /></button>
           </div>
           {handoffSummary.customer_intent && (
             <p className="text-xs text-foreground"><span className="font-medium">Intent:</span> {handoffSummary.customer_intent}</p>

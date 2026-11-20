@@ -76,7 +76,7 @@ export default function MetaAdsPage() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Meta Ads</h1>
+          <h1 className="font-heading text-2xl font-semibold tracking-tight text-foreground">Meta Ads</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Real ad spend, joined against your actual leads and won deals — no need to open Ads Manager.
           </p>
@@ -177,7 +177,7 @@ export default function MetaAdsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <tr className="border-b border-border text-left text-[11px] font-semibold text-muted-foreground">
                     <th className="px-4 py-3">Campaign</th>
                     <th className="px-4 py-3 text-right">Spend</th>
                     <th className="px-4 py-3 text-right">Impressions</th>
@@ -185,9 +185,9 @@ export default function MetaAdsPage() {
                     <th className="px-4 py-3 text-right">CTR</th>
                     <th className="px-4 py-3 text-right">CPC</th>
                     <th className="px-4 py-3 text-right">Conversations</th>
-                    <th className="px-4 py-3 text-right">Qualified Leads</th>
+                    <th className="px-4 py-3 text-right">Qualified leads</th>
                     <th className="px-4 py-3 text-right">Cost/Lead</th>
-                    <th className="px-4 py-3 text-right">Won Value</th>
+                    <th className="px-4 py-3 text-right">Won value</th>
                     <th className="px-4 py-3 text-right">ROAS</th>
                   </tr>
                 </thead>
@@ -227,8 +227,8 @@ function StatTile({ icon: Icon, label, value }: { icon: typeof Eye; label: strin
         <Icon className="h-4 w-4" />
       </span>
       <div className="min-w-0">
-        <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
-        <p className="truncate text-base font-bold tabular-nums text-foreground">{value}</p>
+        <p className="truncate text-[11px] font-semibold text-muted-foreground">{label}</p>
+        <p className="truncate text-base font-semibold tabular-nums text-foreground">{value}</p>
       </div>
     </div>
   )

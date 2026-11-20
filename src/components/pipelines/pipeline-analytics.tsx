@@ -110,13 +110,13 @@ export function PipelineAnalytics({ stages, deals }: PipelineAnalyticsProps) {
           tooltip={`Sum of the dollar values of all ${t.deals} in this pipeline, excluding ${t.lostDeals}.`}
         />
         <Metric
-          icon={<Target className="h-4 w-4 text-blue-400" />}
+          icon={<Target className="h-4 w-4 text-muted-foreground" />}
           label={`Avg ${t.deal.charAt(0).toUpperCase() + t.deal.slice(1)} Size`}
           value={formatCurrency(stats.avgValue, defaultCurrency)}
           tooltip={`Pipeline Value divided by Total ${t.deals.charAt(0).toUpperCase() + t.deals.slice(1)} — the average value of a single non-${t.lostDeal}.`}
         />
         <Metric
-          icon={<TrendingUp className="h-4 w-4 text-purple-400" />}
+          icon={<TrendingUp className="h-4 w-4 text-muted-foreground" />}
           label="Weighted Value"
           value={formatCurrency(stats.weightedValue, defaultCurrency)}
           tooltip={`Expected revenue: each open ${t.deal}'s value × its stage probability. First stage ≈ 10%, stages progress up to 90%, ${t.wonDeals} = 100%. ${t.lostDeals.charAt(0).toUpperCase() + t.lostDeals.slice(1)} are excluded.`}
@@ -151,7 +151,7 @@ function Metric({
 }) {
   return (
     <div className="rounded-lg bg-muted/50 p-3">
-      <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+      <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
         {icon}
         <span>{label}</span>
         <Tooltip>

@@ -108,7 +108,7 @@ export default function ServicesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Services</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Services</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Your rental catalog. Switch a service off and the WhatsApp assistant stops offering it.
           </p>
@@ -183,7 +183,7 @@ export default function ServicesPage() {
                       </p>
                       {row.spec && <p className="text-xs text-muted-foreground truncate">{row.spec}</p>}
                     </div>
-                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${row.available ? 'bg-emerald-500/10 text-emerald-500' : 'bg-muted text-muted-foreground'}`}>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${row.available ? 'bg-emerald-500/10 text-emerald-500' : 'bg-muted text-muted-foreground'}`}>
                       {row.available ? 'Available' : 'Unavailable'}
                     </span>
                     {canEdit && (

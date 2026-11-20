@@ -94,8 +94,8 @@ export default function RevenuePage() {
 
   const StatCard = ({ label, value, sub }: { label: string; value: string; sub: string }) => (
     <div className="card-elevated p-4">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
-      <p className="mt-1.5 text-2xl font-bold text-foreground">{value}</p>
+      <p className="text-[11px] font-semibold text-muted-foreground">{label}</p>
+      <p className="mt-1.5 text-2xl font-semibold text-foreground">{value}</p>
       <p className="mt-0.5 text-xs text-muted-foreground">{sub}</p>
     </div>
   );
@@ -103,7 +103,7 @@ export default function RevenuePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Revenue</h1>
+        <h1 className="text-2xl font-semibold text-foreground">Revenue</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Won deals + paid invoices combined — the same definition the Revenue Analyst AI Employee uses
         </p>
@@ -141,7 +141,7 @@ export default function RevenuePage() {
                         {e.contactName ?? e.contactPhone ?? 'Unknown contact'} · {e.when ? new Date(e.when).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }) : '—'}
                       </p>
                     </div>
-                    <span className="flex items-center gap-1 rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                    <span className="flex items-center gap-1 rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
                       {e.kind === 'deal' ? <Briefcase className="h-3 w-3" /> : <Receipt className="h-3 w-3" />}
                       {e.kind === 'deal' ? 'Deal' : 'Invoice'}
                     </span>

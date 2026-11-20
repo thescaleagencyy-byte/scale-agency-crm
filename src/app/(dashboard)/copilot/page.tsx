@@ -161,11 +161,11 @@ export default function CopilotPage() {
   return (
     <div className="flex h-[calc(100vh-6.5rem)] flex-col space-y-4">
       <div>
-        <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">
+        <p className="flex items-center gap-1.5 text-[11px] font-semibold text-primary">
           <Zap className="h-3 w-3" />
           Scale OS · AI Employees
         </p>
-        <h1 className="mt-1 font-heading text-2xl font-bold tracking-tight text-foreground">
+        <h1 className="mt-1 font-heading text-2xl font-semibold tracking-tight text-foreground">
           {AI_NAME} — {employee.name}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">{employee.tagline}</p>
@@ -189,7 +189,6 @@ export default function CopilotPage() {
       </div>
 
       <div className="relative flex flex-1 flex-col overflow-hidden rounded-3xl bg-zinc-900 text-white shadow-elevated">
-        <div className="pointer-events-none absolute -right-16 -top-16 h-52 w-52 rounded-full bg-primary opacity-[0.12] blur-[80px]" />
 
         <div ref={scrollRef} className="relative flex-1 space-y-3 overflow-y-auto px-5 py-5 sm:px-8">
           {messages.length === 0 && (
@@ -223,7 +222,7 @@ export default function CopilotPage() {
                 }`}
               >
                 <div dangerouslySetInnerHTML={{ __html: renderMarkdown(m.content) }} />
-                <p className="mt-1 text-[10px] text-white/30">{formatTime(m.at)}</p>
+                <p className="mt-1 text-[11px] text-white/30">{formatTime(m.at)}</p>
               </div>
             </div>
           ))}

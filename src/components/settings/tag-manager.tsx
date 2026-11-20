@@ -222,7 +222,7 @@ export function TagManager() {
                     aria-label={`Use ${color.name}`}
                     aria-pressed={selectedColor === color.value}
                     className={cn(
-                      'size-6 rounded-md transition-transform hover:scale-110',
+                      'size-6 rounded-md transition-transform',
                       selectedColor === color.value &&
                         'outline outline-2 outline-offset-2 outline-primary',
                     )}

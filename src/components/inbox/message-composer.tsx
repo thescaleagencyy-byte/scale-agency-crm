@@ -557,7 +557,7 @@ export function MessageComposer({
                     i === replyPopupIdx && "bg-muted"
                   )}
                 >
-                  <span className="mt-0.5 shrink-0 rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-mono font-semibold text-primary">/{r.shortcut}</span>
+                  <span className="mt-0.5 shrink-0 rounded-md bg-primary/10 px-1.5 py-0.5 text-[11px] font-mono font-semibold text-primary">/{r.shortcut}</span>
                   <div className="min-w-0">
                     <p className="text-xs font-semibold text-foreground">{r.title}</p>
                     <p className="truncate text-[11px] text-muted-foreground">{r.body}</p>
@@ -660,7 +660,7 @@ export function MessageComposer({
           `items-end` buttons below the textarea. Indented to line up
           under the textarea left edge. */}
       {!draft && !recording && (
-        <p className="mt-1 pl-[5.5rem] text-[10px] text-muted-foreground">
+        <p className="mt-1 pl-[5.5rem] text-[11px] text-muted-foreground">
           Type &apos;/&apos; for quick replies
         </p>
       )}

@@ -225,7 +225,7 @@ export function TwoFactorCard() {
                 inputMode="numeric"
                 autoComplete="one-time-code"
                 placeholder="123456"
-                className="max-w-40 text-center font-mono tracking-widest"
+                className="max-w-40 text-center font-mono"
                 disabled={verifying}
               />
             </div>

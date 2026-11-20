@@ -140,14 +140,14 @@ export function RoutingRulesPanel() {
 
       <div className="flex justify-end">
         <Button onClick={() => setShowForm(v => !v)} variant="outline" className="border-border bg-transparent text-muted-foreground hover:text-foreground text-sm">
-          <Plus className="h-4 w-4 mr-1.5" />Add Rule
+          <Plus className="h-4 w-4 mr-1.5" />Add rule
         </Button>
       </div>
 
       {showForm && (
         <form onSubmit={save} className="rounded-xl border border-primary/20 bg-primary/5 p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-foreground">New Routing Rule</p>
+            <p className="text-sm font-semibold text-foreground">New routing rule</p>
             <button type="button" onClick={() => setShowForm(false)} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
           </div>
           <div className="space-y-1">
@@ -207,7 +207,7 @@ export function RoutingRulesPanel() {
 
           <div className="flex gap-2">
             <Button type="submit" disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90">
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Route className="h-4 w-4 mr-1.5" />Save Rule</>}
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Route className="h-4 w-4 mr-1.5" />Save rule</>}
             </Button>
           </div>
         </form>
@@ -227,14 +227,14 @@ export function RoutingRulesPanel() {
               'flex items-start gap-3 rounded-xl border p-4 transition-colors',
               r.enabled ? 'border-border bg-card' : 'border-border/50 bg-muted/30 opacity-60'
             )}>
-              <div className="flex h-6 w-6 items-center justify-center shrink-0 text-xs font-bold text-muted-foreground">
+              <div className="flex h-6 w-6 items-center justify-center shrink-0 text-xs font-semibold text-muted-foreground">
                 {idx + 1}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-foreground">{r.name}</p>
                 <div className="mt-1 flex flex-wrap gap-1.5">
                   {r.conditions.map((c, ci) => (
-                    <span key={ci} className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                    <span key={ci} className="rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
                       {describeCondition(c)}
                     </span>
                   ))}

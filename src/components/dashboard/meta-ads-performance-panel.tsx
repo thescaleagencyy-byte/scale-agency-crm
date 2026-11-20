@@ -26,7 +26,7 @@ export function MetaAdsPerformancePanel({ data, loading }: MetaAdsPerformancePan
     <section className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="font-heading text-base font-semibold text-foreground">Ad Performance</h2>
+          <h2 className="font-heading text-base font-semibold text-foreground">Ad performance</h2>
           <p className="text-xs text-muted-foreground">Meta ad spend, joined against leads and won deals</p>
         </div>
         <Link
@@ -73,16 +73,16 @@ export function MetaAdsPerformancePanel({ data, loading }: MetaAdsPerformancePan
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <tr className="border-b border-border text-left text-[11px] font-semibold text-muted-foreground">
                     <th className="px-4 py-3">Campaign</th>
                     <th className="px-4 py-3 text-right">Spend</th>
                     <th className="px-4 py-3 text-right">Impressions</th>
                     <th className="px-4 py-3 text-right">Clicks</th>
                     <th className="px-4 py-3 text-right">CTR</th>
                     <th className="px-4 py-3 text-right">Conversations</th>
-                    <th className="px-4 py-3 text-right">Qualified Leads</th>
+                    <th className="px-4 py-3 text-right">Qualified leads</th>
                     <th className="px-4 py-3 text-right">Cost/Lead</th>
-                    <th className="px-4 py-3 text-right">Won Value</th>
+                    <th className="px-4 py-3 text-right">Won value</th>
                     <th className="px-4 py-3 text-right">ROAS</th>
                   </tr>
                 </thead>

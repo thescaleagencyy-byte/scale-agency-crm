@@ -37,7 +37,7 @@ function StatusIcon({ status }: { status: Message["status"] }) {
     case "delivered":
       return <CheckCheck className="h-3 w-3 text-muted-foreground" />;
     case "read":
-      return <CheckCheck className="h-3 w-3 text-blue-400" />;
+      return <CheckCheck className="h-3 w-3 text-muted-foreground" />;
     case "failed":
       return <XCircle className="h-3 w-3 text-red-400" />;
     default:
@@ -194,7 +194,7 @@ function MessageContent({ message }: { message: Message }) {
     case "template":
       return (
         <div>
-          <span className="mb-1 inline-flex items-center gap-1 rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+          <span className="mb-1 inline-flex items-center gap-1 rounded bg-primary/20 px-1.5 py-0.5 text-[11px] font-medium text-primary">
             <LayoutTemplate className="h-3 w-3" />
             Template
           </span>
@@ -222,7 +222,7 @@ function MessageContent({ message }: { message: Message }) {
       // tap rather than the customer typing the same words.
       return (
         <div className="flex flex-col gap-0.5">
-          <span className="inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
             <CornerDownLeft className="h-3 w-3" />
             Button reply
           </span>
@@ -284,14 +284,14 @@ export function MessageBubble({
           )}
         >
           {message.is_automated && (
-            <span className="inline-flex items-center gap-0.5 rounded-full bg-primary-foreground/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-primary-foreground/80">
+            <span className="inline-flex items-center gap-0.5 rounded-full bg-primary-foreground/15 px-1.5 py-0.5 text-[11px] font-semibold text-primary-foreground/80">
               <Zap className="h-2.5 w-2.5" />
               bot
             </span>
           )}
           <span
             className={cn(
-              "text-[10px]",
+              "text-[11px]",
               isAgent ? "text-primary-foreground/70" : "text-muted-foreground",
             )}
           >

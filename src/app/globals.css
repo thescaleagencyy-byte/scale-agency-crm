@@ -195,12 +195,7 @@ html[data-mode="dark"] .sidebar-invert {
    dark theme's hero card but loses contrast against the light theme's
    pale-tinted hero background. Dark mode keeps the gradient/color pop;
    light mode falls back to solid foreground for legibility. ---- */
-.hero-accent-gradient {
-  background: linear-gradient(to right, var(--primary), color-mix(in oklab, var(--primary) 50%, transparent));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
+.hero-accent-gradient { color: var(--primary); }
 html[data-mode="light"] .hero-accent-gradient {
   background: none;
   -webkit-background-clip: unset;

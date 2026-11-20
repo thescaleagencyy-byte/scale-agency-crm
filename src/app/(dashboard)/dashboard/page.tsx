@@ -52,7 +52,7 @@ const RENTAL_INDUSTRY = (() => {
 type RangeDays = 7 | 30 | 90
 
 export default function DashboardPage() {
-  const { defaultCurrency, profile } = useAuth()
+  const { defaultCurrency } = useAuth()
   const [metrics, setMetrics] = useState<MetricsBundle | null>(null)
   const [metricsLoading, setMetricsLoading] = useState(true)
 
@@ -183,104 +183,70 @@ export default function DashboardPage() {
     [series],
   )
 
-  const heroLabel = CLIENT_NAME || 'the scale agency™'
+  const heroLabel = CLIENT_NAME || 'The Scale Agency'
 
   const labels = (() => {
     const ind = (CLIENT_INDUSTRY || CLIENT_NAME).toLowerCase()
     if (ind.includes('restaurant') || ind.includes('food') || ind.includes('pulao') || ind.includes('sultan')) return {
-      heroHeadline:         'Order Operations',
-      heroTagline:          'Orders, reservations & guest WhatsApp — live.',
-      activeConversations:  'Active Order Chats',
-      newContacts:          'New Customers · 7 Days',
-      newLeads:             'New Leads · 7 Days',
-      openDeals:            'Active Orders Value',
+      heroHeadline:         'Order operations',
+      heroTagline:          'Orders, reservations and guest chats on WhatsApp',
+      activeConversations:  'Active order chats',
+      newContacts:          'New customers · 7 days',
+      newLeads:             'New leads · 7 days',
+      openDeals:            'Active orders value',
       dealWord:             'order',
-      messagesSent:         'Replies Sent · 7 Days',
-      chartTitle:           'Order Inquiries Over Time',
+      messagesSent:         'Replies sent · 7 days',
+      chartTitle:           'Order inquiries over time',
       chartSubtitle:        'Daily order & enquiry volume',
-      pipelineTitle:        'Order Pipeline',
+      pipelineTitle:        'Order pipeline',
       pipelineSubtitle:     'Active orders by stage',
     }
     if (ind.includes('logistic') || ind.includes('transport') || ind.includes('car') || ind.includes('wheel')) return {
-      heroHeadline:         'Rental Operations',
-      heroTagline:          'Rental inquiries, lead pipeline & client WhatsApp — live.',
-      activeConversations:  'Active Inquiries',
-      newContacts:          'New Customers · 7 Days',
-      newLeads:             'Leads Captured · 7 Days',
-      openDeals:            'Open Rental Quotes',
+      heroHeadline:         'Rental operations',
+      heroTagline:          'Rental inquiries, leads and client chats on WhatsApp',
+      activeConversations:  'Active inquiries',
+      newContacts:          'New customers · 7 days',
+      newLeads:             'Leads captured · 7 days',
+      openDeals:            'Open rental quotes',
       dealWord:             'quote',
-      messagesSent:         'Responses Sent · 7 Days',
-      chartTitle:           'Rental Inquiries Over Time',
+      messagesSent:         'Responses sent · 7 days',
+      chartTitle:           'Rental inquiries over time',
       chartSubtitle:        'Daily inquiry & response volume',
-      pipelineTitle:        'Quote Pipeline',
+      pipelineTitle:        'Quote pipeline',
       pipelineSubtitle:     'Active quotes by stage',
     }
     return {
-      heroHeadline:         'Operations Dashboard',
-      heroTagline:          'Your WhatsApp pipeline — live and ready.',
-      activeConversations:  'Active Conversations',
-      newContacts:          'New Contacts · 7 Days',
-      newLeads:             'New Leads · 7 Days',
-      openDeals:            'Open Deals Value',
+      heroHeadline:         'Operations dashboard',
+      heroTagline:          'Conversations, leads and deals from your WhatsApp number',
+      activeConversations:  'Active conversations',
+      newContacts:          'New contacts · 7 days',
+      newLeads:             'New leads · 7 days',
+      openDeals:            'Open deals value',
       dealWord:             'deal',
-      messagesSent:         'Messages Sent · 7 Days',
-      chartTitle:           'Conversations Over Time',
+      messagesSent:         'Messages sent · 7 days',
+      chartTitle:           'Conversations over time',
       chartSubtitle:        'Daily message volume by direction',
-      pipelineTitle:        'Pipeline Value',
+      pipelineTitle:        'Pipeline value',
       pipelineSubtitle:     'Open deals by stage',
     }
   })()
 
-  const firstName = (profile?.full_name ?? '').trim().split(/\s+/)[0] || null
-  const hour = new Date().getHours()
-  const greeting =
-    hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
-  const dateLine = new Date().toLocaleDateString(undefined, {
+  const dateLine = new Date().toLocaleDateString('en-GB', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
   })
+  const updatedAt = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
 
   return (
     <div className="space-y-5">
-      {/* Branded hero */}
-      <div className={`relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-card via-card to-primary/[0.06] px-6 pt-7 sm:px-8 ${RENTAL_INDUSTRY ? 'pb-7 sm:pb-20' : 'pb-7'}`}>
-        {/* Glow orbs */}
-        <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-primary opacity-[0.10] blur-[90px]" />
-        <div className="pointer-events-none absolute -bottom-12 left-1/4 h-40 w-64 rounded-full bg-primary opacity-[0.06] blur-[70px]" />
-        {/* Pattern overlay — rental deployments get a heavy-vehicle livery
-            treatment (diagonal hazard chevrons + a crane silhouette
-            watermark) instead of the generic SaaS grid, so the hero reads
-            "fleet operations", not "template". */}
+      {/* Page header — names the day, quiet surface, one live dot as the
+          only colour. No glows or washes: the stat row below carries the
+          weight of the screen. */}
+      <div className={`relative overflow-hidden rounded-2xl border border-border bg-card px-6 py-6 sm:px-8 ${RENTAL_INDUSTRY ? 'sm:pb-20' : ''}`}>
         {RENTAL_INDUSTRY ? (
           <>
-            <div
-              className="pointer-events-none absolute inset-0 rounded-2xl opacity-[0.05]"
-              style={{
-                backgroundImage:
-                  'repeating-linear-gradient(135deg, var(--primary) 0 14px, transparent 14px 42px)',
-                maskImage:
-                  'radial-gradient(ellipse 70% 130% at 100% 0%, black 0%, transparent 65%)',
-              }}
-            />
-            {/* Chevron livery strip along the bottom edge */}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-x-0 bottom-0 h-1.5 opacity-40"
-              style={{
-                backgroundImage:
-                  'repeating-linear-gradient(135deg, var(--primary) 0 10px, transparent 10px 20px)',
-              }}
-            />
-            {/* Real fleet photos, not stock/decorative — the actual
-                equipment this account rents. Right-aligned, behind the
-                text layer (z-10 on the text wrapper below wins), full
-                opacity per the 07-14 pass (a watermark-level SVG read
-                as "template", not "our fleet"). Same height for both
-                so the pair reads as one consistent row, not two random
-                sizes — source images have different aspect ratios
-                (forklift 717x385, transporter 407x283) so widths differ
-                naturally even at a matched height. */}
+            {/* Real fleet photos of the equipment this account rents */}
             <Image
               src="/clients/ashwheelz-fleet/transporter.png"
               alt=""
@@ -298,47 +264,21 @@ export default function DashboardPage() {
               className="pointer-events-none absolute bottom-2 right-32 hidden h-16 w-auto object-contain sm:block"
             />
           </>
-        ) : (
-          <div
-            className="pointer-events-none absolute inset-0 rounded-2xl opacity-[0.03]"
-            style={{
-              backgroundImage: 'linear-gradient(var(--primary) 1px, transparent 1px), linear-gradient(90deg, var(--primary) 1px, transparent 1px)',
-              backgroundSize: '40px 40px',
-              maskImage: 'radial-gradient(ellipse 80% 100% at 70% 0%, black 30%, transparent 100%)',
-            }}
-          />
-        )}
-        <div className="relative z-10 flex flex-wrap items-end justify-between gap-4">
+        ) : null}
+        <div className="relative flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="mb-2 flex flex-wrap items-center gap-x-2 text-[11px] font-semibold uppercase tracking-[0.2em] hero-accent-solid opacity-80">
-              <span>{heroLabel} · {dateLine}</span>
-              <span aria-hidden className="hidden h-3 w-px bg-primary/30 sm:inline-block" />
-              <span className="hero-accent-gradient">
-                Built by The Scale Agency
-              </span>
-            </p>
-            <h1 className="font-heading text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl">
-              {greeting}
-              {firstName ? (
-                <>
-                  ,{' '}
-                  <span className="hero-accent-gradient">
-                    {firstName}
-                  </span>
-                </>
-              ) : null}
+            <p className="mb-2 text-xs text-muted-foreground">{heroLabel}</p>
+            <h1 suppressHydrationWarning className="font-heading text-[28px] font-medium leading-tight tracking-tight text-foreground sm:text-[32px]">
+              {dateLine}
             </h1>
             <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
               {labels.heroTagline}
             </p>
           </div>
-          <div className="flex shrink-0 items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3.5 py-1.5">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-70" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
-            </span>
-            <span className="text-xs font-semibold hero-accent-solid">
-              {labels.heroHeadline} · Live
+          <div className="flex shrink-0 items-center gap-2 rounded-full border border-border bg-muted/40 px-3 py-1.5">
+            <span className="h-2 w-2 rounded-full bg-primary" aria-hidden />
+            <span className="text-xs text-muted-foreground tabular-nums" suppressHydrationWarning>
+              Updated {updatedAt}
             </span>
           </div>
         </div>

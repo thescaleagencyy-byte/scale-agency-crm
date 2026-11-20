@@ -148,7 +148,7 @@ export function NodeConfigForm({
               placeholder="e.g. name, email, company"
               className="bg-muted font-mono text-xs"
             />
-            <p className="mt-1 text-[10px] text-muted-foreground">
+            <p className="mt-1 text-[11px] text-muted-foreground">
               Interpolate in downstream prompts and handoff notes with{" "}
               <code className="rounded bg-muted px-1">
                 {"{{vars."}
@@ -961,12 +961,12 @@ function SendMediaForm({
         <label className="mb-1 block text-xs text-muted-foreground">File</label>
         {cfg.media_url ? (
           <div className="flex items-center gap-2 rounded-md border border-border bg-muted px-3 py-2 text-xs">
-            <Paperclip className="h-3.5 w-3.5 shrink-0 text-cyan-400" />
+            <Paperclip className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
             <a
               href={cfg.media_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="min-w-0 flex-1 truncate text-foreground hover:text-cyan-300"
+              className="min-w-0 flex-1 truncate text-foreground hover:text-muted-foreground"
               title={displayName || cfg.media_url}
             >
               {displayName || cfg.media_url}

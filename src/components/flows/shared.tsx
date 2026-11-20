@@ -73,7 +73,7 @@ export const NODE_META: Record<
   send_message: {
     label: "Send message",
     icon: MessageCircle,
-    color: "text-sky-400",
+    color: "text-muted-foreground",
   },
   send_buttons: {
     label: "Send buttons",
@@ -83,27 +83,27 @@ export const NODE_META: Record<
   send_list: {
     label: "Send list",
     icon: ListPlus,
-    color: "text-indigo-400",
+    color: "text-muted-foreground",
   },
   send_media: {
     label: "Send media",
     icon: Paperclip,
-    color: "text-cyan-400",
+    color: "text-muted-foreground",
   },
   collect_input: {
     label: "Collect input",
     icon: Inbox,
-    color: "text-teal-400",
+    color: "text-muted-foreground",
   },
   condition: {
     label: "If / else",
     icon: GitFork,
-    color: "text-fuchsia-400",
+    color: "text-muted-foreground",
   },
   set_tag: {
     label: "Tag contact",
     icon: Tag,
-    color: "text-pink-400",
+    color: "text-muted-foreground",
   },
   handoff: {
     label: "Handoff to agent",

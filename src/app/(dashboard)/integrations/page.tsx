@@ -94,7 +94,7 @@ export default function IntegrationsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Integration Hub</h1>
+        <h1 className="text-2xl font-semibold text-foreground">Integration hub</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Where Scale OS connects to everything else. Honest statuses only — nothing shows &quot;Connected&quot; without a real link proving it.
         </p>
@@ -108,7 +108,7 @@ export default function IntegrationsPage() {
       ) : (
         Object.entries(grouped).map(([category, items]) => (
           <div key={category}>
-            <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            <p className="mb-2 text-[11px] font-semibold text-muted-foreground">
               {CATEGORY_LABEL[category as IntegrationCategory] ?? category}
             </p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -123,7 +123,7 @@ export default function IntegrationsPage() {
                         </div>
                         <p className="text-sm font-semibold text-foreground">{i.name}</p>
                       </div>
-                      <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${meta.className}`}>
+                      <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium ${meta.className}`}>
                         <meta.Icon className="h-3 w-3" />
                         {meta.label}
                       </span>
@@ -140,7 +140,7 @@ export default function IntegrationsPage() {
                           href={i.managedElsewhere.settingsHref}
                           className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
                         >
-                          Manage in Settings
+                          Manage in settings
                           <ExternalLink className="h-3 w-3" />
                         </Link>
                       ) : openService === i.service ? (

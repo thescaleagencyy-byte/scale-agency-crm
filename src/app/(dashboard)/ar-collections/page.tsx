@@ -45,7 +45,7 @@ const TONE_LABEL: Record<string, string> = {
   no_email: 'No Email On File',
 };
 const TONE_CLASS: Record<string, string> = {
-  soft: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
+  soft: 'bg-muted text-muted-foreground border-border',
   firm: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
   final: 'bg-orange-500/10 text-orange-400 border-orange-500/30',
   demand: 'bg-red-500/10 text-red-400 border-red-500/30',
@@ -126,7 +126,7 @@ export default function ArCollectionsPage() {
       {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">AR Collections</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">AR collections</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Live log from the AR automation — every invoice it has chased, who got emailed, who got escalated.
           </p>
@@ -154,13 +154,13 @@ export default function ArCollectionsPage() {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-foreground">{rows.length}</div>
+            <div className="text-2xl font-semibold text-foreground">{rows.length}</div>
             <p className="text-sm text-muted-foreground mt-1">Invoices tracked</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="flex items-center gap-1.5 text-2xl font-bold text-foreground">
+            <div className="flex items-center gap-1.5 text-2xl font-semibold text-foreground">
               <Users className="size-4 text-muted-foreground" />{uniqueClients}
             </div>
             <p className="text-sm text-muted-foreground mt-1">Clients</p>
@@ -168,19 +168,19 @@ export default function ArCollectionsPage() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-emerald-400">{sentRows.length}</div>
+            <div className="text-2xl font-semibold text-emerald-400">{sentRows.length}</div>
             <p className="text-sm text-muted-foreground mt-1">Emailed · {formatCurrency(sentSar, 'SAR')}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-amber-400">{escalatedRows.length}</div>
+            <div className="text-2xl font-semibold text-amber-400">{escalatedRows.length}</div>
             <p className="text-sm text-muted-foreground mt-1">Escalated · {formatCurrency(escalatedSar, 'SAR')}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-red-400">{failedRows.length}</div>
+            <div className="text-2xl font-semibold text-red-400">{failedRows.length}</div>
             <p className="text-sm text-muted-foreground mt-1">Send failed</p>
           </CardContent>
         </Card>
@@ -251,7 +251,7 @@ export default function ArCollectionsPage() {
                   <TableHead className="text-muted-foreground">Amount</TableHead>
                   <TableHead className="text-muted-foreground">Tone</TableHead>
                   <TableHead className="text-muted-foreground">Status</TableHead>
-                  <TableHead className="text-muted-foreground">Last Touched</TableHead>
+                  <TableHead className="text-muted-foreground">Last touched</TableHead>
                   <TableHead className="text-muted-foreground">Reply</TableHead>
                   <TableHead />
                 </TableRow>

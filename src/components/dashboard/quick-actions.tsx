@@ -23,27 +23,27 @@ function getActions(): Action[] {
   let candidates: Action[]
   if (ind.includes('logistic') || ind.includes('transport') || ind.includes('car') || ind.includes('wheel')) {
     candidates = [
-      { label: 'New Customer',   href: '/contacts',  icon: UserPlus,      tint: 'text-primary' },
-      { label: 'New Quote',      href: '/pipelines', icon: Briefcase,     tint: 'text-blue-400' },
-      { label: 'View Inquiries', href: '/leads',     icon: TrendingUp,    tint: 'text-amber-400' },
-      { label: 'View WhatsApp',  href: '/inbox',     icon: MessageSquare, tint: 'text-primary' },
-      { label: 'Automations',    href: '/n8n',       icon: Workflow,      tint: 'text-blue-400' },
+      { label: 'New customer',   href: '/contacts',  icon: UserPlus,      tint: 'text-muted-foreground' },
+      { label: 'New quote',      href: '/pipelines', icon: Briefcase,     tint: 'text-muted-foreground' },
+      { label: 'View inquiries', href: '/leads',     icon: TrendingUp,    tint: 'text-muted-foreground' },
+      { label: 'View WhatsApp',  href: '/inbox',     icon: MessageSquare, tint: 'text-muted-foreground' },
+      { label: 'Automations',    href: '/n8n',       icon: Workflow,      tint: 'text-muted-foreground' },
     ]
   } else if (ind.includes('restaurant') || ind.includes('food') || ind.includes('pulao') || ind.includes('sultan')) {
     candidates = [
-      { label: 'New Customer', href: '/contacts',  icon: UserPlus,      tint: 'text-primary' },
-      { label: 'New Order',    href: '/pipelines', icon: Briefcase,     tint: 'text-blue-400' },
-      { label: 'View Leads',   href: '/leads',     icon: TrendingUp,    tint: 'text-amber-400' },
-      { label: 'View Orders',  href: '/inbox',     icon: MessageSquare, tint: 'text-primary' },
-      { label: 'Automations',  href: '/n8n',       icon: Workflow,      tint: 'text-blue-400' },
+      { label: 'New customer', href: '/contacts',  icon: UserPlus,      tint: 'text-muted-foreground' },
+      { label: 'New order',    href: '/pipelines', icon: Briefcase,     tint: 'text-muted-foreground' },
+      { label: 'View leads',   href: '/leads',     icon: TrendingUp,    tint: 'text-muted-foreground' },
+      { label: 'View orders',  href: '/inbox',     icon: MessageSquare, tint: 'text-muted-foreground' },
+      { label: 'Automations',  href: '/n8n',       icon: Workflow,      tint: 'text-muted-foreground' },
     ]
   } else {
     candidates = [
-      { label: 'New Contact', href: '/contacts',  icon: UserPlus,      tint: 'text-primary' },
-      { label: 'New Deal',    href: '/pipelines', icon: Briefcase,     tint: 'text-blue-400' },
-      { label: 'View Leads',  href: '/leads',     icon: TrendingUp,    tint: 'text-amber-400' },
-      { label: 'View Inbox',  href: '/inbox',     icon: MessageSquare, tint: 'text-primary' },
-      { label: 'Automations', href: '/n8n',       icon: Workflow,      tint: 'text-blue-400' },
+      { label: 'New contact', href: '/contacts',  icon: UserPlus,      tint: 'text-muted-foreground' },
+      { label: 'New deal',    href: '/pipelines', icon: Briefcase,     tint: 'text-muted-foreground' },
+      { label: 'View leads',  href: '/leads',     icon: TrendingUp,    tint: 'text-muted-foreground' },
+      { label: 'View inbox',  href: '/inbox',     icon: MessageSquare, tint: 'text-muted-foreground' },
+      { label: 'Automations', href: '/n8n',       icon: Workflow,      tint: 'text-muted-foreground' },
     ]
   }
 
@@ -65,7 +65,7 @@ export function QuickActions() {
           <Link
             key={a.href}
             href={a.href}
-            className="group flex items-center gap-3 card-elevated px-4 py-3.5 transition-all duration-150 hover:border-border/80 hover:bg-card-2 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.98]"
+            className="group flex items-center gap-3 card-elevated px-4 py-3.5 transition-[color,background-color,border-color,box-shadow,opacity] duration-150 hover:border-border/80 hover:bg-card-2 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.98]"
           >
             <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted/60 ${a.tint} transition-colors group-hover:bg-muted`}>
               <Icon className="h-4 w-4" aria-hidden="true" />

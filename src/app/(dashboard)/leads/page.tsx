@@ -14,8 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
   Search, ChevronLeft, ChevronRight, MoreHorizontal, TrendingUp, Loader2,
-  StickyNote, Bell, CheckSquare, Square, Sparkles, Trash2,
-} from 'lucide-react';
+  StickyNote, Bell, CheckSquare, Square, Sparkles, Trash2, Snowflake } from 'lucide-react';
 import { AvatarStack } from '@/components/ui/avatar-stack';
 import { LeadDetailPanel } from '@/components/leads/lead-detail-panel';
 import { LeadNotesPanel } from '@/components/leads/lead-notes-panel';
@@ -263,7 +262,7 @@ export default function LeadsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Leads</h1>
+        <h1 className="text-2xl font-semibold text-foreground">Leads</h1>
         <p className="text-sm text-muted-foreground mt-1">{total} qualified leads captured</p>
       </div>
 
@@ -374,7 +373,7 @@ export default function LeadsPage() {
                 <TableHead className="text-muted-foreground">Company</TableHead>
                 <TableHead className="text-muted-foreground">Source</TableHead>
                 <TableHead className="text-muted-foreground">Score</TableHead>
-                <TableHead className="text-muted-foreground">AI Quality</TableHead>
+                <TableHead className="text-muted-foreground">AI quality</TableHead>
                 <TableHead className="text-muted-foreground">Assigned to</TableHead>
                 <TableHead className="text-muted-foreground">Status</TableHead>
                 <TableHead className="text-muted-foreground">Date</TableHead>
@@ -439,9 +438,10 @@ export default function LeadsPage() {
                       {lead.status === 'new' && Date.now() - new Date(lead.created_at).getTime() > 3 * 86400000 && (
                         <span
                           title="No contact in 3+ days"
-                          className="inline-flex h-5 w-fit items-center justify-center rounded-4xl border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-xs font-medium text-cyan-600"
+                          className="inline-flex h-5 w-fit items-center justify-center rounded-4xl border border-border bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
                         >
-                          🥶 Going cold
+                          <Snowflake className="mr-1 h-3 w-3" aria-hidden />
+                          Going cold
                         </span>
                       )}
                     </div>

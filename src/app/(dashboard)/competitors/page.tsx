@@ -97,7 +97,7 @@ export default function CompetitorsPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Competitor Intelligence</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Competitor intelligence</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Track competitors you care about. &quot;Analyze now&quot; scrapes their site and summarizes pricing, offers, and positioning — needs a Firecrawl key configured for this deployment.
           </p>

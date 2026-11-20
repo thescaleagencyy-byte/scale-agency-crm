@@ -189,7 +189,7 @@ export function Step3Personalize({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-foreground">Personalize Message</h2>
+        <h2 className="text-lg font-semibold text-foreground">Personalize message</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Map template variables to contact fields, custom fields, or static
           values.
@@ -222,7 +222,7 @@ export function Step3Personalize({
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
                     <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                      Mapping Type
+                      Mapping type
                     </label>
                     <Select
                       value={mapping.type}
@@ -237,10 +237,10 @@ export function Step3Personalize({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="border-border bg-popover">
-                        <SelectItem value="static">Static Value</SelectItem>
-                        <SelectItem value="field">Contact Field</SelectItem>
+                        <SelectItem value="static">Static value</SelectItem>
+                        <SelectItem value="field">Contact field</SelectItem>
                         <SelectItem value="custom_field">
-                          Custom Field
+                          Custom field
                         </SelectItem>
                       </SelectContent>
                     </Select>
@@ -317,7 +317,7 @@ export function Step3Personalize({
       <div className="card-elevated p-4">
         <div className="mb-3 flex items-center gap-2">
           <Eye className="h-4 w-4 text-primary" />
-          <p className="text-sm font-medium text-foreground">Live Preview</p>
+          <p className="text-sm font-medium text-foreground">Live preview</p>
           <span className="text-xs text-muted-foreground">({previewLabel})</span>
           {loadingPreview && (
             <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />

@@ -38,7 +38,7 @@ export function AdFunnel({ impressions, clicks, conversations, qualifiedLeads, w
   return (
     <section className="flex h-full flex-col card-elevated">
       <header className="border-b border-border px-5 py-4">
-        <h2 className="text-sm font-semibold text-foreground">Ad Funnel</h2>
+        <h2 className="text-sm font-semibold text-foreground">Ad funnel</h2>
         <p className="mt-0.5 text-xs text-muted-foreground">Where the drop-off happens, stage by stage</p>
       </header>
       <div className="flex-1 p-5">
@@ -65,7 +65,7 @@ export function AdFunnel({ impressions, clicks, conversations, qualifiedLeads, w
                   </div>
                   <div className="h-6 w-full overflow-hidden rounded-md bg-muted">
                     <div
-                      className="h-full rounded-md bg-primary/70 transition-all"
+                      className="h-full rounded-md bg-primary/70 transition-[color,background-color,border-color,box-shadow,opacity]"
                       style={{ width: `${widthPct}%` }}
                     />
                   </div>

@@ -12,11 +12,12 @@ export function avatarColorForName(name: string): { background: string; color: s
     hash |= 0
   }
   const hue = Math.abs(hash) % 360
-  // Solid, mid-lightness fill with white text — reads correctly against
+  // Low-saturation fill: still distinct per contact, but grey-leaning so
+  // the inbox isn't a rainbow. White text — reads correctly against
   // both the light floating panels and the near-black shell, unlike a
   // pale tint that would wash out on dark backgrounds.
   return {
-    background: `hsl(${hue}, 45%, 42%)`,
+    background: `hsl(${hue}, 10%, ${36 + (Math.abs(hash >> 8) % 3) * 4}%)`,
     color: '#ffffff',
   }
 }

@@ -172,7 +172,7 @@ export default function PredictionsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Predictive Intelligence</h1>
+        <h1 className="text-2xl font-semibold text-foreground">Predictive intelligence</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Calculated from your actual data — trend + rule-based scoring, not a live AI guess.
         </p>
@@ -187,9 +187,9 @@ export default function PredictionsPage() {
         <>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <div className="card-elevated p-5">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Next Week Revenue Forecast</p>
+              <p className="text-[11px] font-semibold text-muted-foreground">Next week revenue forecast</p>
               <div className="mt-2 flex items-center gap-2">
-                <span className="text-2xl font-bold text-foreground">{formatCurrency(nextWeekForecast, defaultCurrency)}</span>
+                <span className="text-2xl font-semibold text-foreground">{formatCurrency(nextWeekForecast, defaultCurrency)}</span>
                 <span className={`flex items-center gap-1 text-sm font-medium ${trendColor}`}>
                   <TrendIcon className="h-4 w-4" />
                   {pctChange >= 0 ? '+' : ''}{pctChange.toFixed(0)}%
@@ -203,10 +203,10 @@ export default function PredictionsPage() {
             </div>
 
             <div className="card-elevated p-5">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Weighted Pipeline (next 30 days)</p>
+              <p className="text-[11px] font-semibold text-muted-foreground">Weighted Pipeline (next 30 days)</p>
               <div className="mt-2 flex items-center gap-2">
                 <Target className="h-5 w-5 text-primary" />
-                <span className="text-2xl font-bold text-foreground">{formatCurrency(pipelineForecast, defaultCurrency)}</span>
+                <span className="text-2xl font-semibold text-foreground">{formatCurrency(pipelineForecast, defaultCurrency)}</span>
               </div>
               <p className="mt-2 text-xs text-muted-foreground">
                 {pipelineDealCount} open deal(s) closing within 30 days, weighted by stage probability.

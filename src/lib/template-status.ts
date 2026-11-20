@@ -44,7 +44,7 @@ export const templateStatusConfig: Record<
   },
   IN_APPEAL: {
     label: 'In Appeal',
-    classes: 'bg-blue-600/20 text-blue-400 border-blue-600/30',
+    classes: 'bg-muted text-muted-foreground border-border',
   },
   PENDING_DELETION: {
     label: 'Pending Deletion',

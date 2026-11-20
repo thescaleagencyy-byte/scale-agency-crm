@@ -18,16 +18,16 @@ export interface LeadStatusMeta {
 }
 
 const RENTAL_STATUSES: readonly LeadStatusMeta[] = [
-  { id: 'new',       label: 'New',       className: 'bg-blue-500/15 text-blue-600 border-blue-500/30' },
+  { id: 'new',       label: 'New',       className: 'bg-muted text-muted-foreground border-border' },
   { id: 'quoted',    label: 'Quoted',    className: 'bg-yellow-500/15 text-yellow-600 border-yellow-500/30' },
-  { id: 'confirmed', label: 'Confirmed', className: 'bg-cyan-500/15 text-cyan-600 border-cyan-500/30' },
+  { id: 'confirmed', label: 'Confirmed', className: 'bg-muted text-muted-foreground border-border' },
   { id: 'on_rent',   label: 'On Rent',   className: 'bg-green-500/15 text-green-600 border-green-500/30' },
   { id: 'returned',  label: 'Returned',  className: 'bg-muted text-muted-foreground border-border' },
   { id: 'lost',      label: 'Lost',      className: 'bg-red-500/15 text-red-600 border-red-500/30' },
 ]
 
 const GENERIC_STATUSES: readonly LeadStatusMeta[] = [
-  { id: 'new',    label: 'New',    className: 'bg-blue-500/15 text-blue-600 border-blue-500/30' },
+  { id: 'new',    label: 'New',    className: 'bg-muted text-muted-foreground border-border' },
   { id: 'called', label: 'Called', className: 'bg-yellow-500/15 text-yellow-600 border-yellow-500/30' },
   { id: 'won',    label: 'Won',    className: 'bg-green-500/15 text-green-600 border-green-500/30' },
   { id: 'lost',   label: 'Lost',   className: 'bg-red-500/15 text-red-600 border-red-500/30' },

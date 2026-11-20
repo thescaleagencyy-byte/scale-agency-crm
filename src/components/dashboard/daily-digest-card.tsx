@@ -87,9 +87,8 @@ export function DailyDigestCard() {
 
   return (
     <div className="relative overflow-hidden rounded-3xl bg-zinc-900 p-6 text-white shadow-elevated">
-      <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-primary opacity-[0.14] blur-[60px]" />
       <div className="relative flex items-center justify-between">
-        <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/50">
+        <span className="flex items-center gap-2 text-[11px] font-semibold text-white/50">
           <Sunrise className="h-3.5 w-3.5" />
           Daily Briefing {isToday ? '· Today' : digest ? `· ${new Date(digest.generated_at).toLocaleDateString()}` : ''}
         </span>
@@ -126,7 +125,7 @@ export function DailyDigestCard() {
               type="button"
               onClick={approveStaleLeads}
               disabled={approving}
-              className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground transition-transform hover:scale-[1.03] active:scale-[0.98] disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground transition-transform active:scale-[0.98] disabled:opacity-50"
             >
               {approving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
               Approve — set follow-up reminders for all {staleLeadsCount} stale leads

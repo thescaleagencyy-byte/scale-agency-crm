@@ -92,7 +92,7 @@ function ImportPreviewTags({
         return (
           <span
             key={name}
-            className="inline-flex max-w-full items-center gap-1 rounded-full px-2 py-0.5 text-[10px] leading-none font-medium"
+            className="inline-flex max-w-full items-center gap-1 rounded-full px-2 py-0.5 text-[11px] leading-none font-medium"
             style={{
               backgroundColor: `${color}18`,
               color,
@@ -402,7 +402,7 @@ export function ImportModal({
         <div className="shrink-0 space-y-4 border-b border-border/80 px-6 pt-6 pb-5">
           <DialogHeader className="gap-1.5">
             <DialogTitle className="text-lg text-popover-foreground">
-              Import Contacts
+              Import contacts
             </DialogTitle>
             <DialogDescription className="leading-relaxed text-muted-foreground">
               Upload a CSV with a required{' '}
@@ -438,7 +438,7 @@ export function ImportModal({
                 fileInputRef.current?.click();
             }}
             className={cn(
-              'group flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed p-5 transition-all',
+              'group flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed p-5 transition-[color,background-color,border-color,box-shadow,opacity]',
               file
                 ? 'border-primary/35 bg-primary/[0.04]'
                 : 'hover:border-primary/40 border-border/80 bg-background/40 hover:bg-background/70'
@@ -488,7 +488,7 @@ export function ImportModal({
           {preview.length > 0 && !result && (
             <div className="space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+                <p className="text-[11px] font-semibold text-muted-foreground ">
                   Preview · first {preview.length}
                 </p>
                 <div className="flex flex-wrap items-center gap-1.5">
@@ -597,7 +597,7 @@ export function ImportModal({
                   </div>
                 )}
                 {result.tagsAssigned > 0 && (
-                  <div className="flex items-center gap-1.5 text-sm text-cyan-400">
+                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                     <CheckCircle className="size-4 shrink-0" />
                     {result.tagsAssigned} tag
                     {result.tagsAssigned !== 1 ? 's' : ''} assigned

@@ -47,7 +47,7 @@ const DELIVERY_LABEL: Record<DeliveryStatus, string> = {
   failed: 'Failed to deliver',
 };
 const DELIVERY_CLASS: Record<DeliveryStatus, string> = {
-  sent: 'bg-blue-500/15 text-blue-600 border-blue-500/30',
+  sent: 'bg-muted text-muted-foreground border-border',
   delivered: 'bg-green-500/15 text-green-600 border-green-500/30',
   read: 'bg-green-500/15 text-green-600 border-green-500/30',
   failed: 'bg-red-500/15 text-red-600 border-red-500/30',
@@ -223,7 +223,7 @@ export default function QuotesPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Quotes</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Quotes</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Quote emails picked up by the automation and delivered to customers on WhatsApp
           </p>
@@ -340,7 +340,7 @@ export default function QuotesPage() {
                 <TableHead className="text-muted-foreground">Customer</TableHead>
                 <TableHead className="text-muted-foreground">Company</TableHead>
                 <TableHead className="text-muted-foreground">Quote PDF</TableHead>
-                <TableHead className="text-muted-foreground">Sent By</TableHead>
+                <TableHead className="text-muted-foreground">Sent by</TableHead>
                 <TableHead className="text-muted-foreground">WhatsApp</TableHead>
                 <TableHead className="text-muted-foreground">Date</TableHead>
               </TableRow>
@@ -391,7 +391,7 @@ export default function QuotesPage() {
                       )}
                       {((quote.status === 'failed' && quote.error_detail) ||
                         (quote.delivery_status === 'failed' && quote.error_detail)) && (
-                        <span className="text-[10px] text-muted-foreground max-w-[200px] truncate" title={quote.error_detail ?? undefined}>
+                        <span className="text-[11px] text-muted-foreground max-w-[200px] truncate" title={quote.error_detail ?? undefined}>
                           {quote.error_detail}
                         </span>
                       )}

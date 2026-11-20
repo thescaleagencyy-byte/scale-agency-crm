@@ -91,7 +91,7 @@ export function NumberHealthPanel() {
             <meta.icon className={cn('h-8 w-8 mt-0.5 shrink-0', meta.color)} />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 flex-wrap">
-                <span className={cn('text-base font-bold', meta.color)}>{meta.label}</span>
+                <span className={cn('text-base font-semibold', meta.color)}>{meta.label}</span>
                 {health?.display_phone_number && (
                   <span className="text-xs text-muted-foreground font-mono">{health.display_phone_number}</span>
                 )}
@@ -132,7 +132,7 @@ export function NumberHealthPanel() {
                   {h.messaging_limit_tier && (
                     <span className="text-xs text-muted-foreground">{TIER_LABELS[h.messaging_limit_tier] ?? h.messaging_limit_tier}</span>
                   )}
-                  <span className="ml-auto text-[10px] text-muted-foreground">
+                  <span className="ml-auto text-[11px] text-muted-foreground">
                     {formatDistanceToNow(new Date(h.recorded_at), { addSuffix: true })}
                   </span>
                 </div>

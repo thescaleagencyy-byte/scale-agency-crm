@@ -43,7 +43,6 @@ export function LeadDetailPanel({
 
   return (
     <div className="relative flex h-full flex-col overflow-hidden rounded-3xl bg-zinc-900 text-white shadow-elevated">
-      <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-primary opacity-[0.14] blur-[60px]" />
 
       <div className="relative flex items-start justify-between gap-3 border-b border-white/10 p-5">
         <div className="flex items-center gap-3">
@@ -96,7 +95,7 @@ export function LeadDetailPanel({
           <Field label="Duration" value={lead.duration} />
           <Field label="Quantity" value={lead.quantity} />
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/40">Company</p>
+            <p className="text-[11px] font-semibold text-white/40">Company</p>
             <EditableText
               value={lead.company}
               placeholder="—"
@@ -109,7 +108,7 @@ export function LeadDetailPanel({
 
         {factors.length > 0 && (
           <div>
-            <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40">
+            <p className="mb-2 text-[11px] font-semibold text-white/40">
               Score breakdown
             </p>
             <div className="space-y-1.5 rounded-2xl bg-white/5 p-3">
@@ -119,7 +118,7 @@ export function LeadDetailPanel({
                   <span className="font-semibold tabular-nums">{value > 0 ? '+' : ''}{value}</span>
                 </div>
               ))}
-              <div className="mt-1.5 flex items-center justify-between border-t border-white/10 pt-1.5 text-xs font-bold">
+              <div className="mt-1.5 flex items-center justify-between border-t border-white/10 pt-1.5 text-xs font-semibold">
                 <span>Total</span>
                 <span className="tabular-nums">{lead.score ?? 0}</span>
               </div>
@@ -128,7 +127,7 @@ export function LeadDetailPanel({
         )}
 
         <div>
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40">
+          <p className="mb-2 text-[11px] font-semibold text-white/40">
             Captured
           </p>
           <p className="text-xs text-white/70">
@@ -173,7 +172,7 @@ export function LeadDetailPanel({
               type="button"
               disabled={updating}
               onClick={() => onStatusChange(s)}
-              className="inline-flex items-center gap-1 rounded-full bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground transition-transform hover:scale-[1.03] active:scale-[0.98] disabled:opacity-50"
+              className="inline-flex items-center gap-1 rounded-full bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground transition-transform active:scale-[0.98] disabled:opacity-50"
             >
               Mark {statusLabel[s]}
             </button>
@@ -187,7 +186,7 @@ export function LeadDetailPanel({
 function Field({ label, value }: { label: string; value?: string | null }) {
   return (
     <div>
-      <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/40">{label}</p>
+      <p className="text-[11px] font-semibold text-white/40">{label}</p>
       <p className="mt-0.5 text-sm text-white/90">{value || '—'}</p>
     </div>
   );

@@ -417,13 +417,13 @@ function NodeCard({
             <span className="truncate text-sm font-medium text-foreground">
               {meta.label}
             </span>
-            <code className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+            <code className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
               {node.node_key}
             </code>
             {isEntry && (
               <Badge
                 variant="outline"
-                className="border-primary/40 bg-primary/10 text-[10px] text-primary"
+                className="border-primary/40 bg-primary/10 text-[11px] text-primary"
               >
                 Entry
               </Badge>
@@ -539,7 +539,7 @@ function NodeConfigWithAdvanced({
               />
             </div>
             {hasReplyIds && (
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-[11px] text-muted-foreground">
                 Reply IDs for each option are shown inline above. They&apos;re
                 returned by WhatsApp when a customer taps; you usually don&apos;t
                 need to touch them.

@@ -28,7 +28,7 @@ const STATUSES = ['draft', 'scheduled', 'posted', 'cancelled'] as const;
 const STATUS_LABEL: Record<string, string> = { draft: 'Draft', scheduled: 'Scheduled', posted: 'Posted', cancelled: 'Cancelled' };
 const STATUS_CLASS: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground border-border',
-  scheduled: 'bg-blue-500/15 text-blue-600 border-blue-500/30',
+  scheduled: 'bg-muted text-muted-foreground border-border',
   posted: 'bg-green-500/15 text-green-600 border-green-500/30',
   cancelled: 'bg-red-500/15 text-red-600 border-red-500/30',
 };
@@ -128,7 +128,7 @@ export default function ContentCalendarPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Content Calendar</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Content Calendar</h1>
           <p className="text-sm text-muted-foreground mt-1">
             {total} posts tracked · planning only, nothing here is posted to any platform automatically
           </p>
@@ -209,7 +209,7 @@ export default function ContentCalendarPage() {
               <TableRow className="border-border hover:bg-transparent">
                 <TableHead className="text-muted-foreground">Title</TableHead>
                 <TableHead className="text-muted-foreground">Platform</TableHead>
-                <TableHead className="text-muted-foreground">Scheduled For</TableHead>
+                <TableHead className="text-muted-foreground">Scheduled for</TableHead>
                 <TableHead className="text-muted-foreground">Status</TableHead>
                 <TableHead />
               </TableRow>
@@ -231,7 +231,7 @@ export default function ContentCalendarPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                    <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
                       {PLATFORM_LABEL[p.platform] ?? p.platform}
                     </span>
                   </TableCell>

@@ -16,7 +16,7 @@ export function EquipmentDemandPanel({ data, loading }: EquipmentDemandPanelProp
   return (
     <section className="flex h-full flex-col card-elevated">
       <header className="border-b border-border px-5 py-4">
-        <h2 className="text-sm font-semibold text-foreground">Equipment Demand</h2>
+        <h2 className="text-sm font-semibold text-foreground">Equipment demand</h2>
         <p className="mt-0.5 text-xs text-muted-foreground">Most requested this month</p>
       </header>
 

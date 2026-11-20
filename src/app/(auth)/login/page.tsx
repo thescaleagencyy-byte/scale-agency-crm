@@ -58,24 +58,6 @@ function LoginPageInner() {
 
       {/* ── Left panel – brand ── */}
       <div className="relative hidden lg:flex lg:w-[55%] flex-col items-center justify-center overflow-hidden p-12">
-
-        {/* Glow orbs */}
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute top-[-10%] left-[-10%] h-[500px] w-[500px] rounded-full opacity-[0.12] blur-[120px]" style={{ background: c }} />
-          <div className="absolute bottom-[-5%] right-[-5%] h-[400px] w-[400px] rounded-full opacity-[0.08] blur-[100px]" style={{ background: c }} />
-          <div className="absolute top-[40%] left-[55%] h-[250px] w-[250px] rounded-full opacity-[0.06] blur-[80px]" style={{ background: c }} />
-        </div>
-
-        {/* Subtle grid overlay */}
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage:
-              "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)",
-            backgroundSize: "60px 60px",
-          }}
-        />
-
         {/* Content */}
         <div className="relative z-10 flex flex-col items-center text-center">
           <Image
@@ -84,40 +66,20 @@ function LoginPageInner() {
             width={180}
             height={180}
             priority
-            className="rounded-2xl object-contain mb-8 ring-1 ring-white/10 shadow-2xl"
-            style={{ boxShadow: `0 25px 50px ${c}1a` }}
+            className="mb-8 h-32 w-32 rounded-full object-cover"
           />
-          <h1 className="text-4xl font-bold text-white tracking-tight leading-tight">
-            {CLIENT_NAME ? `${CLIENT_NAME}` : 'Scale smarter.'}<br />
-            <span style={{ color: c }}>
-              {CLIENT_NAME ? 'WhatsApp CRM' : 'Close faster.'}
-            </span>
+          <h1 className="max-w-sm text-balance text-[32px] font-medium leading-tight tracking-tight text-white">
+            {CLIENT_NAME ? `${CLIENT_NAME} WhatsApp CRM` : 'Every WhatsApp enquiry answered and followed up'}
           </h1>
-          <p className="mt-4 text-base text-white/40 max-w-sm leading-relaxed">
-            Your WhatsApp CRM — built for teams that move fast and convert faster.
+          <p className="mt-4 max-w-sm text-base leading-relaxed text-white/50">
+            {CLIENT_NAME ? 'Your team inbox, leads and follow-ups in one place' : 'Scale OS — team inbox, leads and follow-ups in one place'}
           </p>
 
-          {/* Stat pills */}
-          <div className="mt-10 flex items-center gap-4 flex-wrap justify-center">
-            {[
-              { value: "100%", label: "WhatsApp native" },
-              { value: "Real-time", label: "live inbox" },
-              { value: "n8n", label: "automation ready" },
-            ].map((s) => (
-              <div
-                key={s.label}
-                className="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm backdrop-blur-sm"
-              >
-                <span className="font-semibold" style={{ color: c }}>{s.value}</span>
-                <span className="ml-1.5 text-white/50">{s.label}</span>
-              </div>
-            ))}
-          </div>
 
           {/* Built by */}
-          <p className="mt-10 text-xs text-white/20">
-            Powered by{" "}
-            <span className="text-white/40 font-medium">The Scale Agency</span>
+          <p className="mt-12 text-xs text-white/40">
+            Built by{" "}
+            <span className="font-medium text-white/60">The Scale Agency</span>
           </p>
         </div>
       </div>
@@ -134,7 +96,7 @@ function LoginPageInner() {
               width={80}
               height={80}
               priority
-              className="rounded-xl object-contain ring-1 ring-white/10"
+              className="h-20 w-20 rounded-full object-cover"
             />
           </div>
 
@@ -153,7 +115,7 @@ function LoginPageInner() {
             </div>
           ) : (
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-white">Welcome back</h2>
+              <h2 className="text-2xl font-semibold text-white">Welcome back</h2>
               <p className="mt-1 text-sm text-white/40">Sign in to your account to continue.</p>
             </div>
           )}
@@ -166,7 +128,7 @@ function LoginPageInner() {
             )}
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="email" className="text-xs font-medium text-white/50 uppercase tracking-wider">
+              <Label htmlFor="email" className="text-xs font-medium text-white/50">
                 Email
               </Label>
               <Input
@@ -183,7 +145,7 @@ function LoginPageInner() {
 
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-xs font-medium text-white/50 uppercase tracking-wider">
+                <Label htmlFor="password" className="text-xs font-medium text-white/50">
                   Password
                 </Label>
                 <Link href="/forgot-password" className="text-xs transition-colors" style={{ color: `${c}b3` }}>
@@ -204,13 +166,10 @@ function LoginPageInner() {
             <Button
               type="submit"
               disabled={loading}
-              className="mt-2 h-11 w-full rounded-xl font-semibold text-sm transition-all"
+              className="mt-2 h-11 w-full rounded-xl font-semibold text-sm transition-[color,background-color,border-color,box-shadow,opacity]"
               style={{
-                background: loading
-                  ? `${c}4d`
-                  : `linear-gradient(135deg, ${c} 0%, ${c}cc 100%)`,
+                background: loading ? `${c}4d` : c,
                 color: "#080808",
-                boxShadow: loading ? "none" : `0 0 24px ${c}4d`,
               }}
             >
               {loading ? "Signing in..." : "Sign in"}

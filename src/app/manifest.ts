@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next'
 
 const clientName = process.env.NEXT_PUBLIC_CLIENT_NAME
 const appName = clientName ? `${clientName} Dashboard` : 'Scale OS'
-const icon = clientName ? `/clients/${clientName.toLowerCase().replace(/\s+/g, '')}.png` : '/icon.png'
+const icon = clientName ? `/clients/${clientName.toLowerCase().replace(/\s+/g, '')}.png` : '/icon-round.png'
 
 // Makes the app installable to a phone homescreen (Add to Home
 // Screen / "Install app") — no native app build, no app store

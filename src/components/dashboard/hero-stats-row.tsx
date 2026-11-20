@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowDown, ArrowUp, Minus, MessageCircle, ArrowUpRight } from 'lucide-react'
+import { ArrowDown, ArrowUp, Minus, ArrowUpRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatCurrency } from '@/lib/currency'
 import { AvatarStack } from '@/components/ui/avatar-stack'
@@ -106,36 +106,30 @@ export function HeroStatsRow({ metrics, loading, currency, recentContacts, activ
       </div>
 
       {/* Right: dark callout — this week's messaging activity */}
-      <div className="relative flex flex-col justify-between overflow-hidden rounded-3xl bg-zinc-900 p-6 text-white shadow-elevated">
-        <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-primary opacity-[0.14] blur-[60px]" />
+      <div className="relative flex flex-col justify-between overflow-hidden rounded-3xl bg-zinc-900 p-6 text-white">
         <div className="relative flex items-center justify-between">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/50">
+          <span className="text-xs text-white/60">
             Messages · 7 days
           </span>
-          <span className="flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/15 px-2.5 py-1 text-[10px] font-semibold text-primary">
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-70" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
-            </span>
-            Live
+          <span className="flex items-center gap-1.5 text-[11px] text-white/60">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden />
+            WhatsApp
           </span>
         </div>
 
-        <p className="relative mt-3 font-heading text-[38px] font-extrabold leading-none tabular-nums sm:text-[42px]">
+        <p className="relative mt-3 font-heading text-[38px] font-medium leading-none tabular-nums sm:text-[42px]">
           {metrics.messagesSent7d.toLocaleString()}
         </p>
 
         <div className="relative mt-4 flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-medium text-white/80">
-            <MessageCircle className="h-3 w-3" />
-            WhatsApp
-          </span>
-          <span className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-medium text-white/80">
-            +{metrics.messagesSentToday.current.toLocaleString()} today
+          <span className="text-xs text-white/60 tabular-nums">
+            {metrics.messagesSentToday.current > 0
+              ? `+${metrics.messagesSentToday.current.toLocaleString()} today`
+              : 'None yet today'}
           </span>
           <Link
             href="/inbox"
-            className="ml-auto inline-flex items-center gap-1 rounded-full bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground transition-transform hover:scale-[1.03] active:scale-[0.98]"
+            className="ml-auto inline-flex items-center gap-1 rounded-full bg-primary px-3.5 py-1.5 text-xs font-medium text-primary-foreground transition-[background-color,transform] hover:bg-primary-hover active:scale-[0.98]"
           >
             Open inbox
             <ArrowUpRight className="h-3 w-3" />
@@ -193,16 +187,16 @@ function StatCell({
 
   return (
     <div className="flex-1 px-5 py-5 sm:px-7 sm:py-6">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">{label}</p>
+      <p className="text-xs text-muted-foreground">{label}</p>
       <p className={cn(
-        'mt-2 truncate font-heading font-extrabold leading-none tabular-nums text-foreground',
+        'mt-2 truncate font-heading font-medium leading-none tabular-nums text-foreground',
         size === 'md' ? 'text-[24px] sm:text-[28px]' : 'text-[34px] sm:text-[42px]',
       )}>
         {value}
       </p>
       {deltaText ? (
         <div className="mt-2.5 flex items-center gap-1.5">
-          <span className={cn('inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold', deltaColor)}>
+          <span className={cn('inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[11px] font-semibold', deltaColor)}>
             {Arrow ? <Arrow className="h-2.5 w-2.5" /> : null}
           </span>
           <span className="truncate text-[11px] text-muted-foreground">{deltaText}</span>
@@ -218,7 +212,7 @@ function StatCell({
               style={{ width: `${Math.min(100, Math.max(0, barPct * 100))}%` }}
             />
           </div>
-          {barLabel && <p className="mt-1.5 text-[10px] text-muted-foreground">{barLabel}</p>}
+          {barLabel && <p className="mt-1.5 text-[11px] text-muted-foreground">{barLabel}</p>}
         </div>
       )}
       {recentContacts && recentContacts.length > 0 && (
@@ -226,7 +220,7 @@ function StatCell({
           <AvatarStack
             avatars={recentContacts.map((c) => ({ label: c.name || c.phone || '?', title: c.name || c.phone }))}
           />
-          <span className="text-[10px] text-muted-foreground">{avatarCaption ?? 'Most recent'}</span>
+          <span className="text-[11px] text-muted-foreground">{avatarCaption ?? 'Most recent'}</span>
         </div>
       )}
     </div>

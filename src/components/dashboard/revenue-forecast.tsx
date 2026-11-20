@@ -87,7 +87,7 @@ export function RevenueForecast({ currency }: Props) {
     <div className="card-elevated p-5 space-y-4">
       <div className="flex items-center gap-2">
         <TrendingUp className="h-4 w-4 text-primary" />
-        <h3 className="text-sm font-semibold text-foreground">Revenue Forecast</h3>
+        <h3 className="text-sm font-semibold text-foreground">Revenue forecast</h3>
         <span className="ml-auto text-xs text-muted-foreground">Weighted by stage probability</span>
       </div>
 
@@ -101,12 +101,12 @@ export function RevenueForecast({ currency }: Props) {
         <>
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-lg bg-muted/50 border border-border p-3">
-              <p className="text-xs text-muted-foreground">Pipeline Value</p>
-              <p className="text-lg font-bold text-foreground mt-1">{formatCurrency(totalPipeline, currency)}</p>
+              <p className="text-xs text-muted-foreground">Pipeline value</p>
+              <p className="text-lg font-semibold text-foreground mt-1">{formatCurrency(totalPipeline, currency)}</p>
             </div>
             <div className="rounded-lg bg-primary/10 border border-primary/20 p-3">
-              <p className="text-xs text-primary/80">Weighted Forecast</p>
-              <p className="text-lg font-bold text-primary mt-1">{formatCurrency(totalForecast, currency)}</p>
+              <p className="text-xs text-primary/80">Weighted forecast</p>
+              <p className="text-lg font-semibold text-primary mt-1">{formatCurrency(totalForecast, currency)}</p>
             </div>
           </div>
 

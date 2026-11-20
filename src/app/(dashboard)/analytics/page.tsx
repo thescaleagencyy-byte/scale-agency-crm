@@ -62,7 +62,7 @@ function StatCard({ icon: Icon, label, value, sub }: { icon: typeof Clock; label
         </div>
         <p className="text-xs font-medium text-muted-foreground">{label}</p>
       </div>
-      <p className="text-2xl font-bold text-foreground">{value}</p>
+      <p className="text-2xl font-semibold text-foreground">{value}</p>
       {sub && <p className="mt-0.5 text-xs text-muted-foreground">{sub}</p>}
     </div>
   );
@@ -197,7 +197,7 @@ export default function AnalyticsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Analytics</h1>
+        <h1 className="text-2xl font-semibold text-foreground">Analytics</h1>
         <p className="mt-1 text-sm text-muted-foreground">SLA performance, agent workload, and AI conversation intelligence.</p>
       </div>
 
@@ -209,27 +209,27 @@ export default function AnalyticsPage() {
           {roi && (
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 rounded-2xl border border-primary/20 bg-primary/5 p-4">
               <div className="space-y-0.5">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-primary/70">Revenue from CRM</p>
-                <p className="text-2xl font-bold text-primary">{formatCurrency(roi.totalRevenue, defaultCurrency)}</p>
+                <p className="text-[11px] font-semibold text-primary/70">Revenue from CRM</p>
+                <p className="text-2xl font-semibold text-primary">{formatCurrency(roi.totalRevenue, defaultCurrency)}</p>
                 <p className="text-xs text-muted-foreground">{roi.wonDeals} deals won + {roi.paidInvoices} invoices paid</p>
               </div>
               <div className="space-y-0.5">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">CSAT Score</p>
-                <p className="text-2xl font-bold text-foreground">
+                <p className="text-[11px] font-semibold text-muted-foreground">CSAT score</p>
+                <p className="text-2xl font-semibold text-foreground">
                   {roi.avgCsat != null ? `${roi.avgCsat.toFixed(1)}/5` : '—'}
                 </p>
                 <p className="text-xs text-muted-foreground">{roi.csatCount} responses</p>
               </div>
               <div className="space-y-0.5">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">CSAT Satisfaction</p>
-                <p className="text-2xl font-bold text-foreground">
+                <p className="text-[11px] font-semibold text-muted-foreground">CSAT satisfaction</p>
+                <p className="text-2xl font-semibold text-foreground">
                   {roi.avgCsat != null ? `${Math.round((roi.avgCsat / 5) * 100)}%` : '—'}
                 </p>
                 <p className="text-xs text-muted-foreground">avg rating</p>
               </div>
               <div className="space-y-0.5">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Deal Win Rate</p>
-                <p className="text-2xl font-bold text-foreground">
+                <p className="text-[11px] font-semibold text-muted-foreground">Deal win rate</p>
+                <p className="text-2xl font-semibold text-foreground">
                   {summary ? `${Math.round((roi.wonDeals / Math.max(summary.total_conversations, 1)) * 100)}%` : '—'}
                 </p>
                 <p className="text-xs text-muted-foreground">conversations → won</p>
@@ -247,24 +247,24 @@ export default function AnalyticsPage() {
 
           {/* SLA targets */}
           <div className="card-elevated p-5 space-y-4">
-            <p className="text-sm font-semibold text-foreground">SLA Targets</p>
+            <p className="text-sm font-semibold text-foreground">SLA targets</p>
             <div className="grid grid-cols-2 gap-6">
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs text-muted-foreground">First reply within 1 hour</span>
-                  <span className="text-sm font-bold text-foreground">{summary?.within_1h ?? 0}%</span>
+                  <span className="text-sm font-semibold text-foreground">{summary?.within_1h ?? 0}%</span>
                 </div>
                 <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                  <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${summary?.within_1h ?? 0}%` }} />
+                  <div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${summary?.within_1h ?? 0}%` }} />
                 </div>
               </div>
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs text-muted-foreground">First reply within 24 hours</span>
-                  <span className="text-sm font-bold text-foreground">{summary?.within_24h ?? 0}%</span>
+                  <span className="text-sm font-semibold text-foreground">{summary?.within_24h ?? 0}%</span>
                 </div>
                 <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                  <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${summary?.within_24h ?? 0}%` }} />
+                  <div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${summary?.within_24h ?? 0}%` }} />
                 </div>
               </div>
             </div>
@@ -275,7 +275,7 @@ export default function AnalyticsPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Brain className="h-4 w-4 text-muted-foreground" />
-                <p className="text-sm font-semibold text-foreground">Conversation Intelligence</p>
+                <p className="text-sm font-semibold text-foreground">Conversation intelligence</p>
                 {intelligence && (
                   <span className="text-xs text-muted-foreground">
                     · last analyzed {new Date(intelligence.generated_at).toLocaleDateString()} · {intelligence.conversations_analyzed} conversations
@@ -299,7 +299,7 @@ export default function AnalyticsPage() {
                   <div className="lg:col-span-2 rounded-xl border border-primary/20 bg-primary/5 p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <Sparkles className="h-4 w-4 text-primary" />
-                      <p className="text-xs font-semibold text-primary">AI Summary</p>
+                      <p className="text-xs font-semibold text-primary">AI summary</p>
                     </div>
                     <p className="text-sm text-foreground leading-relaxed">{intelligence.raw_summary}</p>
                   </div>
@@ -310,12 +310,12 @@ export default function AnalyticsPage() {
                   <div className="card-elevated p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <AlertCircle className="h-4 w-4 text-amber-400" />
-                      <p className="text-xs font-semibold text-foreground">Top Customer Objections</p>
+                      <p className="text-xs font-semibold text-foreground">Top customer objections</p>
                     </div>
                     <ul className="space-y-1.5">
                       {intelligence.top_objections.map((o, i) => (
                         <li key={i} className="flex items-start gap-2 text-sm text-foreground">
-                          <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-[9px] font-bold text-amber-400">{i + 1}</span>
+                          <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-[11px] font-semibold text-amber-400">{i + 1}</span>
                           {o}
                         </li>
                       ))}
@@ -328,12 +328,12 @@ export default function AnalyticsPage() {
                   <div className="card-elevated p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <MessageSquare className="h-4 w-4 text-primary" />
-                      <p className="text-xs font-semibold text-foreground">Most Common Requests</p>
+                      <p className="text-xs font-semibold text-foreground">Most common requests</p>
                     </div>
                     <ul className="space-y-1.5">
                       {intelligence.common_requests.map((r, i) => (
                         <li key={i} className="flex items-start gap-2 text-sm text-foreground">
-                          <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary/20 text-[9px] font-bold text-primary">{i + 1}</span>
+                          <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary/20 text-[11px] font-semibold text-primary">{i + 1}</span>
                           {r}
                         </li>
                       ))}
@@ -346,12 +346,12 @@ export default function AnalyticsPage() {
                   <div className="lg:col-span-2 card-elevated p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <Lightbulb className="h-4 w-4 text-primary" />
-                      <p className="text-xs font-semibold text-foreground">Actionable Insights</p>
+                      <p className="text-xs font-semibold text-foreground">Actionable insights</p>
                     </div>
                     <div className="grid gap-2 sm:grid-cols-2">
                       {intelligence.key_insights.map((insight, i) => (
                         <div key={i} className="flex items-start gap-2.5 rounded-lg border border-border bg-muted/30 px-3 py-2.5">
-                          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[10px] font-bold text-primary">{i + 1}</span>
+                          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[11px] font-semibold text-primary">{i + 1}</span>
                           <p className="text-xs text-foreground leading-relaxed">{insight}</p>
                         </div>
                       ))}
@@ -361,7 +361,7 @@ export default function AnalyticsPage() {
 
                 {/* Sentiment + close time */}
                 <div className="card-elevated p-4">
-                  <p className="text-xs font-semibold text-foreground mb-3">Sentiment Breakdown</p>
+                  <p className="text-xs font-semibold text-foreground mb-3">Sentiment breakdown</p>
                   <div className="space-y-2">
                     {(['positive', 'neutral', 'negative'] as const).map(k => {
                       const pct = intelligence.sentiment_breakdown?.[k] ?? 0;
@@ -370,7 +370,7 @@ export default function AnalyticsPage() {
                         <div key={k}>
                           <div className="flex items-center justify-between mb-1">
                             <span className="text-xs text-muted-foreground capitalize">{k}</span>
-                            <span className="text-xs font-bold text-foreground">{pct}%</span>
+                            <span className="text-xs font-semibold text-foreground">{pct}%</span>
                           </div>
                           <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
                             <div className={`h-full rounded-full ${colors[k]}`} style={{ width: `${pct}%` }} />
@@ -384,7 +384,7 @@ export default function AnalyticsPage() {
                 {intelligence.avg_close_days !== null && (
                   <div className="card-elevated p-4 flex flex-col justify-center">
                     <p className="text-xs text-muted-foreground mb-1">Avg days to close conversation</p>
-                    <p className="text-3xl font-bold text-foreground">{intelligence.avg_close_days.toFixed(1)}</p>
+                    <p className="text-3xl font-semibold text-foreground">{intelligence.avg_close_days.toFixed(1)}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">days</p>
                   </div>
                 )}
@@ -410,7 +410,7 @@ export default function AnalyticsPage() {
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-muted-foreground" />
-              <p className="text-sm font-semibold text-foreground">Agent Performance</p>
+              <p className="text-sm font-semibold text-foreground">Agent performance</p>
             </div>
             <div className="rounded-xl border border-border overflow-hidden">
               <table className="w-full text-sm">
@@ -420,8 +420,8 @@ export default function AnalyticsPage() {
                     <th className="text-right text-xs text-muted-foreground px-4 py-2.5 font-medium">Assigned</th>
                     <th className="text-right text-xs text-muted-foreground px-4 py-2.5 font-medium">Resolved</th>
                     <th className="text-right text-xs text-muted-foreground px-4 py-2.5 font-medium">Resolution %</th>
-                    <th className="text-right text-xs text-muted-foreground px-4 py-2.5 font-medium">Avg First Reply</th>
-                    <th className="text-right text-xs text-muted-foreground px-4 py-2.5 font-medium">Avg Resolution Time</th>
+                    <th className="text-right text-xs text-muted-foreground px-4 py-2.5 font-medium">Avg first reply</th>
+                    <th className="text-right text-xs text-muted-foreground px-4 py-2.5 font-medium">Avg resolution time</th>
                   </tr>
                 </thead>
                 <tbody>

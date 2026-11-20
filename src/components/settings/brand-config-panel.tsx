@@ -64,7 +64,7 @@ export function BrandConfigPanel() {
               placeholder="e.g. Acme CRM"
               className="border-border bg-muted text-foreground"
             />
-            <p className="text-[10px] text-muted-foreground">Shown in sidebar header instead of default name.</p>
+            <p className="text-[11px] text-muted-foreground">Shown in sidebar header instead of default name.</p>
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs text-muted-foreground">Support email</Label>
@@ -90,7 +90,7 @@ export function BrandConfigPanel() {
             {config.logo_url && (
               <img src={config.logo_url} alt="Logo preview" className="h-10 w-10 rounded-lg object-cover border border-border" />
             )}
-            <p className="text-[10px] text-muted-foreground">Host your logo on Supabase Storage or any public CDN. Replaces the sidebar avatar.</p>
+            <p className="text-[11px] text-muted-foreground">Host your logo on Supabase Storage or any public CDN. Replaces the sidebar avatar.</p>
           </div>
         </div>
 
@@ -117,7 +117,7 @@ export function BrandConfigPanel() {
               style={{ backgroundColor: config.primary_hex || '#7c3aed' }}
             />
           </div>
-          <p className="text-[10px] text-muted-foreground">Buttons, badges, and active states. Applied instantly on save.</p>
+          <p className="text-[11px] text-muted-foreground">Buttons, badges, and active states. Applied instantly on save.</p>
         </div>
 
         <Button type="submit" disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90">

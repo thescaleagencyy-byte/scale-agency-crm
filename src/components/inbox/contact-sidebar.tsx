@@ -161,7 +161,7 @@ export function ContactSidebar({ contact, conversationId }: ContactSidebarProps)
               activeTab === 'notes' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'
             )}
           >
-            <MessageSquare className="h-3.5 w-3.5" />Team Notes
+            <MessageSquare className="h-3.5 w-3.5" />Team notes
           </button>
         )}
       </div>
@@ -262,7 +262,7 @@ export function ContactSidebar({ contact, conversationId }: ContactSidebarProps)
                       </span>
                       {deal.stage && (
                         <span
-                          className="shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium"
+                          className="shrink-0 rounded-full px-1.5 py-0.5 text-[11px] font-medium"
                           style={{
                             backgroundColor: `${deal.stage.color}1a`,
                             color: deal.stage.color,
@@ -315,7 +315,7 @@ export function ContactSidebar({ contact, conversationId }: ContactSidebarProps)
                       <p className="whitespace-pre-wrap text-xs text-foreground">
                         {note.note_text}
                       </p>
-                      <p className="mt-1 text-[10px] text-muted-foreground">
+                      <p className="mt-1 text-[11px] text-muted-foreground">
                         {format(new Date(note.created_at), "MMM d, yyyy HH:mm")}
                       </p>
                     </div>
@@ -339,7 +339,7 @@ function SectionHeader({
   label: string;
 }) {
   return (
-    <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+    <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
       <Icon className="h-3 w-3" />
       {label}
     </div>

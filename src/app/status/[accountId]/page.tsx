@@ -53,8 +53,8 @@ export default function PublicStatusPage() {
   return (
     <div className="w-full max-w-sm card-elevated p-6 space-y-5">
       <div className="text-center space-y-1">
-        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Status</p>
-        <h1 className="text-xl font-bold text-foreground">{status.account_name}</h1>
+        <p className="text-xs font-medium text-muted-foreground">Status</p>
+        <h1 className="text-xl font-semibold text-foreground">{status.account_name}</h1>
       </div>
 
       <div className="space-y-3">
@@ -89,7 +89,7 @@ export default function PublicStatusPage() {
         )}
       </div>
 
-      <p className="text-center text-[10px] text-muted-foreground">Powered by The Scale Agency</p>
+      <p className="text-center text-[11px] text-muted-foreground">Powered by the Scale Agency</p>
     </div>
   );
 }

@@ -184,7 +184,7 @@ export default function VoiceAgentPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Voice Agent</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Voice agent</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Reem — AshWheelz&apos;s inbound voice agent. Every call, recorded and logged.
           </p>
@@ -367,7 +367,7 @@ export default function VoiceAgentPage() {
 
                 {selectedCall.recording_url && (
                   <div>
-                    <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Recording</h3>
+                    <h3 className="text-xs font-semibold text-muted-foreground mb-2">Recording</h3>
                     {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
                     <audio controls src={selectedCall.recording_url} className="w-full" />
                   </div>
@@ -375,14 +375,14 @@ export default function VoiceAgentPage() {
 
                 {selectedCall.summary && (
                   <div>
-                    <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Summary</h3>
+                    <h3 className="text-xs font-semibold text-muted-foreground mb-2">Summary</h3>
                     <p className="text-sm text-foreground whitespace-pre-wrap">{selectedCall.summary}</p>
                   </div>
                 )}
 
                 {selectedCall.transcript && (
                   <div>
-                    <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Transcript</h3>
+                    <h3 className="text-xs font-semibold text-muted-foreground mb-2">Transcript</h3>
                     <p className="text-sm text-foreground whitespace-pre-wrap font-mono text-xs leading-relaxed bg-muted/50 rounded-lg p-3 max-h-96 overflow-y-auto">
                       {selectedCall.transcript}
                     </p>
@@ -395,7 +395,7 @@ export default function VoiceAgentPage() {
 
                 {selectedCall.ended_reason && (
                   <div>
-                    <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Ended Reason</h3>
+                    <h3 className="text-xs font-semibold text-muted-foreground mb-2">Ended reason</h3>
                     <p className="text-sm text-foreground">{selectedCall.ended_reason}</p>
                   </div>
                 )}

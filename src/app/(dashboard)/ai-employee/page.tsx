@@ -141,7 +141,7 @@ export default function AIEmployeePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><Bot className="h-6 w-6 text-primary" /> AI Employee</h1>
+        <h1 className="text-2xl font-semibold text-foreground flex items-center gap-2"><Bot className="h-6 w-6 text-primary" /> AI employee</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Your own AI agent that answers questions, takes orders/bookings, and confirms them — built from the catalog below. Escalates to a human for anything it can&apos;t handle.
         </p>
@@ -150,7 +150,7 @@ export default function AIEmployeePage() {
       <div className="card-elevated p-5 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-foreground">Enable AI Employee</p>
+            <p className="text-sm font-medium text-foreground">Enable AI employee</p>
             <p className="text-xs text-muted-foreground">Turns on for every new WhatsApp message. Test with your own number first before relying on it for real customers.</p>
           </div>
           <button

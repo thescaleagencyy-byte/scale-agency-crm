@@ -117,11 +117,11 @@ export default function QRCodesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">QR Codes</h1>
+          <h1 className="text-2xl font-semibold text-foreground">QR codes</h1>
           <p className="mt-1 text-sm text-muted-foreground">Generate WhatsApp QR codes for campaigns. Print on menus, cards, or ads.</p>
         </div>
         <Button onClick={() => setShowForm(true)} className="bg-primary text-primary-foreground hover:bg-primary/90">
-          <Plus className="h-4 w-4 mr-2" />New QR Code
+          <Plus className="h-4 w-4 mr-2" />New QR code
         </Button>
       </div>
 
@@ -129,7 +129,7 @@ export default function QRCodesPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowForm(false)}>
           <div className="bg-popover border border-border rounded-2xl shadow-2xl w-full max-w-lg mx-4 p-6 space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-foreground">Create QR Code</h2>
+              <h2 className="text-base font-semibold text-foreground">Create QR code</h2>
               <button onClick={() => setShowForm(false)} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
             </div>
             <form onSubmit={save} className="space-y-3">
@@ -190,7 +190,7 @@ export default function QRCodesPage() {
                     <p className="text-sm font-semibold text-foreground truncate">{e.name}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">+{e.phone.replace(/\D/g, '')}</p>
                     {e.campaign_tag && (
-                      <span className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                      <span className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
                         <Tag className="h-2.5 w-2.5" />{e.campaign_tag}
                       </span>
                     )}

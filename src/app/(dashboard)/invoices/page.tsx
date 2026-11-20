@@ -108,7 +108,7 @@ export default function InvoicesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Invoices</h1>
+        <h1 className="text-2xl font-semibold text-foreground">Invoices</h1>
         <p className="text-sm text-muted-foreground mt-1">
           {total} invoices · {formatCurrency(unpaidTotal, defaultCurrency)} unpaid on this page
         </p>
@@ -159,7 +159,7 @@ export default function InvoicesPage() {
                 <TableHead className="text-muted-foreground">Contact</TableHead>
                 <TableHead className="text-muted-foreground">Title</TableHead>
                 <TableHead className="text-muted-foreground">Amount</TableHead>
-                <TableHead className="text-muted-foreground">Due Date</TableHead>
+                <TableHead className="text-muted-foreground">Due date</TableHead>
                 <TableHead className="text-muted-foreground">Status</TableHead>
                 <TableHead />
               </TableRow>

@@ -119,7 +119,7 @@ export default function OutreachSequenceDetailPage() {
         </button>
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-foreground">{sequence.name}</h1>
+            <h1 className="text-2xl font-semibold text-foreground">{sequence.name}</h1>
             <Badge variant="outline" className="text-xs capitalize">{sequence.status}</Badge>
           </div>
           <p className="text-sm text-muted-foreground mt-0.5">
@@ -134,7 +134,7 @@ export default function OutreachSequenceDetailPage() {
           )}
           <Button onClick={loadProspects} className="bg-primary text-primary-foreground hover:bg-primary/90">
             <UserPlus className="h-4 w-4 mr-2" />
-            Enroll Prospects
+            Enroll prospects
           </Button>
         </div>
       </div>
@@ -221,7 +221,7 @@ export default function OutreachSequenceDetailPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setEnrollOpen(false)}>
           <div className="bg-popover border border-border rounded-xl shadow-xl w-full max-w-md mx-4 flex flex-col max-h-[80vh]" onClick={e => e.stopPropagation()}>
             <div className="p-4 border-b border-border">
-              <h2 className="text-sm font-semibold text-foreground">Enroll Prospects</h2>
+              <h2 className="text-sm font-semibold text-foreground">Enroll prospects</h2>
               <div className="relative mt-3">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search..." className="pl-8 bg-muted border-border text-foreground" />

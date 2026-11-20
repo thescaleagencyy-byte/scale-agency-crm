@@ -124,7 +124,7 @@ export function AIAlertsPanel() {
           </div>
         </div>
         {templates.length === 0 && (
-          <p className="text-[10px] text-muted-foreground">No approved templates yet — submit one in Settings → Templates first. Each alert below needs its own approved template (Meta requires one for any business-initiated WhatsApp message).</p>
+          <p className="text-[11px] text-muted-foreground">No approved templates yet — submit one in Settings → Templates first. Each alert below needs its own approved template (Meta requires one for any business-initiated WhatsApp message).</p>
         )}
       </div>
 

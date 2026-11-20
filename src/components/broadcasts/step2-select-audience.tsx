@@ -249,7 +249,7 @@ export function Step2SelectAudience({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-foreground">Select Audience</h2>
+        <h2 className="text-lg font-semibold text-foreground">Select audience</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Choose who will receive this broadcast.
         </p>
@@ -277,7 +277,7 @@ export function Step2SelectAudience({
                     option.type === 'csv' ? audience.csvContacts : undefined,
                 })
               }
-              className={`flex items-start gap-3 rounded-xl border p-4 text-left transition-all ${
+              className={`flex items-start gap-3 rounded-xl border p-4 text-left transition-[color,background-color,border-color,box-shadow,opacity] ${
                 isSelected
                   ? 'border-primary bg-primary/5 ring-1 ring-primary/30'
                   : 'border-border bg-card/50 hover:border-border'
@@ -305,7 +305,7 @@ export function Step2SelectAudience({
 
       {audience.type === 'tags' && (
         <div className="card-elevated p-4">
-          <p className="mb-3 text-sm font-medium text-foreground">Select Tags</p>
+          <p className="mb-3 text-sm font-medium text-foreground">Select tags</p>
           {loadingTags ? (
             <Loader2 className="h-5 w-5 animate-spin text-primary" />
           ) : tags.length === 0 ? (
@@ -320,7 +320,7 @@ export function Step2SelectAudience({
                   <button
                     key={tag.id}
                     onClick={() => toggleTag(tag.id)}
-                    className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-all ${
+                    className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity] ${
                       isSelected
                         ? 'border-primary/30 bg-primary/10 text-primary'
                         : 'border-border bg-muted text-muted-foreground hover:border-border'
@@ -341,7 +341,7 @@ export function Step2SelectAudience({
 
       {audience.type === 'custom_field' && (
         <div className="space-y-3 card-elevated p-4">
-          <p className="text-sm font-medium text-foreground">Custom Field Filter</p>
+          <p className="text-sm font-medium text-foreground">Custom field filter</p>
           {loadingFields ? (
             <Loader2 className="h-5 w-5 animate-spin text-primary" />
           ) : customFields.length === 0 ? (
@@ -408,7 +408,7 @@ export function Step2SelectAudience({
                 <button
                   key={tag.id}
                   onClick={() => toggleExcludeTag(tag.id)}
-                  className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-all ${
+                  className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity] ${
                     isExcluded
                       ? 'border-red-500/30 bg-red-500/10 text-red-300'
                       : 'border-border bg-muted text-muted-foreground hover:border-border'
@@ -428,7 +428,7 @@ export function Step2SelectAudience({
 
       {/* Audience Summary */}
       <div className="card-elevated p-4">
-        <p className="mb-2 text-sm font-medium text-foreground">Audience Summary</p>
+        <p className="mb-2 text-sm font-medium text-foreground">Audience summary</p>
         {loadingCount ? (
           <div className="flex items-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin text-primary" />

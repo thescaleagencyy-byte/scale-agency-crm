@@ -448,7 +448,7 @@ export function ContactDetailView({
                   value="custom"
                   className="data-active:bg-muted data-active:text-primary text-muted-foreground"
                 >
-                  Custom Fields
+                  Custom fields
                 </TabsTrigger>
                 <TabsTrigger
                   value="deals"
@@ -536,7 +536,7 @@ export function ContactDetailView({
                             key={tag.id}
                             onClick={() => toggleTag(tag.id)}
                             disabled={savingTags}
-                            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium transition-all cursor-pointer ${
+                            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity] cursor-pointer ${
                               selected
                                 ? 'ring-2 ring-primary ring-offset-1 ring-offset-border'
                                 : 'opacity-50 hover:opacity-80'
@@ -601,7 +601,7 @@ export function ContactDetailView({
                           </p>
                           <button
                             onClick={() => deleteNote(note.id)}
-                            className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-400 transition-all cursor-pointer shrink-0"
+                            className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-400 transition-[color,background-color,border-color,box-shadow,opacity] cursor-pointer shrink-0"
                           >
                             <Trash2 className="size-3.5" />
                           </button>
@@ -689,7 +689,7 @@ export function ContactDetailView({
                           </p>
                           {deal.stage && (
                             <span
-                              className="shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium"
+                              className="shrink-0 rounded-full px-1.5 py-0.5 text-[11px] font-medium"
                               style={{
                                 backgroundColor: `${deal.stage.color}20`,
                                 color: deal.stage.color,
@@ -743,13 +743,13 @@ export function ContactDetailView({
                         />
                         <div className="rounded-lg border border-border bg-muted/50 p-2.5">
                           <div className="flex items-center gap-2 mb-1">
-                            {item.type === 'note' && <StickyNote className="h-3 w-3 text-violet-400" />}
+                            {item.type === 'note' && <StickyNote className="h-3 w-3 text-muted-foreground" />}
                             {item.type === 'deal' && <DollarSign className="h-3 w-3 text-green-400" />}
-                            {item.type === 'message' && <MessageSquare className="h-3 w-3 text-blue-400" />}
+                            {item.type === 'message' && <MessageSquare className="h-3 w-3 text-muted-foreground" />}
                             <span className="text-xs font-medium text-foreground capitalize">
                               {item.type === 'message' ? `${item.sender} message` : item.type}
                             </span>
-                            <span className="ml-auto text-[10px] text-muted-foreground flex items-center gap-1">
+                            <span className="ml-auto text-[11px] text-muted-foreground flex items-center gap-1">
                               <Clock className="h-2.5 w-2.5" />
                               {new Date(item.at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' })}
                             </span>

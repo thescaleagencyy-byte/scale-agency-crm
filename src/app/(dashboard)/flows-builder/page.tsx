@@ -266,7 +266,7 @@ export default function FlowsBuilderPage() {
       {/* Flow list */}
       <div className="w-72 shrink-0 flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <h1 className="text-lg font-bold text-foreground">WA Flows</h1>
+          <h1 className="text-lg font-semibold text-foreground">WA Flows</h1>
           <Button size="sm" onClick={() => setShowCreate(v => !v)} className="bg-primary text-primary-foreground hover:bg-primary/90 h-8 text-xs">
             <Plus className="h-3.5 w-3.5 mr-1" />New
           </Button>
@@ -298,7 +298,7 @@ export default function FlowsBuilderPage() {
                 <Workflow className={cn('h-4 w-4 shrink-0', activeFlow?.id === f.id ? 'text-primary' : 'text-muted-foreground')} />
                 <div className="flex-1 min-w-0">
                   <p className={cn('text-sm font-medium truncate', activeFlow?.id === f.id ? 'text-primary' : 'text-foreground')}>{f.name}</p>
-                  <Badge variant="outline" className={cn('text-[10px] mt-0.5 capitalize', STATUS_COLORS[f.status] ?? '')}>{f.status}</Badge>
+                  <Badge variant="outline" className={cn('text-[11px] mt-0.5 capitalize', STATUS_COLORS[f.status] ?? '')}>{f.status}</Badge>
                 </div>
                 <button
                   onClick={e => { e.stopPropagation(); deleteFlow(f.id); }}
@@ -352,7 +352,7 @@ export default function FlowsBuilderPage() {
                   onClick={() => setShowSendModal(true)}
                   className="border-border bg-transparent h-8 text-xs gap-1"
                 >
-                  <Users className="h-3.5 w-3.5" />Send to Contact
+                  <Users className="h-3.5 w-3.5" />Send to contact
                 </Button>
               )}
             </div>
@@ -433,7 +433,7 @@ export default function FlowsBuilderPage() {
 
                         <div className="grid grid-cols-2 gap-2">
                           <div className="space-y-1">
-                            <Label className="text-[10px] text-muted-foreground">Label</Label>
+                            <Label className="text-[11px] text-muted-foreground">Label</Label>
                             <Input
                               value={c.label}
                               onChange={e => updateComponent(activeScreen, ci, { label: e.target.value })}
@@ -442,7 +442,7 @@ export default function FlowsBuilderPage() {
                           </div>
                           {c.type !== 'TextBody' && c.type !== 'Footer' && (
                             <div className="space-y-1">
-                              <Label className="text-[10px] text-muted-foreground">Field name (no spaces)</Label>
+                              <Label className="text-[11px] text-muted-foreground">Field name (no spaces)</Label>
                               <Input
                                 value={c.name}
                                 onChange={e => updateComponent(activeScreen, ci, { name: e.target.value.replace(/\s/g, '_') })}
@@ -454,7 +454,7 @@ export default function FlowsBuilderPage() {
 
                         {(c.type === 'Dropdown' || c.type === 'RadioButtonsGroup' || c.type === 'CheckboxGroup') && (
                           <div className="space-y-1">
-                            <Label className="text-[10px] text-muted-foreground">Options (one per line)</Label>
+                            <Label className="text-[11px] text-muted-foreground">Options (one per line)</Label>
                             <textarea
                               value={(c.options ?? []).join('\n')}
                               onChange={e => updateComponent(activeScreen, ci, { options: e.target.value.split('\n').filter(Boolean) })}
@@ -473,7 +473,7 @@ export default function FlowsBuilderPage() {
                               onChange={e => updateComponent(activeScreen, ci, { required: e.target.checked })}
                               className="accent-primary"
                             />
-                            <span className="text-[10px] text-muted-foreground">Required field</span>
+                            <span className="text-[11px] text-muted-foreground">Required field</span>
                           </label>
                         )}
                       </div>
@@ -497,7 +497,7 @@ export default function FlowsBuilderPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowSendModal(false)}>
           <div className="bg-popover border border-border rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-foreground">Send Booking Flow</h2>
+              <h2 className="text-base font-semibold text-foreground">Send booking flow</h2>
               <button onClick={() => setShowSendModal(false)} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
             </div>
             <div className="space-y-3">

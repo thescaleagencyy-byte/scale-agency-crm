@@ -62,7 +62,7 @@ export function MetricCard({
   return (
     <div
       className={cn(
-        'group relative overflow-hidden rounded-2xl p-5 transition-all duration-200',
+        'group relative overflow-hidden rounded-2xl p-5 transition-[color,background-color,border-color,box-shadow,opacity] duration-200',
         'animate-in fade-in slide-in-from-bottom-2 animation-duration-500 fill-mode-forwards',
         'hover:-translate-y-0.5',
         isHero
@@ -77,7 +77,7 @@ export function MetricCard({
       <div className="relative flex items-center gap-2.5">
         <div
           className={cn(
-            'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-105',
+            'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-transform duration-200',
             isHero ? 'bg-white/10 text-white' : cn('bg-primary/10 text-primary', CHIP_CLASS[variant])
           )}
         >
@@ -85,7 +85,7 @@ export function MetricCard({
         </div>
         <p
           className={cn(
-            'min-w-0 text-[11px] font-semibold uppercase leading-snug tracking-wide',
+            'min-w-0 text-[11px] font-semibold leading-snug',
             isHero ? 'text-white/60' : 'text-muted-foreground'
           )}
         >
@@ -94,7 +94,7 @@ export function MetricCard({
       </div>
 
       <div className="relative mt-3 flex items-end justify-between gap-3">
-        <p className="min-w-0 font-heading text-[32px] font-bold leading-none tracking-tight tabular-nums">
+        <p className="min-w-0 font-heading text-[32px] font-semibold leading-none tracking-tight tabular-nums">
           {value}
         </p>
         {sparkline && sparkline.length > 0 ? <Sparkline values={sparkline} hero={isHero} /> : null}

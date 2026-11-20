@@ -205,7 +205,7 @@ export default function FlowsPage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-semibold text-foreground">Flows</h1>
-            <span className="inline-flex items-center rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300">
+            <span className="inline-flex items-center rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold text-amber-300">
               Beta
             </span>
           </div>
@@ -257,7 +257,7 @@ export default function FlowsPage() {
 
           {templates.length > 0 && (
             <div className="space-y-3">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 Start from a template
               </p>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -289,7 +289,7 @@ export default function FlowsPage() {
           )}
 
           <div className="space-y-2 border-t border-border pt-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Or start blank
             </p>
             <Input
@@ -383,7 +383,7 @@ function FlowCard({
         <Badge
           variant="outline"
           className={cn(
-            "shrink-0 gap-1 text-[10px]",
+            "shrink-0 gap-1 text-[11px]",
             STATUS_COLORS[flow.status],
           )}
         >

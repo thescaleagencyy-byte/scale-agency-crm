@@ -110,7 +110,7 @@ export function RecoveryPanel() {
               ))}
             </select>
             {templates.length === 0 && (
-              <p className="text-[10px] text-muted-foreground">No approved templates yet — submit one in Settings → Templates first. Meta requires an approved template to message a conversation that's gone quiet.</p>
+              <p className="text-[11px] text-muted-foreground">No approved templates yet — submit one in Settings → Templates first. Meta requires an approved template to message a conversation that's gone quiet.</p>
             )}
           </div>
         </div>

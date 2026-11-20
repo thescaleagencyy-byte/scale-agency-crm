@@ -58,8 +58,8 @@ type HeaderFormat = 'none' | 'text' | 'image' | 'video' | 'document';
 const HEADER_FORMATS: HeaderFormat[] = ['none', 'text', 'image', 'video', 'document'];
 
 const categoryColors: Record<string, string> = {
-  Marketing: 'bg-purple-600/20 text-purple-400 border-purple-600/30',
-  Utility: 'bg-blue-600/20 text-blue-400 border-blue-600/30',
+  Marketing: 'bg-muted text-muted-foreground border-border',
+  Utility: 'bg-muted text-muted-foreground border-border',
   Authentication: 'bg-amber-600/20 text-amber-400 border-amber-600/30',
 };
 
@@ -500,7 +500,7 @@ export function TemplateManager() {
             </Button>
             <Button onClick={openCreate}>
               <Plus className="size-4" />
-              New Template
+              New template
             </Button>
           </div>
         }
@@ -535,13 +535,13 @@ export function TemplateManager() {
                         {status.label}
                       </Badge>
                       {template.language && (
-                        <span className="text-xs text-muted-foreground uppercase">
+                        <span className="text-xs text-muted-foreground ">
                           {template.language}
                         </span>
                       )}
                       {template.quality_score && (
                         <span
-                          className={`text-[10px] uppercase font-medium ${
+                          className={`text-[11px] font-medium ${
                             template.quality_score === 'GREEN'
                               ? 'text-emerald-400'
                               : template.quality_score === 'YELLOW'
@@ -665,7 +665,7 @@ export function TemplateManager() {
 
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label className="text-muted-foreground">Template Name</Label>
+              <Label className="text-muted-foreground">Template name</Label>
               <Input
                 placeholder="e.g. order_confirmation"
                 value={form.name}
@@ -866,7 +866,7 @@ export function TemplateManager() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-muted-foreground">Body Text</Label>
+              <Label className="text-muted-foreground">Body text</Label>
               <Textarea
                 placeholder="Hello {{1}}, your order {{2}} is confirmed."
                 value={form.body_text}
@@ -934,7 +934,7 @@ export function TemplateManager() {
                   className="border-border bg-transparent text-muted-foreground hover:bg-muted h-7 text-xs"
                 >
                   <Plus className="size-3" />
-                  Add Button
+                  Add button
                 </Button>
               </div>
               {form.buttons.length === 0 ? (
@@ -968,7 +968,7 @@ export function TemplateManager() {
                               value="QUICK_REPLY"
                               className="text-popover-foreground focus:bg-muted focus:text-popover-foreground"
                             >
-                              Quick Reply
+                              Quick reply
                             </SelectItem>
                             <SelectItem
                               value="URL"
@@ -986,7 +986,7 @@ export function TemplateManager() {
                               value="COPY_CODE"
                               className="text-popover-foreground focus:bg-muted focus:text-popover-foreground"
                             >
-                              Copy Code
+                              Copy code
                             </SelectItem>
                           </SelectContent>
                         </Select>

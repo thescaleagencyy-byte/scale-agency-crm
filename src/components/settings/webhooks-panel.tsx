@@ -144,7 +144,7 @@ export function WebhooksPanel() {
 
       {/* API Keys */}
       <div className="space-y-4">
-        <p className="text-sm font-semibold text-foreground">API Keys</p>
+        <p className="text-sm font-semibold text-foreground">API keys</p>
 
         {newKey && (
           <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-2">
@@ -165,7 +165,7 @@ export function WebhooksPanel() {
             <Input value={keyName} onChange={e => setKeyName(e.target.value)} placeholder="e.g. Shopify Integration" className="border-border bg-muted text-foreground" />
           </div>
           <Button type="submit" disabled={keySaving || !keyName.trim()} className="bg-primary text-primary-foreground hover:bg-primary/90 shrink-0">
-            {keySaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Plus className="h-4 w-4 mr-1.5" />Create Key</>}
+            {keySaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Plus className="h-4 w-4 mr-1.5" />Create key</>}
           </Button>
         </form>
 
@@ -232,7 +232,7 @@ export function WebhooksPanel() {
                   <p className="text-xs text-muted-foreground font-mono truncate">{w.url}</p>
                   <div className="mt-1 flex flex-wrap gap-1">
                     {w.events.map(ev => (
-                      <span key={ev} className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">{ev}</span>
+                      <span key={ev} className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">{ev}</span>
                     ))}
                   </div>
                 </div>

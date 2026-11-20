@@ -63,7 +63,7 @@ export function ReminderDialog({ entityType, entityId, entityLabel, onClose }: P
       >
         <div className="flex items-center gap-2">
           <Bell className="h-4 w-4 text-primary" />
-          <h2 className="text-sm font-semibold text-foreground">Set Reminder</h2>
+          <h2 className="text-sm font-semibold text-foreground">Set reminder</h2>
         </div>
         <p className="text-xs text-muted-foreground">{entityLabel}</p>
 

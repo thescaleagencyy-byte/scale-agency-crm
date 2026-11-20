@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Loader2, FileText, ArrowRight } from 'lucide-react';
 
 const categoryColors: Record<string, string> = {
-  Marketing: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-  Utility: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+  Marketing: 'bg-muted text-muted-foreground border-border',
+  Utility: 'bg-muted text-muted-foreground border-border',
   Authentication: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
 };
 
@@ -68,7 +68,7 @@ export function Step1ChooseTemplate({ selectedTemplate, onSelect, onNext, onBack
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-foreground">Choose a Template</h2>
+        <h2 className="text-lg font-semibold text-foreground">Choose a template</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Select an approved message template for your broadcast.
         </p>
@@ -90,7 +90,7 @@ export function Step1ChooseTemplate({ selectedTemplate, onSelect, onNext, onBack
               <button
                 key={template.id}
                 onClick={() => onSelect(template)}
-                className={`flex flex-col gap-3 rounded-xl border p-4 text-left transition-all ${
+                className={`flex flex-col gap-3 rounded-xl border p-4 text-left transition-[color,background-color,border-color,box-shadow,opacity] ${
                   isSelected
                     ? 'border-primary bg-primary/5 ring-1 ring-primary/30'
                     : 'border-border bg-card/50 hover:border-border hover:bg-card'
@@ -99,13 +99,13 @@ export function Step1ChooseTemplate({ selectedTemplate, onSelect, onNext, onBack
                 <div className="flex items-start justify-between">
                   <h3 className="text-sm font-medium text-foreground">{template.name}</h3>
                   <span
-                    className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${catColor}`}
+                    className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${catColor}`}
                   >
                     {template.category}
                   </span>
                 </div>
                 <p className="line-clamp-3 text-xs text-muted-foreground">{template.body_text}</p>
-                <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
                   <span>{template.language ?? 'en_US'}</span>
                   {/* Status is omitted on purpose — every template
                       shown here is already filtered to APPROVED,

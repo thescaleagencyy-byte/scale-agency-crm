@@ -132,7 +132,7 @@ export function N8nConfig() {
         {/* Webhook forwarding */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-foreground">Webhook Forwarding</CardTitle>
+            <CardTitle className="text-foreground">Webhook forwarding</CardTitle>
             <CardDescription className="text-muted-foreground">
               Meta events received by this CRM will be forwarded to your n8n webhook trigger URL.
             </CardDescription>
@@ -156,7 +156,7 @@ export function N8nConfig() {
         {/* Live dashboard credentials */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-foreground">Live Dashboard</CardTitle>
+            <CardTitle className="text-foreground">Live dashboard</CardTitle>
             <CardDescription className="text-muted-foreground">
               Connect to the n8n API to show live automation executions in the CRM.
             </CardDescription>

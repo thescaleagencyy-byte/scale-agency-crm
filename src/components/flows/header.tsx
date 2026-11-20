@@ -77,7 +77,7 @@ export function EditorHeader() {
           <StatusBadge status={state.status} />
           {dirty && (
             <span
-              className="inline-flex shrink-0 items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-amber-300"
+              className="inline-flex shrink-0 items-center gap-1 text-[11px] font-medium text-amber-300"
               title="Unsaved changes — hit Save to persist"
               aria-live="polite"
             >

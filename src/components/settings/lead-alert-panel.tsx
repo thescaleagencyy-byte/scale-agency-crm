@@ -122,7 +122,7 @@ export function LeadAlertPanel() {
               ))}
             </select>
             {templates.length === 0 && (
-              <p className="text-[10px] text-muted-foreground">No approved templates yet — submit one in Settings → Templates first (e.g. body: &quot;Hot lead: {'{{1}}'} ({'{{2}}'}) — {'{{3}}'}. Call now before they go cold.&quot;). Meta requires an approved template for this kind of business-initiated message.</p>
+              <p className="text-[11px] text-muted-foreground">No approved templates yet — submit one in Settings → Templates first (e.g. body: &quot;Hot lead: {'{{1}}'} ({'{{2}}'}) — {'{{3}}'}. Call now before they go cold.&quot;). Meta requires an approved template for this kind of business-initiated message.</p>
             )}
           </div>
         </div>

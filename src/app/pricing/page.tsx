@@ -45,12 +45,16 @@ export default function PricingPage() {
   return (
     <div className="min-h-screen">
       <header className="flex items-center justify-between px-6 py-5 sm:px-10">
-        <Link href="/" className="font-display text-lg font-bold text-foreground">the scale agency™</Link>
+        <Link href="/" className="flex items-center gap-2.5">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icon-round.png" alt="" className="h-7 w-7 rounded-full" />
+          <span className="font-display text-base font-medium text-foreground">Scale OS</span>
+        </Link>
         <nav className="flex items-center gap-4 text-sm">
           <Link href="/login" className="text-muted-foreground hover:text-foreground transition-colors">Sign in</Link>
           <Link
             href="/signup"
-            className="rounded-lg bg-primary px-4 py-2 font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            className="rounded-lg bg-primary px-4 py-2 font-medium text-primary-foreground hover:bg-primary-hover transition-colors"
           >
             Get started
           </Link>
@@ -58,10 +62,10 @@ export default function PricingPage() {
       </header>
 
       <section className="mx-auto max-w-3xl px-6 pt-14 pb-10 text-center">
-        <h1 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-5xl">Simple, honest pricing</h1>
+        <h1 className="font-display text-3xl font-medium tracking-tight text-foreground sm:text-5xl">Pricing</h1>
         <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-          Start free. Upgrade with a card in under a minute — no sales call required. Pakistani
-          customers can also pay by bank transfer, JazzCash, or Easypaisa.
+          Start free. Move up a plan from Settings when your team needs more seats or messages.
+          Teams in Pakistan can pay by bank transfer, JazzCash or Easypaisa
         </p>
       </section>
 
@@ -75,12 +79,12 @@ export default function PricingPage() {
               <div
                 key={id}
                 className={`rounded-2xl border p-6 flex flex-col ${
-                  featured ? 'border-primary bg-primary/5' : 'border-border bg-card'
+                  featured ? 'border-primary/60 bg-card' : 'border-border bg-card'
                 }`}
               >
                 <p className="text-sm font-semibold text-foreground capitalize">{id}</p>
                 <p className="mt-1 text-xs text-muted-foreground min-h-[2.5rem]">{copy.tagline}</p>
-                <p className="mt-4 text-2xl font-bold text-foreground">
+                <p className="mt-4 text-2xl font-medium tabular-nums text-foreground">
                   {id === 'free' && 'Free'}
                   {id === 'enterprise' && 'Custom'}
                   {id in STRIPE_PLANS && (
@@ -106,7 +110,7 @@ export default function PricingPage() {
                   href="/signup"
                   className={`mt-6 rounded-lg px-4 py-2.5 text-center text-sm font-semibold transition-colors ${
                     featured
-                      ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                      ? 'bg-primary text-primary-foreground hover:bg-primary-hover'
                       : 'border border-border text-foreground hover:bg-muted'
                   }`}
                 >
@@ -117,13 +121,12 @@ export default function PricingPage() {
           })}
         </div>
         <p className="mt-8 text-center text-xs text-muted-foreground">
-          Sign up free, then upgrade any time from Settings → Billing — pay instantly by card, or by
-          bank transfer / JazzCash / Easypaisa if you&apos;re in Pakistan.
+          Upgrade any time from Settings → Billing
         </p>
       </section>
 
       <footer className="border-t border-border px-6 py-8 text-center text-xs text-muted-foreground">
-        Powered by The Scale Agency
+        Scale OS is built by The Scale Agency
       </footer>
     </div>
   )

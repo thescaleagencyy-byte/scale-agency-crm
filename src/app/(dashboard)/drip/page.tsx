@@ -51,7 +51,7 @@ export default function DripPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Drip Campaigns</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Drip campaigns</h1>
           <p className="mt-1 text-sm text-muted-foreground">Automated multi-step message sequences</p>
         </div>
         <Button
@@ -59,7 +59,7 @@ export default function DripPage() {
           className="bg-primary text-primary-foreground hover:bg-primary/90"
         >
           <Plus className="h-4 w-4 mr-2" />
-          New Campaign
+          New campaign
         </Button>
       </div>
 
@@ -74,7 +74,7 @@ export default function DripPage() {
           <p className="text-xs text-muted-foreground">Create sequences to nurture contacts over time</p>
           <Button onClick={() => router.push('/drip/new')} className="mt-2 bg-primary text-primary-foreground">
             <Plus className="h-4 w-4 mr-2" />
-            New Campaign
+            New campaign
           </Button>
         </div>
       ) : (

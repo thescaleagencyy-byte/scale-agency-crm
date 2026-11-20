@@ -93,7 +93,7 @@ export function Step4ScheduleSend({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-foreground">Review & Send</h2>
+        <h2 className="text-lg font-semibold text-foreground">Review & send</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Name your broadcast, review the details, and send.
         </p>
@@ -101,7 +101,7 @@ export function Step4ScheduleSend({
 
       {/* Broadcast Name */}
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-foreground">Broadcast Name</label>
+        <label className="mb-1.5 block text-sm font-medium text-foreground">Broadcast name</label>
         <Input
           value={name}
           onChange={(e) => onNameChange(e.target.value)}
@@ -123,7 +123,7 @@ export function Step4ScheduleSend({
             <p className="text-foreground">{audienceLabel}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Estimated Reach</p>
+            <p className="text-xs text-muted-foreground">Estimated reach</p>
             <div className="flex items-center gap-1.5">
               {loadingReach ? (
                 <Loader2 className="h-3 w-3 animate-spin text-primary" />
@@ -154,7 +154,7 @@ export function Step4ScheduleSend({
           </div>
           <div className="h-1.5 w-full rounded-full bg-muted">
             <div
-              className="h-1.5 rounded-full bg-primary transition-all duration-300"
+              className="h-1.5 rounded-full bg-primary transition-[color,background-color,border-color,box-shadow,opacity] duration-300"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -195,11 +195,11 @@ export function Step4ScheduleSend({
             }
           >
             <Send className="h-4 w-4" />
-            Send Broadcast
+            Send broadcast
           </DialogTrigger>
           <DialogContent className="border-border bg-popover sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-popover-foreground">Confirm Broadcast</DialogTitle>
+              <DialogTitle className="text-popover-foreground">Confirm broadcast</DialogTitle>
               <DialogDescription className="text-muted-foreground">
                 You are about to send this broadcast to{' '}
                 <span className="font-medium text-popover-foreground">{estimatedReach.toLocaleString()}</span>{' '}
@@ -224,7 +224,7 @@ export function Step4ScheduleSend({
                 className="bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 <Send className="h-4 w-4" />
-                Confirm & Send
+                Confirm & send
               </Button>
             </DialogFooter>
           </DialogContent>

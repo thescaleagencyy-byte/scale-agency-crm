@@ -131,7 +131,7 @@ export default function BusinessKnowledgePage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Business Knowledge</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Business knowledge</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Permanent facts the Copilot reads before every answer — pricing, SOPs, refund policy, tone, whatever it should always know.
           </p>
@@ -190,7 +190,7 @@ export default function BusinessKnowledgePage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-medium text-foreground">{gap.question_pattern}</p>
-                    <Badge variant="outline" className="text-[10px]">{gap.occurrence_count}x</Badge>
+                    <Badge variant="outline" className="text-[11px]">{gap.occurrence_count}x</Badge>
                   </div>
                   {gap.sample_quote && <p className="mt-0.5 text-xs text-muted-foreground italic">&quot;{gap.sample_quote}&quot;</p>}
                 </div>

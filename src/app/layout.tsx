@@ -31,9 +31,12 @@ const _clientName = process.env.NEXT_PUBLIC_CLIENT_NAME
 const _appTitle = _clientName ? `${_clientName} Dashboard` : "Scale OS"
 const _clientIcon = _clientName
   ? `/clients/${_clientName.toLowerCase().replace(/\s+/g, '')}.png`
-  : "/icon.png"
+  : "/icon-round.png?v=2"
 
 export const metadata: Metadata = {
+  metadataBase: process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? new URL(`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`)
+    : undefined,
   title: {
     default: _appTitle,
     template: `%s — ${_appTitle}`,
@@ -42,6 +45,13 @@ export const metadata: Metadata = {
   robots: {
     index: false,
     follow: false,
+  },
+  // Link previews (WhatsApp, Slack, iMessage) use the same round logo
+  // as the browser tab.
+  openGraph: {
+    title: _appTitle,
+    description: `${_appTitle} — powered by The Scale Agency`,
+    images: [{ url: _clientIcon, width: 512, height: 512 }],
   },
   icons: {
     icon: [{ url: _clientIcon, type: "image/png" }],

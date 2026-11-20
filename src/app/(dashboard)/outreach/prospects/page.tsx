@@ -79,12 +79,12 @@ export default function OutreachProspectsPage() {
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold text-foreground">Prospects</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Prospects</h1>
           <p className="text-sm text-muted-foreground mt-0.5">People to cold-email — separate from your WhatsApp leads/contacts</p>
         </div>
         <Button onClick={() => setPasteOpen(true)} className="bg-primary text-primary-foreground hover:bg-primary/90">
           <Plus className="h-4 w-4 mr-2" />
-          Add Prospects
+          Add prospects
         </Button>
       </div>
 
@@ -99,7 +99,7 @@ export default function OutreachProspectsPage() {
           <p className="text-xs text-muted-foreground">Paste a list of emails to get started</p>
           <Button onClick={() => setPasteOpen(true)} className="mt-2 bg-primary text-primary-foreground">
             <Plus className="h-4 w-4 mr-2" />
-            Add Prospects
+            Add prospects
           </Button>
         </div>
       ) : (
@@ -133,7 +133,7 @@ export default function OutreachProspectsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setPasteOpen(false)}>
           <div className="bg-popover border border-border rounded-xl shadow-xl w-full max-w-lg mx-4" onClick={e => e.stopPropagation()}>
             <div className="p-4 border-b border-border">
-              <h2 className="text-sm font-semibold text-foreground">Add Prospects</h2>
+              <h2 className="text-sm font-semibold text-foreground">Add prospects</h2>
               <p className="text-xs text-muted-foreground mt-1">One per line: <code>email,name,company</code> — name and company are optional.</p>
             </div>
             <div className="p-4">

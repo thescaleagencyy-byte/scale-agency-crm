@@ -76,9 +76,9 @@ function getActionTag(e: N8nExecution): ActionTag {
 
 const TAG_CLASSES: Record<TagVariant, string> = {
   muted:   'bg-muted/60 text-muted-foreground border-border',
-  blue:    'bg-blue-500/10 text-blue-400 border-blue-500/30',
+  blue:    'bg-muted text-muted-foreground border-border',
   green:   'bg-green-500/10 text-green-400 border-green-500/30',
-  purple:  'bg-purple-500/10 text-purple-400 border-purple-500/30',
+  purple:  'bg-muted text-muted-foreground border-border',
   amber:   'bg-amber-500/10 text-amber-400 border-amber-500/30',
   red:     'bg-red-500/10 text-red-400 border-red-500/30',
   emerald: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
@@ -184,19 +184,19 @@ function ErrorModal({ execution, open, onClose }: ErrorModalProps) {
           <div className="space-y-4 text-sm">
             {err.failedNode && (
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Failed at node</p>
+                <p className="text-xs text-muted-foreground mb-1">Failed at node</p>
                 <p className="font-mono text-foreground bg-muted/50 rounded px-2 py-1 text-xs">{err.failedNode}</p>
               </div>
             )}
             {err.message && (
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Error</p>
+                <p className="text-xs text-muted-foreground mb-1">Error</p>
                 <p className="text-red-300 bg-red-950/20 rounded px-2 py-1 text-xs font-mono break-all">{err.message}</p>
               </div>
             )}
             {err.description && (
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Details</p>
+                <p className="text-xs text-muted-foreground mb-1">Details</p>
                 <p className="text-muted-foreground text-xs">{err.description}</p>
               </div>
             )}
@@ -312,7 +312,7 @@ export default function N8nDashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">n8n Automations</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">n8n Automations</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Live view of workflow executions — today and yesterday.
           </p>
@@ -349,19 +349,19 @@ export default function N8nDashboardPage() {
       <div className="grid grid-cols-3 gap-4">
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-primary">{runningCount}</div>
+            <div className="text-2xl font-semibold text-primary">{runningCount}</div>
             <p className="text-sm text-muted-foreground mt-1">Running now</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-emerald-400">{successCount}</div>
+            <div className="text-2xl font-semibold text-emerald-400">{successCount}</div>
             <p className="text-sm text-muted-foreground mt-1">Succeeded today</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-red-400">{errorCount}</div>
+            <div className="text-2xl font-semibold text-red-400">{errorCount}</div>
             <p className="text-sm text-muted-foreground mt-1">Failed today</p>
           </CardContent>
         </Card>
@@ -401,7 +401,7 @@ export default function N8nDashboardPage() {
               {groups.map(({ label, items }) => (
                 <div key={label}>
                   <div className="flex items-center gap-3 mb-3">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+                    <p className="text-xs font-semibold text-muted-foreground">
                       {label}
                     </p>
                     <span className="text-xs text-muted-foreground/60">

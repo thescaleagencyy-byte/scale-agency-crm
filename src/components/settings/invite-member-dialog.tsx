@@ -317,7 +317,7 @@ export function InviteMemberDialog({
 
               {/* Permission checklist */}
               <div className="rounded-lg border border-border bg-muted/30 overflow-hidden">
-                <div className="grid grid-cols-[1fr_auto_auto_auto] text-[10px] font-semibold text-muted-foreground px-3 py-1.5 border-b border-border gap-3">
+                <div className="grid grid-cols-[1fr_auto_auto_auto] text-[11px] font-semibold text-muted-foreground px-3 py-1.5 border-b border-border gap-3">
                   <span>Permission</span>
                   <span className={role === 'admin' ? 'text-primary' : ''}>Admin</span>
                   <span className={role === 'agent' ? 'text-primary' : ''}>Agent</span>

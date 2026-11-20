@@ -202,7 +202,7 @@ export function PipelineSettings({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md bg-popover border-border max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-popover-foreground">Manage Pipeline</DialogTitle>
+          <DialogTitle className="text-popover-foreground">Manage pipeline</DialogTitle>
         </DialogHeader>
 
         {showDeleteConfirm ? (
@@ -211,7 +211,7 @@ export function PipelineSettings({
               <AlertTriangle className="h-5 w-5 shrink-0 text-red-400" />
               <div>
                 <p className="text-sm font-medium text-red-400">
-                  Delete Pipeline
+                  Delete pipeline
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   This will archive all deals in this pipeline. This cannot be
@@ -240,7 +240,7 @@ export function PipelineSettings({
           <>
             <div className="grid gap-4 py-2">
               <div className="grid gap-2">
-                <Label className="text-muted-foreground">Pipeline Name</Label>
+                <Label className="text-muted-foreground">Pipeline name</Label>
                 <Input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -294,7 +294,7 @@ export function PipelineSettings({
                       key={color}
                       type="button"
                       onClick={() => setNewStageColor(color)}
-                      className="h-5 w-5 rounded-full border-2 transition-transform hover:scale-110"
+                      className="h-5 w-5 rounded-full border-2 transition-transform"
                       style={{
                         backgroundColor: color,
                         borderColor:
@@ -345,7 +345,7 @@ export function PipelineSettings({
                 onClick={() => setShowDeleteConfirm(true)}
                 className="mr-auto bg-red-600 hover:bg-red-700"
               >
-                Delete Pipeline
+                Delete pipeline
               </Button>
               <Button
                 variant="outline"
@@ -469,7 +469,7 @@ function ColorSwatch({
                   onChange(c);
                   setOpen(false);
                 }}
-                className="h-5 w-5 rounded-full border-2 transition-transform hover:scale-110"
+                className="h-5 w-5 rounded-full border-2 transition-transform"
                 style={{
                   backgroundColor: c,
                   borderColor:

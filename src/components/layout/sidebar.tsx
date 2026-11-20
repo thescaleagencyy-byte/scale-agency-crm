@@ -73,14 +73,14 @@ const ROLE_CHIP: Record<
     label: "Owner",
     // Amber: scarce, immutable, "the boss" — gets visual emphasis.
     className:
-      "border-amber-500/40 bg-amber-500/10 text-amber-300",
+      "border-border bg-transparent text-muted-foreground",
   },
   admin: {
     icon: Shield,
     label: "Admin",
     // Primary-tinted: significant but not as scarce as owner.
     className:
-      "border-primary/40 bg-primary/10 text-primary",
+      "border-border bg-transparent text-muted-foreground",
   },
   agent: {
     icon: UserCog,
@@ -277,11 +277,6 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
         )}
         aria-label="Primary"
       >
-        {/* Brand glow — subtle primary halo at the top of the sidebar */}
-        <div className="pointer-events-none absolute left-0 right-0 top-0 h-32 rounded-t-none opacity-60"
-          style={{ background: 'radial-gradient(ellipse 120% 60% at 50% 0%, color-mix(in oklab, var(--primary) 18%, transparent) 0%, transparent 100%)' }}
-        />
-
         {/* Collapse toggle — desktop only, floats on the right edge. */}
         <button
           type="button"
@@ -309,9 +304,9 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                 />
                 {!collapsed && (
                   <div className="min-w-0">
-                    <p className="truncate font-heading text-sm font-bold leading-tight tracking-tight text-foreground">{CLIENT_NAME}</p>
+                    <p className="truncate font-heading text-sm font-semibold leading-tight tracking-tight text-foreground">{CLIENT_NAME}</p>
                     {CLIENT_INDUSTRY && (
-                      <p className="text-[10px] font-medium uppercase tracking-widest text-primary/70 leading-tight mt-0.5">{CLIENT_INDUSTRY}</p>
+                      <p className="text-[11px] font-medium text-primary/70 leading-tight mt-0.5">{CLIENT_INDUSTRY}</p>
                     )}
                   </div>
                 )}
@@ -359,13 +354,13 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
         {/* Main navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           {navGroups.map((group, gi) => (
-            <div key={group.label} className={gi > 0 ? "mt-5" : undefined}>
+            <div key={group.label} className={gi > 0 ? "mt-6" : undefined}>
               {!collapsed && (
-                <p className="mb-1.5 px-3 text-[9px] font-medium uppercase tracking-[0.1em] text-muted-foreground/40">
+                <p className="mb-2 px-3 text-xs text-muted-foreground/70">
                   {group.label}
                 </p>
               )}
-              <ul className="flex flex-col gap-1">
+              <ul className="flex flex-col gap-0.5">
                 {group.items.map((item) => {
                   const isActive =
                     pathname === item.href ||
@@ -380,29 +375,17 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                         href={item.href}
                         title={collapsed ? item.label : undefined}
                         className={cn(
-                          "group/navitem relative flex items-center gap-3 overflow-hidden rounded-xl px-3 py-2.5 text-sm font-medium transition-colors duration-200 lg:py-2",
-                          // Sliding pill reveal on hover — a ::before layer so it can
-                          // animate scale-x without fighting the active-state background.
-                          "before:absolute before:inset-0 before:-z-10 before:scale-x-0 before:rounded-xl before:bg-muted before:transition-transform before:duration-200 before:ease-out before:[transform-origin:left] hover:before:scale-x-100",
+                          "group/navitem relative flex h-9 items-center gap-2.5 rounded-lg px-3 text-sm transition-colors duration-150",
                           isActive
-                            ? "text-primary"
-                            : "text-muted-foreground hover:text-foreground",
+                            ? "bg-muted text-foreground"
+                            : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
                         )}
                       >
                         {isActive && (
-                          <>
-                            <span className="absolute inset-0 -z-10 rounded-xl bg-primary/10 duration-300 animate-in fade-in" />
-                            <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-primary duration-300 animate-in fade-in slide-in-from-left-1" />
-                          </>
+                          <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-primary" aria-hidden />
                         )}
-                        <span
-                          aria-hidden="true"
-                          className={cn(
-                            "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-all duration-200 group-hover/navitem:scale-105",
-                            isActive ? "bg-primary/15 text-primary" : "bg-transparent"
-                          )}
-                        >
-                          <item.icon className="h-[17px] w-[17px]" strokeWidth={isActive ? 2.2 : 1.8} />
+                        <span aria-hidden="true" className="flex h-5 w-5 shrink-0 items-center justify-center">
+                          <item.icon className={cn("h-[18px] w-[18px]", isActive && "text-primary")} strokeWidth={1.5} />
                         </span>
                         {!collapsed && <span className="flex-1">{item.label}</span>}
                         {!collapsed && showUnreadDot && (
@@ -410,7 +393,6 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                             aria-label={`${totalUnread} unread conversation${totalUnread === 1 ? "" : "s"}`}
                             className="relative flex h-2 w-2"
                           >
-                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
                             <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
                           </span>
                         )}
@@ -433,13 +415,13 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                     href={item.href}
                     title={collapsed ? item.label : undefined}
                     className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors lg:py-2",
+                      "flex h-9 items-center gap-2.5 rounded-lg px-3 text-sm transition-colors duration-150",
                       isActive
-                        ? "bg-primary/10 text-primary"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                        ? "bg-muted text-foreground"
+                        : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
                     )}
                   >
-                    <item.icon className="h-4 w-4 shrink-0" />
+                    <item.icon className={cn("h-[18px] w-[18px] shrink-0", isActive && "text-primary")} strokeWidth={1.5} />
                     {!collapsed && item.label}
                   </Link>
                 </li>
@@ -451,10 +433,10 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
         {/* Agency credit — the quiet referral engine on every screen. */}
         {!collapsed && (
           <div className="shrink-0 border-t border-border px-6 py-2.5">
-            <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/50">
+            <p className="text-[11px] text-muted-foreground/70">
               Powered by
             </p>
-            <p className="bg-gradient-to-r from-primary to-primary/50 bg-clip-text text-[11px] font-bold tracking-wide text-transparent">
+            <p className="text-xs font-medium text-foreground/90">
               The Scale Agency
             </p>
           </div>
@@ -487,7 +469,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                   const Icon = meta.icon;
                   return (
                     <span
-                      className={`ml-auto inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider ${meta.className}`}
+                      className={`ml-auto inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[11px] font-medium ${meta.className}`}
                     >
                       <Icon className="size-3" />
                       {meta.label}

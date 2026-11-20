@@ -182,11 +182,11 @@ export function BillingPanel() {
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <p className="text-sm font-semibold text-foreground capitalize">{subscription.plan_name} plan</p>
-              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium capitalize ${STATUS_STYLES[subscription.status]}`}>
+              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium capitalize ${STATUS_STYLES[subscription.status]}`}>
                 {subscription.status.replace('_', ' ')}
               </span>
             </div>
-            <p className="text-2xl font-bold text-foreground">
+            <p className="text-2xl font-semibold text-foreground">
               {subscription.amount > 0
                 ? `${subscription.currency} ${subscription.amount.toLocaleString()} / ${subscription.billing_interval === 'monthly' ? 'mo' : 'yr'}`
                 : 'Free'}
@@ -324,7 +324,7 @@ export function BillingPanel() {
                   Bank / JazzCash / Easypaisa
                 </Button>
               </div>
-              <p className="text-[10px] text-muted-foreground">Card payments require a connected Stripe account. Local payment methods are confirmed manually.</p>
+              <p className="text-[11px] text-muted-foreground">Card payments require a connected Stripe account. Local payment methods are confirmed manually.</p>
             </div>
           )}
         </DialogContent>

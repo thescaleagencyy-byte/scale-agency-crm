@@ -51,7 +51,7 @@ export default function OutreachPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Outreach</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Outreach</h1>
           <p className="mt-1 text-sm text-muted-foreground">Cold email sequences, sent via your connected Gmail</p>
         </div>
         <div className="flex items-center gap-2">
@@ -64,7 +64,7 @@ export default function OutreachPage() {
             className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <Plus className="h-4 w-4 mr-2" />
-            New Sequence
+            New sequence
           </Button>
         </div>
       </div>
@@ -80,7 +80,7 @@ export default function OutreachPage() {
           <p className="text-xs text-muted-foreground">Create a sequence and connect Gmail under Integrations to start sending</p>
           <Button onClick={() => router.push('/outreach/new')} className="mt-2 bg-primary text-primary-foreground">
             <Plus className="h-4 w-4 mr-2" />
-            New Sequence
+            New sequence
           </Button>
         </div>
       ) : (

@@ -337,7 +337,7 @@ function ConversationItem({
           <span className="truncate text-sm font-medium text-foreground">
             {displayName}
           </span>
-          <span className="shrink-0 text-[10px] text-muted-foreground">{timeAgo}</span>
+          <span className="shrink-0 text-[11px] text-muted-foreground">{timeAgo}</span>
         </div>
         <div className="mt-0.5 flex items-center justify-between gap-2">
           <p className="truncate text-xs text-muted-foreground">
@@ -346,7 +346,7 @@ function ConversationItem({
           <div className="flex shrink-0 items-center gap-1.5">
             {conversation.is_qualified && (
               <span
-                className="flex h-4 w-4 items-center justify-center rounded-full bg-blue-500/15 text-blue-500"
+                className="flex h-4 w-4 items-center justify-center rounded-full bg-muted text-muted-foreground"
                 title="Qualified — answered a real business question"
               >
                 <BadgeCheck className="h-2.5 w-2.5" />
@@ -370,7 +370,7 @@ function ConversationItem({
             )}
             {conversation.contact?.channel === 'instagram' && (
               <span
-                className="flex h-4 w-4 items-center justify-center rounded-full bg-pink-500/15 text-pink-500"
+                className="flex h-4 w-4 items-center justify-center rounded-full bg-muted text-muted-foreground"
                 title="Instagram"
               >
                 <ImageIcon className="h-2.5 w-2.5" />
@@ -385,7 +385,7 @@ function ConversationItem({
               </span>
             )}
             {conversation.unread_count > 0 && (
-              <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+              <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[11px] font-semibold text-primary-foreground">
                 {conversation.unread_count}
               </span>
             )}
@@ -400,7 +400,7 @@ function ConversationItem({
         </div>
         {assignedAgentName && (
           <div className="mt-0.5 flex items-center gap-1">
-            <span className="text-[10px] text-muted-foreground/40">·</span>
+            <span className="text-[11px] text-muted-foreground/40">·</span>
             <span className="truncate text-[11px] font-medium text-primary/85">
               {assignedAgentName}
             </span>

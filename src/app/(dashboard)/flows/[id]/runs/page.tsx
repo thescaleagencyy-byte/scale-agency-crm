@@ -250,7 +250,7 @@ function RunCard({
               {meta.label}
             </Badge>
             {run.status === "active" && run.current_node_key && (
-              <code className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+              <code className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
                 at {run.current_node_key}
               </code>
             )}
@@ -294,7 +294,7 @@ function RunCard({
 const EVENT_COLOR: Record<string, string> = {
   started: "text-emerald-300",
   node_entered: "text-muted-foreground",
-  message_sent: "text-sky-300",
+  message_sent: "text-muted-foreground",
   reply_received: "text-primary",
   fallback_fired: "text-amber-300",
   handoff: "text-amber-300",
@@ -307,19 +307,19 @@ function EventLine({ ev }: { ev: EventRow }) {
   const cls = EVENT_COLOR[ev.event_type] ?? "text-muted-foreground";
   return (
     <div className="flex items-start gap-2 rounded-md px-2 py-1 text-xs">
-      <span className="w-32 shrink-0 text-[10px] text-muted-foreground">
+      <span className="w-32 shrink-0 text-[11px] text-muted-foreground">
         {format(new Date(ev.created_at), "HH:mm:ss")}
       </span>
-      <span className={cn("w-32 shrink-0 font-mono text-[10px]", cls)}>
+      <span className={cn("w-32 shrink-0 font-mono text-[11px]", cls)}>
         {ev.event_type}
       </span>
       {ev.node_key && (
-        <code className="shrink-0 rounded bg-muted px-1 py-0.5 text-[10px] text-muted-foreground">
+        <code className="shrink-0 rounded bg-muted px-1 py-0.5 text-[11px] text-muted-foreground">
           {ev.node_key}
         </code>
       )}
       {Object.keys(ev.payload).length > 0 && (
-        <span className="min-w-0 truncate text-[10px] text-muted-foreground">
+        <span className="min-w-0 truncate text-[11px] text-muted-foreground">
           {summarizePayload(ev.payload)}
         </span>
       )}

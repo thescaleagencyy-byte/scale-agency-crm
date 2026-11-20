@@ -142,14 +142,14 @@ export default function ContractsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Contracts</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Contracts</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Upload, send, and track signature status for client agreements.
           </p>
         </div>
         {canEdit && (
           <Button onClick={() => setFormOpen(true)} className="bg-primary text-primary-foreground hover:bg-primary/90">
-            <Plus className="h-4 w-4 mr-1.5" />New Contract
+            <Plus className="h-4 w-4 mr-1.5" />New contract
           </Button>
         )}
       </div>
@@ -183,7 +183,7 @@ export default function ContractsPage() {
                     {c.signer_name || c.signer_email || <span className="text-muted-foreground">—</span>}
                   </TableCell>
                   <TableCell>
-                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium capitalize ${STATUS_STYLES[c.status]}`}>
+                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium capitalize ${STATUS_STYLES[c.status]}`}>
                       {c.status}
                     </span>
                   </TableCell>
@@ -234,7 +234,7 @@ export default function ContractsPage() {
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>New Contract</DialogTitle>
+            <DialogTitle>New contract</DialogTitle>
             <DialogDescription>Upload a document and track it through signature.</DialogDescription>
           </DialogHeader>
           <form onSubmit={createContract} className="space-y-4">

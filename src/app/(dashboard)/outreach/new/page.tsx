@@ -85,7 +85,7 @@ export default function NewOutreachSequencePage() {
         <button onClick={() => router.back()} className="text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <h1 className="text-2xl font-bold text-foreground">New Outreach Sequence</h1>
+        <h1 className="text-2xl font-semibold text-foreground">New outreach sequence</h1>
       </div>
 
       <div className="card-elevated p-5 space-y-4">
@@ -116,14 +116,14 @@ export default function NewOutreachSequencePage() {
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-foreground">Steps</h2>
           <button onClick={addStep} className="flex items-center gap-1 text-xs text-primary hover:text-primary/80">
-            <Plus className="h-3.5 w-3.5" /> Add Step
+            <Plus className="h-3.5 w-3.5" /> Add step
           </button>
         </div>
 
         {steps.map((step, i) => (
           <div key={i} className="card-elevated p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground uppercase">Step {i + 1}</span>
+              <span className="text-xs font-semibold text-muted-foreground ">Step {i + 1}</span>
               {steps.length > 1 && (
                 <button onClick={() => removeStep(i)} className="text-muted-foreground hover:text-red-400">
                   <Trash2 className="h-3.5 w-3.5" />

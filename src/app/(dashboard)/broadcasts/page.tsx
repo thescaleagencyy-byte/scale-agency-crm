@@ -179,7 +179,7 @@ export default function BroadcastsPage() {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Broadcasts</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Broadcasts</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Send bulk messages to your contacts using approved templates.
           </p>
@@ -191,7 +191,7 @@ export default function BroadcastsPage() {
           className="bg-primary text-primary-foreground hover:bg-primary/90"
         >
           <Plus className="h-4 w-4" />
-          New Broadcast
+          New broadcast
         </GatedButton>
       </div>
 
@@ -209,7 +209,7 @@ export default function BroadcastsPage() {
             className="mt-4 bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <Plus className="h-4 w-4" />
-            New Broadcast
+            New broadcast
           </GatedButton>
         </div>
       ) : (
@@ -258,7 +258,7 @@ export default function BroadcastsPage() {
                       <RateCell
                         value={broadcast.read_count}
                         total={broadcast.total_recipients}
-                        color="bg-blue-500"
+                        color="bg-muted-foreground"
                       />
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">

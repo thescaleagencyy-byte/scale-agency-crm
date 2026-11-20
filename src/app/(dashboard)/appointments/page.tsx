@@ -168,11 +168,11 @@ export default function AppointmentsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Appointments</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Appointments</h1>
           <p className="mt-1 text-sm text-muted-foreground">Manage bookings for your services.</p>
         </div>
         <Button onClick={() => setShowApptForm(true)} className="bg-primary text-primary-foreground hover:bg-primary/90">
-          <Plus className="h-4 w-4 mr-2" />Book Appointment
+          <Plus className="h-4 w-4 mr-2" />Book appointment
         </Button>
       </div>
 
@@ -207,7 +207,7 @@ export default function AppointmentsPage() {
         <div className="flex items-center justify-between">
           <p className="text-sm font-semibold text-foreground">Services ({services.length})</p>
           <Button variant="outline" size="sm" onClick={() => setShowServiceForm(v => !v)} className="border-border bg-transparent text-muted-foreground hover:text-foreground text-xs">
-            <Plus className="h-3 w-3 mr-1" />Add Service
+            <Plus className="h-3 w-3 mr-1" />Add service
           </Button>
         </div>
 
@@ -313,7 +313,7 @@ export default function AppointmentsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowApptForm(false)}>
           <div className="bg-popover border border-border rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-foreground">Book Appointment</h2>
+              <h2 className="text-base font-semibold text-foreground">Book appointment</h2>
               <button onClick={() => setShowApptForm(false)} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
             </div>
             <form onSubmit={createAppointment} className="space-y-3">
