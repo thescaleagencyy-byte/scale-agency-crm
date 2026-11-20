@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Sparkles } from 'lucide-react'
+import { Minus, Sparkles } from 'lucide-react'
 import type { ActivityItem } from '@/lib/dashboard/types'
 import { hasFeature } from '@/lib/features'
 import { DailyDigestCard } from '@/components/dashboard/daily-digest-card'
@@ -17,7 +17,15 @@ function stamp(iso: string) {
 
 // The dark column on the right: the morning briefing on top, then a
 // timeline of what just happened. Stays in view while the left scrolls.
-export function SummaryPanel({ activity, loading }: { activity: ActivityItem[] | null; loading: boolean }) {
+export function SummaryPanel({
+  activity,
+  loading,
+  onHide,
+}: {
+  activity: ActivityItem[] | null
+  loading: boolean
+  onHide: () => void
+}) {
   const items = (activity ?? []).slice(0, 7)
   return (
     <aside className="flex flex-col gap-3 rounded-[30px] bg-zinc-950 p-3 text-white xl:sticky xl:top-0 xl:max-h-[calc(100vh-8rem)] xl:overflow-y-auto xl:[scrollbar-width:none]">
@@ -27,6 +35,15 @@ export function SummaryPanel({ activity, loading }: { activity: ActivityItem[] |
         </span>
         <h2 className="flex-1 font-heading text-[22px] font-normal tracking-tight">Summary</h2>
         {hasFeature('copilot') && <CircleLink href="/copilot" label="Ask CEO Copilot" tone="dark" />}
+        <button
+          type="button"
+          onClick={onHide}
+          aria-label="Hide summary"
+          title="Hide summary"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/15 text-white transition-colors hover:bg-white hover:text-black"
+        >
+          <Minus className="h-[18px] w-[18px]" strokeWidth={1.5} />
+        </button>
       </div>
 
       {hasFeature('daily_digest') && <DailyDigestCard embedded />}
@@ -77,5 +94,21 @@ export function SummaryPanel({ activity, loading }: { activity: ActivityItem[] |
         )}
       </div>
     </aside>
+  )
+}
+
+/** Small black pill that brings the summary back once hidden. */
+export function SummaryReopen({ onShow }: { onShow: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onShow}
+      className="fixed bottom-6 right-6 z-30 flex h-12 items-center gap-2.5 rounded-full bg-zinc-950 py-1.5 pl-1.5 pr-5 text-sm text-white shadow-[0_8px_24px_-8px_rgba(0,0,0,0.45)] transition-colors hover:bg-zinc-800"
+    >
+      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
+        <Sparkles className="h-4 w-4" strokeWidth={1.5} />
+      </span>
+      Summary
+    </button>
   )
 }

@@ -35,7 +35,7 @@ import { HeroStatsRow } from '@/components/dashboard/hero-stats-row'
 import { TitleRow } from '@/components/dashboard/workspace/title-row'
 import { NewLeads } from '@/components/dashboard/workspace/new-leads'
 import { FollowUps } from '@/components/dashboard/workspace/follow-ups'
-import { SummaryPanel } from '@/components/dashboard/workspace/summary-panel'
+import { SummaryPanel, SummaryReopen } from '@/components/dashboard/workspace/summary-panel'
 import { loadFollowUps, loadNewLeads, type WorkspaceLead } from '@/lib/dashboard/workspace-queries'
 import { AgentQueueCard } from '@/components/dashboard/agent-queue-card'
 import { QuickActions } from '@/components/dashboard/quick-actions'
@@ -98,6 +98,19 @@ export default function DashboardPage() {
   const [followUps, setFollowUps] = useState<{ leads: WorkspaceLead[]; total: number }>({ leads: [], total: 0 })
   const [followUpsLoading, setFollowUpsLoading] = useState(hasFeature('leads'))
 
+
+  // Summary column: open by default on wide screens, hidden on laptops
+  // where it would squeeze the cards. The user's choice is remembered.
+  const [summaryOpen, setSummaryOpen] = useState(false)
+  useEffect(() => {
+    const saved = localStorage.getItem('ws-summary-open')
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- read once from the browser after mount
+    setSummaryOpen(saved === null ? window.innerWidth >= 1600 : saved === '1')
+  }, [])
+  const toggleSummary = useCallback((open: boolean) => {
+    setSummaryOpen(open)
+    localStorage.setItem('ws-summary-open', open ? '1' : '0')
+  }, [])
 
   const loadAll = useCallback(() => {
     const db = createClient()
@@ -256,7 +269,7 @@ export default function DashboardPage() {
       {/* Big page title, one action, the headline numbers on the right */}
       <TitleRow metrics={metrics} loading={metricsLoading} title="Dashboard" />
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className={summaryOpen ? 'grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]' : 'grid grid-cols-1 gap-6'}>
       <div className="min-w-0 space-y-8">
       {RENTAL_INDUSTRY ? (
         <div className="flex items-center gap-4 overflow-hidden rounded-[26px] bg-card px-6 py-4">
@@ -350,10 +363,13 @@ export default function DashboardPage() {
       </div>
 
       {/* Right column — briefing + latest activity, stays in view */}
-      <div className="min-w-0">
-        <SummaryPanel activity={activity} loading={activityLoading} />
+      {summaryOpen && (
+        <div className="min-w-0">
+          <SummaryPanel activity={activity} loading={activityLoading} onHide={() => toggleSummary(false)} />
+        </div>
+      )}
       </div>
-      </div>
+      {!summaryOpen && <SummaryReopen onShow={() => toggleSummary(true)} />}
     </div>
   )
 }
